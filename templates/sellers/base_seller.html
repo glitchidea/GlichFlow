@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Satış Yönetimi - GlichFlow{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'sellers/css/sellers.css' %}">
+{% block seller_css %}{% endblock %}
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <!-- Breadcrumb -->
+            <nav aria-label="breadcrumb" class="mb-4">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'sellers:index' %}">
+                            <i class="fas fa-chart-line"></i> Satış Dashboard
+                        </a>
+                    </li>
+                    {% block breadcrumb %}{% endblock %}
+                </ol>
+            </nav>
+
+            <!-- Page Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="h3 mb-0">{% block page_title %}Satış Yönetimi{% endblock %}</h1>
+                    <p class="text-muted mb-0">{% block page_description %}Proje satışlarını ve müşterileri yönetin{% endblock %}</p>
+                </div>
+                <div>
+                    {% block page_actions %}{% endblock %}
+                </div>
+            </div>
+
+            <!-- Main Content -->
+            {% block seller_content %}{% endblock %}
+        </div>
+    </div>
+</div>
+
+<!-- Modals -->
+{% block modals %}{% endblock %}
+{% endblock %}
+
+{% block extra_js %}
+{% now 'U' as ts %}
+<script src="{% static 'sellers/js/sellers.js' %}?v={{ STATIC_VERSION|default:ts }}"></script>
+{% block seller_js %}{% endblock %}
+{% endblock %}

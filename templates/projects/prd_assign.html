@@ -1,0 +1,246 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/prd_assign.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Assign Header -->
+    <div class="assign-header">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h1 class="h3 mb-2">{{ title }}</h1>
+                <p class="mb-0 text-white-50">PRD'yi bir projeye veya göreve atayın</p>
+            </div>
+            <div class="col-md-4 text-md-end">
+                <a href="{% url 'projects:prd_detail' prd.id %}" class="btn btn-light btn-sm">
+                    <i class="fas fa-arrow-left"></i> Geri
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- PRD Bilgileri -->
+    <div class="prd-info">
+        <div class="row">
+            <div class="col-md-8">
+                <h5 class="mb-2">{{ prd.title }}</h5>
+                {% if prd.description %}
+                <p class="mb-2 text-muted">{{ prd.description }}</p>
+                {% endif %}
+                <div class="d-flex align-items-center gap-3">
+                    <span class="badge bg-{{ prd.status }}">{{ prd.get_status_display }}</span>
+                    <span class="badge bg-secondary">{{ prd.get_priority_display }}</span>
+                </div>
+            </div>
+            <div class="col-md-4 text-md-end">
+                <small class="text-muted">
+                    <i class="fas fa-user"></i> {{ prd.created_by.get_full_name|default:prd.created_by.username }}
+                    <br>
+                    <i class="fas fa-calendar"></i> {{ prd.created_at|date:"d.m.Y H:i" }}
+                </small>
+            </div>
+        </div>
+    </div>
+
+    <form method="post">
+        {% csrf_token %}
+        
+        <!-- Atama Seçenekleri -->
+        <div class="assign-section">
+            <h4 class="mb-3">
+                <i class="fas fa-link text-primary"></i> Atama Seçenekleri
+            </h4>
+            
+            <div class="row">
+                <!-- Proje Atama -->
+                <div class="col-md-6">
+                    <div class="assignment-option" id="project-option">
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="assignment_type" 
+                                   id="assignment_project" value="project">
+                            <label class="form-check-label" for="assignment_project">
+                                <strong><i class="fas fa-project-diagram"></i> Projeye Ata</strong>
+                            </label>
+                        </div>
+                        <p class="text-muted mt-2 mb-0">
+                            PRD'yi bir projeye atayarak o projenin gereksinimlerini tanımlayın.
+                        </p>
+                    </div>
+                    
+                    <div id="project-list" style="display: none;">
+                        <h6 class="mb-2">Mevcut Projeler:</h6>
+                        {% for project in projects %}
+                        <div class="project-card" data-project-id="{{ project.id }}">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h6 class="mb-1">{{ project.name }}</h6>
+                                    <p class="mb-1 text-muted small">{{ project.description|truncatechars:100 }}</p>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <span class="badge bg-{{ project.status }}">{{ project.get_status_display }}</span>
+                                        <span class="badge bg-secondary">{{ project.get_priority_display }}</span>
+                                    </div>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="project" 
+                                           value="{{ project.id }}" id="project_{{ project.id }}">
+                                </div>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i> Henüz proje bulunmuyor.
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                
+                <!-- Görev Atama -->
+                <div class="col-md-6">
+                    <div class="assignment-option" id="task-option">
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="assignment_type" 
+                                   id="assignment_task" value="task">
+                            <label class="form-check-label" for="assignment_task">
+                                <strong><i class="fas fa-tasks"></i> Göreve Ata</strong>
+                            </label>
+                        </div>
+                        <p class="text-muted mt-2 mb-0">
+                            PRD'yi bir göreve atayarak o görevin gereksinimlerini tanımlayın.
+                        </p>
+                    </div>
+                    
+                    <div id="task-list" style="display: none;">
+                        <h6 class="mb-2">Mevcut Görevler:</h6>
+                        {% for task in tasks %}
+                        <div class="task-card" data-task-id="{{ task.id }}">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h6 class="mb-1">{{ task.title }}</h6>
+                                    <p class="mb-1 text-muted small">{{ task.description|truncatechars:100 }}</p>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <span class="badge bg-{{ task.status }}">{{ task.get_status_display }}</span>
+                                        <span class="badge bg-secondary">{{ task.get_priority_display }}</span>
+                                        <small class="text-muted">{{ task.project.name }}</small>
+                                    </div>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="task" 
+                                           value="{{ task.id }}" id="task_{{ task.id }}">
+                                </div>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i> Henüz görev bulunmuyor.
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mevcut Atama -->
+        {% if prd.project or prd.task %}
+        <div class="assign-section">
+            <h4 class="mb-3">
+                <i class="fas fa-info-circle text-warning"></i> Mevcut Atama
+            </h4>
+            
+            <div class="alert alert-warning">
+                <i class="fas fa-exclamation-triangle"></i>
+                <strong>Dikkat:</strong> Bu PRD zaten 
+                {% if prd.project %}
+                    <strong>{{ prd.project.name }}</strong> projesine atanmış.
+                {% elif prd.task %}
+                    <strong>{{ prd.task.title }}</strong> görevine atanmış.
+                {% endif %}
+                Yeni bir atama yaparsanız mevcut atama değiştirilecektir.
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Form Butonları -->
+        <div class="assign-section">
+            <div class="d-flex justify-content-between">
+                <a href="{% url 'projects:prd_detail' prd.id %}" class="btn btn-secondary">
+                    <i class="fas fa-times"></i> İptal
+                </a>
+                
+                <div>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-link"></i> Ata
+                    </button>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Atama türü seçimi
+    $('input[name="assignment_type"]').change(function() {
+        const assignmentType = $(this).val();
+        
+        // Tüm seçenekleri temizle
+        $('.assignment-option').removeClass('selected');
+        $('#project-list, #task-list').hide();
+        $('input[name="project"], input[name="task"]').prop('checked', false);
+        
+        if (assignmentType === 'project') {
+            $('#project-option').addClass('selected');
+            $('#project-list').show();
+        } else if (assignmentType === 'task') {
+            $('#task-option').addClass('selected');
+            $('#task-list').show();
+        }
+    });
+    
+    // Proje seçimi
+    $('.project-card').click(function() {
+        $('.project-card').removeClass('selected');
+        $(this).addClass('selected');
+        $(this).find('input[type="radio"]').prop('checked', true);
+    });
+    
+    // Görev seçimi
+    $('.task-card').click(function() {
+        $('.task-card').removeClass('selected');
+        $(this).addClass('selected');
+        $(this).find('input[type="radio"]').prop('checked', true);
+    });
+    
+    // Form validasyonu
+    $('form').submit(function(e) {
+        const assignmentType = $('input[name="assignment_type"]:checked').val();
+        const project = $('input[name="project"]:checked').val();
+        const task = $('input[name="task"]:checked').val();
+        
+        if (!assignmentType) {
+            alert('Lütfen bir atama türü seçin.');
+            e.preventDefault();
+            return false;
+        }
+        
+        if (assignmentType === 'project' && !project) {
+            alert('Lütfen bir proje seçin.');
+            e.preventDefault();
+            return false;
+        }
+        
+        if (assignmentType === 'task' && !task) {
+            alert('Lütfen bir görev seçin.');
+            e.preventDefault();
+            return false;
+        }
+    });
+});
+</script>
+{% endblock %}

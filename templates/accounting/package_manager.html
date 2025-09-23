@@ -1,0 +1,500 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Paket Yöneticisi{% endblock %}
+{% block page_title %}Paket Yöneticisi{% endblock %}
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'accounting:index' %}">Muhasebe</a></li>
+<li class="breadcrumb-item active">Paket Yöneticisi</li>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+  .category-list {
+    border: 1px solid #e9ecef;
+    border-radius: 12px;
+    background: white;
+    margin-bottom: 2rem;
+  }
+  
+  .category-header {
+    background: #f8f9fa;
+    padding: 1.5rem;
+    border-bottom: 1px solid #e9ecef;
+    border-radius: 12px 12px 0 0;
+  }
+  
+  .category-item {
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid #f0f0f0;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .category-item:hover {
+    background: #f8f9fa;
+  }
+  
+  .category-item.selected {
+    background: #e3f2fd;
+    border-left: 4px solid #007bff;
+  }
+  
+  .category-item:last-child {
+    border-bottom: none;
+  }
+  
+  .category-info {
+    flex: 1;
+  }
+  
+  .category-name {
+    font-weight: 600;
+    color: #212529;
+    margin: 0;
+  }
+  
+  .category-description {
+    font-size: 0.9rem;
+    color: #6c757d;
+    margin: 0;
+  }
+  
+  .category-stats {
+    text-align: right;
+  }
+  
+  .package-count {
+    background: #007bff;
+    color: white;
+    padding: 0.25rem 0.5rem;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 500;
+  }
+  
+  .extras-count {
+    background: #28a745;
+    color: white;
+    padding: 0.25rem 0.5rem;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    margin-top: 0.25rem;
+  }
+  
+  .selected-category-section {
+    border: 1px solid #e9ecef;
+    border-radius: 12px;
+    background: white;
+    margin-bottom: 2rem;
+    display: none;
+  }
+  
+  .selected-category-header {
+    background: #e3f2fd;
+    padding: 1.5rem;
+    border-bottom: 1px solid #e9ecef;
+    border-radius: 12px 12px 0 0;
+  }
+  
+  .selected-category-body {
+    padding: 1.5rem;
+  }
+  
+  .package-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+  
+  .package-item {
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 1rem;
+    background: white;
+    transition: all 0.2s ease;
+  }
+  
+  .package-item:hover {
+    border-color: #007bff;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  }
+  
+  .package-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: start;
+    margin-bottom: 0.75rem;
+  }
+  
+  .package-name {
+    font-weight: 600;
+    color: #212529;
+    margin: 0;
+  }
+  
+  .package-price {
+    background: #28a745;
+    color: white;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    font-weight: 500;
+  }
+  
+  .feature-list {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 1rem 0;
+  }
+  
+  .feature-list li {
+    padding: 0.25rem 0;
+    font-size: 0.9rem;
+    color: #6c757d;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .feature-list li:before {
+    content: "•";
+    color: #007bff;
+    margin-right: 0.5rem;
+  }
+  
+  .action-buttons {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+  
+  .btn-sm {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.8rem;
+  }
+  
+  .extras-section {
+    border-top: 1px solid #e9ecef;
+    padding-top: 1rem;
+    margin-top: 1rem;
+  }
+  
+  .extra-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem;
+    border: 1px solid #e9ecef;
+    border-radius: 4px;
+    margin-bottom: 0.5rem;
+    background: #f8f9fa;
+  }
+  
+  .extra-info {
+    flex: 1;
+  }
+  
+  .extra-name {
+    font-weight: 500;
+    margin: 0;
+  }
+  
+  .extra-details {
+    font-size: 0.8rem;
+    color: #6c757d;
+    margin: 0;
+  }
+  
+  .quick-actions {
+    background: #e3f2fd;
+    border: 1px solid #bbdefb;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 2rem;
+  }
+  
+  .empty-state {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: #6c757d;
+  }
+  
+  .empty-state i {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    opacity: 0.5;
+  }
+  
+  .no-selection {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: #6c757d;
+    background: #f8f9fa;
+    border-radius: 12px;
+    border: 2px dashed #dee2e6;
+  }
+  
+  .no-selection i {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+    opacity: 0.3;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Hızlı İşlemler -->
+<div class="quick-actions">
+  <div class="d-flex justify-content-between align-items-center">
+    <div>
+      <h6 class="mb-1">Hızlı İşlemler</h6>
+      <small class="text-muted">Kategori ve paket yönetimi için hızlı erişim</small>
+    </div>
+    <div class="d-flex gap-2">
+      <a href="{% url 'accounting:group_create' %}" class="btn btn-primary btn-sm">
+        <i class="fas fa-layer-group me-1"></i> Yeni Kategori
+      </a>
+      <a href="{% url 'accounting:package_create' %}" class="btn btn-success btn-sm">
+        <i class="fas fa-box me-1"></i> Yeni Paket
+      </a>
+      <a href="{% url 'accounting:extra_create' %}" class="btn btn-info btn-sm">
+        <i class="fas fa-plus-circle me-1"></i> Ek Hizmet
+      </a>
+    </div>
+  </div>
+</div>
+
+<div class="row">
+  <!-- Kategori Listesi -->
+  <div class="col-12 col-lg-4">
+    <div class="category-list">
+      <div class="category-header">
+        <h5 class="mb-0">Kategoriler</h5>
+        <small class="text-muted">Yönetmek istediğiniz kategoriyi seçin</small>
+      </div>
+      
+      {% for group in groups %}
+      <div class="category-item" data-group-id="{{ group.id }}">
+        <div class="category-info">
+          <h6 class="category-name">{{ group.name }}</h6>
+          {% if group.description %}
+            <p class="category-description">{{ group.description }}</p>
+          {% endif %}
+        </div>
+        <div class="category-stats">
+          <div class="package-count">{{ group.packages.count }} paket</div>
+          <div class="extras-count">{{ group.extra_services.count }} ek hizmet</div>
+        </div>
+      </div>
+      {% empty %}
+      <div class="empty-state">
+        <i class="fas fa-boxes"></i>
+        <h6>Henüz kategori yok</h6>
+        <p class="mb-2">İlk kategorinizi oluşturarak başlayın</p>
+        <a href="{% url 'accounting:group_create' %}" class="btn btn-primary btn-sm">
+          <i class="fas fa-plus me-1"></i> İlk Kategoriyi Oluştur
+        </a>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Seçilen Kategori Detayları -->
+  <div class="col-12 col-lg-8">
+    <!-- Kategori seçilmediğinde gösterilecek mesaj -->
+    <div class="no-selection" id="noSelectionMessage">
+      <i class="fas fa-hand-pointer"></i>
+      <h5>Kategori Seçin</h5>
+      <p class="mb-3">Sol taraftan yönetmek istediğiniz kategoriyi seçin</p>
+      <small class="text-muted">Seçilen kategorinin paketleri ve ek hizmetleri burada görünecek</small>
+    </div>
+
+    <!-- Seçilen kategori detayları -->
+    {% for group in groups %}
+    <div class="selected-category-section" id="categorySection_{{ group.id }}">
+      <div class="selected-category-header">
+        <div class="d-flex justify-content-between align-items-start">
+          <div>
+            <h5 class="mb-1">{{ group.name }}</h5>
+            {% if group.description %}
+              <p class="text-muted mb-0 small">{{ group.description }}</p>
+            {% endif %}
+          </div>
+          <div class="action-buttons">
+            <a href="{% url 'accounting:group_update' group.id %}" class="btn btn-outline-secondary btn-sm">
+              <i class="fas fa-edit"></i> Düzenle
+            </a>
+            <a href="{% url 'accounting:group_delete' group.id %}" class="btn btn-outline-danger btn-sm">
+              <i class="fas fa-trash"></i> Sil
+            </a>
+          </div>
+        </div>
+      </div>
+      
+      <div class="selected-category-body">
+        <!-- Paketler -->
+        <div class="mb-3">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <h6 class="mb-0">Paketler ({{ group.packages.count }})</h6>
+            <a href="{% url 'accounting:package_create' %}?group={{ group.id }}" class="btn btn-outline-primary btn-sm">
+              <i class="fas fa-plus me-1"></i> Paket Ekle
+            </a>
+          </div>
+          
+          {% if group.packages.all %}
+            <div class="package-grid">
+              {% for package in group.packages.all %}
+              <div class="package-item">
+                <div class="package-header">
+                  <h6 class="package-name">{{ package.name }}</h6>
+                  <span class="package-price">{{ package.base_price }} ₺</span>
+                </div>
+                
+                {% if package.extra_pages_multiplier > 0 %}
+                  <div class="small text-muted mb-2">
+                    <i class="fas fa-file-alt me-1"></i>Ek sayfa: {{ package.extra_pages_multiplier }}₺/sayfa
+                  </div>
+                {% endif %}
+                
+                <div class="mb-2">
+                  <strong class="small">Özellikler:</strong>
+                  <ul class="feature-list">
+                    {% for feature in package.features.all %}
+                      <li>
+                        <span>{{ feature.text }}</span>
+                        <div class="action-buttons">
+                          <a href="{% url 'accounting:feature_update' feature.id %}" class="btn btn-outline-secondary btn-sm">
+                            <i class="fas fa-edit"></i>
+                          </a>
+                          <a href="{% url 'accounting:feature_delete' feature.id %}" class="btn btn-outline-danger btn-sm">
+                            <i class="fas fa-trash"></i>
+                          </a>
+                        </div>
+                      </li>
+                    {% empty %}
+                      <li class="text-muted">Özellik yok</li>
+                    {% endfor %}
+                  </ul>
+                  <a href="{% url 'accounting:feature_create' %}?package={{ package.id }}" class="btn btn-outline-primary btn-sm">
+                    <i class="fas fa-plus me-1"></i> Özellik Ekle
+                  </a>
+                </div>
+                
+                <div class="action-buttons">
+                  <a href="{% url 'accounting:package_update' package.id %}" class="btn btn-outline-secondary btn-sm">
+                    <i class="fas fa-edit me-1"></i> Düzenle
+                  </a>
+                  <a href="{% url 'accounting:package_delete' package.id %}" class="btn btn-outline-danger btn-sm">
+                    <i class="fas fa-trash me-1"></i> Sil
+                  </a>
+                </div>
+              </div>
+              {% endfor %}
+            </div>
+          {% else %}
+            <div class="empty-state">
+              <i class="fas fa-box-open"></i>
+              <h6>Bu kategoride henüz paket yok</h6>
+              <p class="mb-2">İlk paketinizi oluşturarak başlayın</p>
+              <a href="{% url 'accounting:package_create' %}?group={{ group.id }}" class="btn btn-primary btn-sm">
+                <i class="fas fa-plus me-1"></i> İlk Paketi Oluştur
+              </a>
+            </div>
+          {% endif %}
+        </div>
+        
+        <!-- Ek Hizmetler -->
+        <div class="extras-section">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <h6 class="mb-0">Ek Hizmetler ({{ group.extra_services.count }})</h6>
+            <a href="{% url 'accounting:extra_create' %}?group={{ group.id }}" class="btn btn-outline-info btn-sm">
+              <i class="fas fa-plus me-1"></i> Ek Hizmet Ekle
+            </a>
+          </div>
+          
+          {% if group.extra_services.all %}
+            {% for extra in group.extra_services.all %}
+            <div class="extra-item">
+                        <div class="extra-info">
+            <h6 class="extra-name mb-1">{{ extra.name }}</h6>
+            <p class="extra-details mb-0">
+              {{ extra.get_pricing_type_display }} • {{ extra.get_input_type_display }}
+              {% if extra.description %} • {{ extra.description|truncatechars:50 }}{% endif %}
+            </p>
+            <div class="small text-primary">{{ extra.get_display_price }}</div>
+          </div>
+              <div class="action-buttons">
+                <a href="{% url 'accounting:extra_update' extra.id %}" class="btn btn-outline-secondary btn-sm">
+                  <i class="fas fa-edit"></i>
+                </a>
+                <a href="{% url 'accounting:extra_delete' extra.id %}" class="btn btn-outline-danger btn-sm">
+                  <i class="fas fa-trash"></i>
+                </a>
+              </div>
+            </div>
+            {% endfor %}
+          {% else %}
+            <div class="text-center py-3 text-muted">
+              <i class="fas fa-plus-circle mb-2"></i>
+              <p class="mb-2">Bu kategori için ek hizmet yok</p>
+              <a href="{% url 'accounting:extra_create' %}?group={{ group.id }}" class="btn btn-outline-info btn-sm">
+                <i class="fas fa-plus me-1"></i> İlk Ek Hizmeti Ekle
+              </a>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Kategori seçimi
+  document.querySelectorAll('.category-item').forEach(item => {
+    item.addEventListener('click', function() {
+      const groupId = this.dataset.groupId;
+      
+      // Tüm kategori seçimlerini temizle
+      document.querySelectorAll('.category-item').forEach(cat => {
+        cat.classList.remove('selected');
+      });
+      
+      // Tüm kategori bölümlerini gizle
+      document.querySelectorAll('.selected-category-section').forEach(section => {
+        section.style.display = 'none';
+      });
+      
+      // Seçilen kategoriyi işaretle
+      this.classList.add('selected');
+      
+      // Seçilen kategorinin bölümünü göster
+      const categorySection = document.getElementById(`categorySection_${groupId}`);
+      if (categorySection) {
+        categorySection.style.display = 'block';
+      }
+      
+      // "Kategori seçin" mesajını gizle
+      document.getElementById('noSelectionMessage').style.display = 'none';
+    });
+  });
+  
+  // İlk kategoriyi otomatik seç (eğer varsa)
+  const firstCategory = document.querySelector('.category-item');
+  if (firstCategory) {
+    firstCategory.click();
+  }
+});
+</script>
+{% endblock %}
+
+

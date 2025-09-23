@@ -1,0 +1,125 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }} | GlichFlow{% endblock %}
+
+{% block page_title %}{{ title }}{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'communications:inbox' %}">Mesajlar</a></li>
+<li class="breadcrumb-item active">{{ title }}</li>
+{% endblock %}
+
+{% block page_actions %}
+<div class="btn-group">
+    {% if request.user == message_obj.recipient %}
+    <a href="{% url 'communications:message_create' %}?reply_to={{ message_obj.sender.id }}&subject=Re: {{ message_obj.subject|urlencode }}" class="btn btn-primary">
+        <i class="fas fa-reply"></i> Yanıtla
+    </a>
+    {% endif %}
+    <button type="button" class="btn btn-primary dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false">
+        <span class="visually-hidden">Dropdown</span>
+    </button>
+    <ul class="dropdown-menu dropdown-menu-end">
+        <li><a class="dropdown-item text-danger" href="{% url 'communications:message_delete' message_obj.id %}"><i class="fas fa-trash me-2"></i> Sil</a></li>
+    </ul>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8 mx-auto">
+        <div class="card">
+            <div class="card-header">
+                <ul class="nav nav-tabs card-header-tabs">
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.user == message_obj.recipient %}active{% endif %}" href="{% url 'communications:inbox' %}">
+                            <i class="fas fa-inbox me-1"></i> Gelen Mesajlar
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.user == message_obj.sender %}active{% endif %}" href="{% url 'communications:sent' %}">
+                            <i class="fas fa-paper-plane me-1"></i> Gönderilen Mesajlar
+                        </a>
+                    </li>
+                </ul>
+            </div>
+            <div class="card-body">
+                <div class="message-header mb-4">
+                    <div class="d-flex justify-content-between flex-wrap">
+                        <h4 class="message-subject mb-3">{{ message_obj.subject }}</h4>
+                        <div class="message-date text-muted">
+                            {{ message_obj.created_at|date:"d F Y H:i" }}
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <h6 class="text-muted">Gönderen:</h6>
+                            <div class="d-flex align-items-center">
+                                {% if message_obj.sender.profile_picture %}
+                                <img src="{{ message_obj.sender.profile_picture.url }}" class="rounded-circle me-2" style="width: 40px; height: 40px;" alt="{{ message_obj.sender.get_full_name }}">
+                                {% else %}
+                                <div class="bg-secondary bg-opacity-10 rounded-circle me-2 d-flex align-items-center justify-content-center text-secondary" style="width: 40px; height: 40px;">
+                                    <i class="fas fa-user"></i>
+                                </div>
+                                {% endif %}
+                                <div>
+                                    <strong>{{ message_obj.sender.get_full_name|default:message_obj.sender.username }}</strong>
+                                    <div class="small text-muted">{{ message_obj.sender.email }}</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <h6 class="text-muted">Alıcı:</h6>
+                            <div class="d-flex align-items-center">
+                                {% if message_obj.recipient.profile_picture %}
+                                <img src="{{ message_obj.recipient.profile_picture.url }}" class="rounded-circle me-2" style="width: 40px; height: 40px;" alt="{{ message_obj.recipient.get_full_name }}">
+                                {% else %}
+                                <div class="bg-secondary bg-opacity-10 rounded-circle me-2 d-flex align-items-center justify-content-center text-secondary" style="width: 40px; height: 40px;">
+                                    <i class="fas fa-user"></i>
+                                </div>
+                                {% endif %}
+                                <div>
+                                    <strong>{{ message_obj.recipient.get_full_name|default:message_obj.recipient.username }}</strong>
+                                    <div class="small text-muted">{{ message_obj.recipient.email }}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <hr>
+                
+                <div class="message-content mb-4">
+                    <div class="p-3">
+                        {{ message_obj.content|linebreaks }}
+                    </div>
+                </div>
+                
+                {% if request.user == message_obj.recipient %}
+                <div class="d-flex justify-content-end">
+                    <a href="{% url 'communications:message_create' %}?reply_to={{ message_obj.sender.id }}&subject=Re: {{ message_obj.subject|urlencode }}" class="btn btn-primary">
+                        <i class="fas fa-reply me-1"></i> Yanıtla
+                    </a>
+                </div>
+                {% endif %}
+                
+                <div class="small text-muted mt-4">
+                    {% if message_obj.read and request.user == message_obj.recipient %}
+                    <p><i class="fas fa-check-double me-1"></i> Okundu: {{ message_obj.read_at|date:"d F Y H:i" }}</p>
+                    {% elif request.user == message_obj.sender %}
+                    <p>
+                        {% if message_obj.read %}
+                        <i class="fas fa-check-double me-1"></i> Okundu: {{ message_obj.read_at|date:"d F Y H:i" }}
+                        {% else %}
+                        <i class="fas fa-check me-1"></i> Henüz okunmadı
+                        {% endif %}
+                    </p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

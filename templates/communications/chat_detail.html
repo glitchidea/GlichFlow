@@ -1,0 +1,935 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block page_title %}{{ title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .chat-container {
+        display: flex;
+        height: calc(100vh - 260px);
+        min-height: 500px;
+        background-color: #fff;
+        border-radius: 0.25rem;
+        overflow: hidden;
+        border: 1px solid rgba(0,0,0,.125);
+    }
+    
+    .chat-sidebar {
+        width: 300px;
+        border-right: 1px solid rgba(0,0,0,.125);
+        overflow-y: auto;
+        background-color: #f8f9fa;
+    }
+    
+    .chat-main {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .chat-header {
+        padding: 15px;
+        border-bottom: 1px solid rgba(0,0,0,.125);
+        display: flex;
+        align-items: center;
+    }
+    
+    .chat-header .back-button {
+        margin-right: 15px;
+        font-size: 1.2rem;
+    }
+    
+    .chat-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        overflow: hidden;
+        background-color: #e9ecef;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 10px;
+    }
+    
+    .chat-avatar img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    
+    .chat-avatar .initial {
+        font-size: 1.2rem;
+        font-weight: 700;
+        color: #6c757d;
+    }
+    
+    .chat-body {
+        flex: 1;
+        overflow-y: auto;
+        padding: 15px;
+        background-color: #f5f6fa;
+    }
+    
+    .chat-footer {
+        padding: 15px;
+        border-top: 1px solid rgba(0,0,0,.125);
+    }
+    
+    .message {
+        margin-bottom: 15px;
+        display: flex;
+        flex-direction: column;
+        max-width: 85%;
+    }
+    
+    .message.message-right {
+        align-items: flex-end;
+        align-self: flex-end;
+    }
+    
+    .message.message-left {
+        align-items: flex-start;
+    }
+    
+    .message-sender {
+        font-size: 0.75rem;
+        margin-bottom: 2px;
+        font-weight: 600;
+        color: #6c757d;
+    }
+    
+    .message-bubble {
+        padding: 10px 15px;
+        border-radius: 15px;
+        position: relative;
+        max-width: 100%;
+        word-wrap: break-word;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    }
+    
+    .message-left .message-bubble {
+        background-color: white;
+        border-top-left-radius: 0;
+    }
+    
+    .message-right .message-bubble {
+        background-color: #dcf8c6;
+        border-top-right-radius: 0;
+    }
+    
+    .message-time {
+        font-size: 0.7rem;
+        color: #6c757d;
+        margin-top: 3px;
+        display: flex;
+        align-items: center;
+    }
+    
+    .message-time i {
+        margin-left: 4px;
+    }
+    
+    .message-system .message-bubble {
+        background-color: #e9ecef;
+        padding: 5px 10px;
+        border-radius: 10px;
+        font-size: 0.85rem;
+        max-width: 80%;
+        margin: 0 auto;
+        text-align: center;
+    }
+    
+    .message-reply-to {
+        font-size: 0.85rem;
+        padding: 5px 10px;
+        background-color: rgba(0,0,0,0.05);
+        border-left: 3px solid var(--primary);
+        margin-bottom: 5px;
+        border-radius: 4px;
+    }
+    
+    .message-file {
+        display: flex;
+        align-items: center;
+        background-color: rgba(0,0,0,0.05);
+        padding: 5px;
+        border-radius: 4px;
+    }
+    
+    .message-file i {
+        font-size: 1.5rem;
+        margin-right: 10px;
+    }
+    
+    .input-group .file-upload-button {
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .input-group .file-upload-button input[type=file] {
+        position: absolute;
+        top: 0;
+        right: 0;
+        min-width: 100%;
+        min-height: 100%;
+        opacity: 0;
+        cursor: pointer;
+    }
+    
+    .sidebar-header {
+        padding: 15px;
+        border-bottom: 1px solid rgba(0,0,0,.125);
+    }
+    
+    .sidebar-body {
+        padding: 15px;
+    }
+    
+    .sidebar-section {
+        margin-bottom: 20px;
+    }
+    
+    .sidebar-section-title {
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        color: #6c757d;
+        margin-bottom: 10px;
+        border-bottom: 1px solid rgba(0,0,0,.125);
+        padding-bottom: 5px;
+    }
+    
+    .member-item {
+        display: flex;
+        align-items: center;
+        padding: 5px;
+        border-radius: 5px;
+        transition: all 0.2s;
+        margin-bottom: 5px;
+    }
+    
+    .member-item:hover {
+        background-color: rgba(0,0,0,0.05);
+    }
+    
+    .member-avatar {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        overflow: hidden;
+        background-color: #e9ecef;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 10px;
+    }
+    
+    .member-avatar img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    
+    .member-avatar .initial {
+        font-size: 0.9rem;
+        font-weight: 700;
+        color: #6c757d;
+    }
+    
+    .member-name {
+        font-size: 0.9rem;
+    }
+    
+    .member-role {
+        margin-left: auto;
+        font-size: 0.75rem;
+        padding: 2px 5px;
+        border-radius: 3px;
+        background-color: #e9ecef;
+    }
+    
+    .member-role.admin {
+        background-color: #e3f2fd;
+        color: #0d6efd;
+    }
+    
+    .typing-indicator {
+        display: flex;
+        align-items: center;
+        font-size: 0.85rem;
+        color: #6c757d;
+        margin-top: 10px;
+    }
+    
+    .typing-dots {
+        display: flex;
+        margin-left: 5px;
+    }
+    
+    .typing-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background-color: #6c757d;
+        margin: 0 2px;
+        animation: typing 1.5s infinite;
+    }
+    
+    .typing-dot:nth-child(2) {
+        animation-delay: 0.5s;
+    }
+    
+    .typing-dot:nth-child(3) {
+        animation-delay: 1s;
+    }
+    
+    @keyframes typing {
+        0%, 60%, 100% {
+            transform: translateY(0);
+        }
+        30% {
+            transform: translateY(-5px);
+        }
+    }
+    
+    .group-type-badge {
+        font-size: 0.75rem;
+        padding: 2px 5px;
+        border-radius: 3px;
+    }
+    
+    .direct {
+        background-color: #e3f2fd;
+        color: #0d6efd;
+    }
+    
+    .group {
+        background-color: #e6f4ea;
+        color: #34a853;
+    }
+    
+    .project {
+        background-color: #fff8e1;
+        color: #ff9800;
+    }
+    
+    .task {
+        background-color: #f3e5f5;
+        color: #9c27b0;
+    }
+    
+    .selected-file-preview {
+        display: flex;
+        align-items: center;
+        background-color: rgba(0,0,0,0.05);
+        padding: 5px 10px;
+        border-radius: 5px;
+        margin-bottom: 10px;
+    }
+    
+    .selected-file-preview i {
+        margin-right: 10px;
+    }
+    
+    .selected-file-name {
+        max-width: 200px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    
+    .remove-file {
+        margin-left: auto;
+        cursor: pointer;
+        color: #dc3545;
+    }
+    
+    .empty-chat {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        padding: 20px;
+        text-align: center;
+    }
+    
+    .empty-chat i {
+        font-size: 4rem;
+        color: #ccc;
+        margin-bottom: 20px;
+    }
+    
+    .chat-body {
+        display: flex;
+        flex-direction: column;
+    }
+</style>
+{% endblock %}
+
+{% block breadcrumb %}
+<div class="page-title-box">
+    <div class="page-title-right">
+        <ol class="breadcrumb m-0">
+            <li class="breadcrumb-item"><a href="{% url 'dashboard:index' %}">Ana Sayfa</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'communications:chat_list' %}">Mesajlar</a></li>
+            <li class="breadcrumb-item active">{{ group.name }}</li>
+        </ol>
+    </div>
+    <h4 class="page-title">{{ title }}</h4>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="chat-container">
+    <!-- Sol kenar çubuğu - Grup bilgileri -->
+    <div class="chat-sidebar">
+        <div class="sidebar-header">
+            <div class="d-flex align-items-center">
+                <div class="chat-avatar me-2">
+                    {% if group.image %}
+                    <img src="{{ group.image.url }}" alt="{{ group.name }}">
+                    {% else %}
+                    <div class="initial">{{ group.name|slice:"0:1" }}</div>
+                    {% endif %}
+                </div>
+                <div>
+                    <h5 class="mb-0">
+                        {% if group.type == 'direct' %}
+                            <!-- Direkt mesaj ise karşı tarafın adını göster -->
+                            {% for member in group.members.all %}
+                                {% if member.id != request.user.id %}
+                                    {{ member.get_full_name|default:member.username }}
+                                {% endif %}
+                            {% endfor %}
+                        {% else %}
+                            {{ group.name }}
+                        {% endif %}
+                    </h5>
+                    <span class="group-type-badge {{ group.type }}">
+                        {% if group.type == 'direct' %}
+                        <i class="mdi mdi-account"></i>
+                        {% elif group.type == 'group' %}
+                        <i class="mdi mdi-account-group"></i>
+                        {% elif group.type == 'project' %}
+                        <i class="mdi mdi-briefcase"></i>
+                        {% elif group.type == 'task' %}
+                        <i class="mdi mdi-clipboard-check"></i>
+                        {% endif %}
+                        {{ group.get_type_display }}
+                    </span>
+                </div>
+            </div>
+        </div>
+        <div class="sidebar-body">
+            {% if group.description %}
+            <div class="sidebar-section">
+                <div class="sidebar-section-title">Açıklama</div>
+                <p>{{ group.description }}</p>
+            </div>
+            {% endif %}
+            
+            {% if group.related_project %}
+            <div class="sidebar-section">
+                <div class="sidebar-section-title">İlişkili Proje</div>
+                <p><a href="{% url 'projects:project_detail' project_id=group.related_project.id %}">{{ group.related_project.name }}</a></p>
+            </div>
+            {% endif %}
+            
+            {% if group.related_task %}
+            <div class="sidebar-section">
+                <div class="sidebar-section-title">İlişkili Görev</div>
+                <p><a href="{% url 'tasks:task_detail' task_id=group.related_task.id %}">{{ group.related_task.title }}</a></p>
+            </div>
+            {% endif %}
+            
+            <div class="sidebar-section">
+                <div class="sidebar-section-title">Üyeler ({{ group_members.count }})</div>
+                <div class="members-list">
+                    {% for member in group_members %}
+                    <div class="member-item">
+                        <div class="member-avatar">
+                            {% if member.user.profile_photo %}
+                            <img src="{{ member.user.profile_photo.url }}" alt="{{ member.user.get_full_name }}">
+                            {% else %}
+                            <div class="initial">{{ member.user.get_full_name|default:member.user.username|slice:"0:1" }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="member-name">
+                            {{ member.user.get_full_name|default:member.user.username }}
+                            {% if member.user == request.user %}
+                            (siz)
+                            {% endif %}
+                        </div>
+                        <div class="member-role {{ member.role }}">
+                            {{ member.get_role_display }}
+                        </div>
+                        {% if member.user != request.user %}
+                        <div class="ms-auto">
+                            <a href="{% url 'communications:start_direct_message' user_id=member.user.id %}" class="btn btn-sm btn-outline-info" title="Kişisel Mesaj Gönder">
+                                <i class="mdi mdi-message-text-outline"></i>
+                            </a>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <div class="sidebar-section">
+                <div class="sidebar-section-title">Grup İşlemleri</div>
+                <div class="d-grid gap-2">
+                    {% for member in group_members %}
+                        {% if member.user.id == request.user.id and member.role == 'admin' %}
+                        <a href="{% url 'communications:edit_group' group_id=group.id %}" class="btn btn-sm btn-outline-primary">
+                            <i class="mdi mdi-pencil"></i> Grubu Düzenle
+                        </a>
+                        {% if group.type != 'direct' %}
+                        <a href="{% url 'communications:delete_group' group_id=group.id %}" class="btn btn-sm btn-outline-danger">
+                            <i class="mdi mdi-delete"></i> Grubu Sil
+                        </a>
+                        {% endif %}
+                        {% endif %}
+                    {% endfor %}
+                    {% if group.type != 'direct' %}
+                    <a href="{% url 'communications:leave_group' group_id=group.id %}" class="btn btn-sm btn-outline-warning">
+                        <i class="mdi mdi-exit-to-app"></i> Gruptan Ayrıl
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Ana mesaj alanı -->
+    <div class="chat-main">
+        <div class="chat-header py-2 px-3 border-bottom d-flex align-items-center">
+            <div class="d-flex align-items-center">
+                <div class="chat-avatar me-2">
+                    {% if group.image %}
+                    <img src="{{ group.image.url }}" alt="{{ group.name }}" class="rounded-circle" width="40" height="40">
+                    {% else %}
+                    <div class="rounded-circle bg-light d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                        <span class="text-muted fw-bold">{{ group.name|slice:"0:1" }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="chat-user-info">
+                    <h5 class="mb-0">
+                        {% if group.type == 'direct' %}
+                            <!-- Direkt mesaj ise karşı tarafın adını göster -->
+                            {% for member in group.members.all %}
+                                {% if member.id != request.user.id %}
+                                    {{ member.get_full_name|default:member.username }}
+                                {% endif %}
+                            {% endfor %}
+                        {% else %}
+                            {{ group.name }}
+                        {% endif %}
+                    </h5>
+                    <small class="text-muted chat-group-type">
+                        {% if group.type == 'direct' %}
+                        <i class="mdi mdi-account"></i> Kişisel Mesaj
+                        {% elif group.type == 'group' %}
+                        <i class="mdi mdi-account-group"></i> Grup
+                        {% elif group.type == 'project' %}
+                        <i class="mdi mdi-briefcase"></i> Proje Grubu
+                        {% elif group.type == 'task' %}
+                        <i class="mdi mdi-clipboard-check"></i> Görev Grubu
+                        {% endif %}
+                    </small>
+                </div>
+            </div>
+            <div class="ms-auto">
+                <div class="btn-group">
+                    <button type="button" class="btn btn-sm btn-light dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="mdi mdi-dots-vertical"></i>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        {% if group.type != 'direct' %}
+                            {% for member in group_members %}
+                                {% if member.user.id == request.user.id and member.role == 'admin' %}
+                                <li><a class="dropdown-item" href="{% url 'communications:edit_group' group_id=group.id %}"><i class="mdi mdi-pencil me-1"></i> Grubu Düzenle</a></li>
+                                <li><a class="dropdown-item" href="{% url 'communications:delete_group' group_id=group.id %}"><i class="mdi mdi-delete me-1"></i> Grubu Sil</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                {% endif %}
+                            {% endfor %}
+                        {% endif %}
+                        {% if group.type != 'direct' %}
+                        <li><a class="dropdown-item" href="{% url 'communications:leave_group' group_id=group.id %}"><i class="mdi mdi-exit-to-app me-1"></i> Gruptan Ayrıl</a></li>
+                        {% else %}
+                        <li><a class="dropdown-item text-danger" href="#" id="deleteChatBtn"><i class="mdi mdi-delete me-1"></i> Konuşmayı Sil</a></li>
+                        {% endif %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <div class="chat-body" id="chatMessages">
+            {% if messages_list %}
+                {% for message in messages_list %}
+                <div class="message {% if message.sender == request.user %}message-right{% elif message.message_type == 'system' %}message-system{% else %}message-left{% endif %}" data-id="{{ message.id }}">
+                    {% if message.message_type != 'system' %}
+                        {% if message.sender != request.user or message.sender == request.user %}
+                        <div class="message-sender">{{ message.sender.get_full_name|default:message.sender.username }}</div>
+                        {% endif %}
+                    {% endif %}
+                    
+                    <div class="message-content">
+                        {% if message.parent_message %}
+                        <div class="message-reply-to">
+                            <small class="text-muted">Yanıtlanan mesaj:</small>
+                            {{ message.parent_message.content|truncatechars:100 }}
+                        </div>
+                        {% endif %}
+                        
+                        <div class="message-bubble">
+                            {% if message.file %}
+                            <div class="message-file mb-2">
+                                <i class="mdi mdi-file"></i>
+                                <a href="{{ message.file.url }}" target="_blank" class="text-primary">
+                                    {{ message.file.name|cut:'uploads/messages/'|truncatechars:50 }}
+                                </a>
+                            </div>
+                            {% endif %}
+                            
+                            {{ message.content|linebreaksbr }}
+                        </div>
+                    </div>
+                    
+                    <div class="message-time">
+                        {{ message.created_at|date:"d.m.Y H:i" }}
+                        {% if message.sender == request.user %}
+                            {% with read_status=message.read_status.all %}
+                                {% if read_status.count > 1 %}
+                                <i class="mdi mdi-check-all {% if read_status.count == group_members.count %}text-primary{% endif %}"></i>
+                                {% else %}
+                                <i class="mdi mdi-check"></i>
+                                {% endif %}
+                            {% endwith %}
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="empty-chat">
+                    <i class="mdi mdi-message-text-outline"></i>
+                    <h5>Bu grupta henüz mesaj yok</h5>
+                    <p>İlk mesajı siz gönderin!</p>
+                </div>
+            {% endif %}
+        </div>
+        
+        <div class="chat-footer">
+            <form action="{% url 'communications:create_message' group_id=group.id %}" method="post" enctype="multipart/form-data" id="messageForm">
+                {% csrf_token %}
+                <input type="hidden" name="message_type" value="text">
+                <input type="hidden" name="parent_message" id="replyToMessage" value="">
+                
+                <div id="replyPreview" class="d-none mb-2 p-2 bg-light rounded">
+                    <div class="d-flex align-items-center">
+                        <i class="mdi mdi-reply me-2"></i>
+                        <div class="flex-grow-1">
+                            <small class="text-muted">Yanıtlanan mesaj:</small>
+                            <div id="replyContent"></div>
+                        </div>
+                        <button type="button" class="btn btn-sm btn-danger" id="cancelReply">
+                            <i class="mdi mdi-close"></i> Vazgeç
+                        </button>
+                    </div>
+                </div>
+                
+                <div id="filePreview" class="d-none"></div>
+                
+                <div class="input-group">
+                    <div class="btn btn-outline-secondary file-upload-button">
+                        <i class="mdi mdi-paperclip"></i>
+                        <input type="file" name="file" id="fileInput" />
+                    </div>
+                    <input type="text" class="form-control" name="content" id="messageContent" placeholder="Mesajınızı yazın..." autocomplete="off">
+                    <button class="btn btn-primary" type="submit" id="sendButton">
+                        <i class="mdi mdi-send"></i>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        // Mesaj gönderildiğinde chat-body'yi en alta kaydır
+        var chatBody = document.getElementById('chatMessages');
+        chatBody.scrollTop = chatBody.scrollHeight;
+        
+        // Sesli bildirim için ses nesnesi
+        var newMessageSound = new Audio("{% static 'sounds/notification.mp3' %}");
+        
+        // Mesaj yazarken otomatik yükseklik artırma
+        $('#messageContent').on('input', function() {
+            this.style.height = 'auto';
+            this.style.height = (this.scrollHeight) + 'px';
+        });
+        
+        // Konuşmayı silme işlemi için
+        $('#deleteChatBtn').on('click', function(e) {
+            e.preventDefault();
+            
+            // Onay kutusu göster
+            if (confirm("Bu konuşmayı silmek istediğinizden emin misiniz? Bu işlem, sizin tarafınızdan konuşmayı kaldıracak ve karşı taraf onay verirse tamamen silinecektir.")) {
+                // Silme isteği gönder
+                $.ajax({
+                    url: "{% url 'communications:request_delete_direct_chat' group_id=group.id %}",
+                    type: 'POST',
+                    data: {
+                        'csrfmiddlewaretoken': '{{ csrf_token }}'
+                    },
+                    success: function(response) {
+                        if (response.status === 'success') {
+                            alert("Silme isteği başarıyla gönderildi. Konuşma sizin tarafınızdan kaldırıldı.");
+                            window.location.href = "{% url 'communications:chat_list' %}";
+                        } else {
+                            alert(response.message || "Konuşma silinirken bir hata oluştu.");
+                        }
+                    },
+                    error: function() {
+                        alert("Konuşma silinirken bir hata oluştu. Lütfen tekrar deneyin.");
+                    }
+                });
+            }
+        });
+        
+        // Dosya seçildiğinde önizleme göster
+        $('#fileInput').on('change', function() {
+            if (this.files.length > 0) {
+                var fileName = this.files[0].name;
+                var fileExt = fileName.split('.').pop().toLowerCase();
+                var fileIcon = 'mdi-file';
+                
+                // Dosya türüne göre ikon belirle
+                if (['jpg', 'jpeg', 'png', 'gif', 'bmp'].includes(fileExt)) {
+                    fileIcon = 'mdi-file-image';
+                } else if (['pdf'].includes(fileExt)) {
+                    fileIcon = 'mdi-file-pdf';
+                } else if (['doc', 'docx'].includes(fileExt)) {
+                    fileIcon = 'mdi-file-word';
+                } else if (['xls', 'xlsx'].includes(fileExt)) {
+                    fileIcon = 'mdi-file-excel';
+                } else if (['ppt', 'pptx'].includes(fileExt)) {
+                    fileIcon = 'mdi-file-powerpoint';
+                } else if (['zip', 'rar', 'tar', 'gz'].includes(fileExt)) {
+                    fileIcon = 'mdi-file-archive';
+                }
+                
+                var preview = `
+                <div class="selected-file-preview">
+                    <i class="mdi ${fileIcon}"></i>
+                    <span class="selected-file-name">${fileName}</span>
+                    <span class="remove-file">
+                        <i class="mdi mdi-close"></i>
+                    </span>
+                </div>
+                `;
+                
+                $('#filePreview').html(preview).removeClass('d-none');
+            } else {
+                $('#filePreview').addClass('d-none').html('');
+            }
+        });
+        
+        // Dosya kaldır butonu
+        $(document).on('click', '.remove-file', function() {
+            $('#fileInput').val('');
+            $('#filePreview').addClass('d-none').html('');
+        });
+        
+        // Mesaja yanıt verme
+        $(document).on('click', '.message-bubble', function() {
+            var message = $(this).closest('.message');
+            var messageId = message.data('id');
+            var messageContent = message.find('.message-bubble').text().trim();
+            
+            // Yanıt önizlemeyi göster
+            $('#replyToMessage').val(messageId);
+            $('#replyContent').text(messageContent);
+            $('#replyPreview').removeClass('d-none');
+            
+            // Mesaj yazma alanına odaklan
+            $('#messageContent').focus();
+        });
+        
+        // Yanıtlamayı iptal et
+        $('#cancelReply').on('click', function() {
+            $('#replyToMessage').val('');
+            $('#replyPreview').addClass('d-none');
+            $('#messageContent').focus();
+        });
+        
+        // Boş mesaj göndermeyi engelle
+        $('#messageForm').on('submit', function(e) {
+            var content = $('#messageContent').val().trim();
+            var file = $('#fileInput').val();
+            
+            if (!content && !file) {
+                e.preventDefault();
+                return false;
+            }
+            
+            // Form gönderildikten sonra, başarılı yanıt gelince sayfa yenilenir
+            // Bu nedenle AJAX ile formu gönderiyoruz
+            e.preventDefault();
+            
+            var formData = new FormData(this);
+            
+            $.ajax({
+                url: $(this).attr('action'),
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function(response) {
+                    // Formu temizle
+                    $('#messageContent').val('').css('height', 'auto');
+                    $('#fileInput').val('');
+                    $('#filePreview').addClass('d-none').html('');
+                    $('#replyToMessage').val('');
+                    $('#replyPreview').addClass('d-none');
+                    
+                    // Hemen mesajları yenile
+                    checkForNewMessages();
+                },
+                error: function(xhr, status, error) {
+                    alert('Mesaj gönderilirken bir hata oluştu. Lütfen tekrar deneyin.');
+                }
+            });
+        });
+        
+        // ESC tuşu ile yanıtlamayı iptal et
+        $(document).keyup(function(e) {
+            if (e.key === "Escape" && !$('#replyPreview').hasClass('d-none')) {
+                $('#cancelReply').click();
+            }
+        });
+        
+        // Düzenli aralıklarla yeni mesajları kontrol et
+        var lastMessageId = $('.message').last().data('id') || 0;
+        
+        function checkForNewMessages() {
+            $.ajax({
+                url: '{% url "communications:load_more_messages" group_id=group.id %}',
+                data: { 'last_message_id': lastMessageId },
+                dataType: 'json',
+                success: function(data) {
+                    if (data.messages && data.messages.length > 0) {
+                        var messagesHtml = '';
+                        var shouldScroll = chatBody.scrollTop + chatBody.clientHeight >= chatBody.scrollHeight - 50;
+                        var hasNewMessagesFromOthers = false;
+                        
+                        // En son mesaj ID'sini güncelle
+                        lastMessageId = data.messages[data.messages.length - 1].id;
+                        
+                        // Yeni mesajları hazırla
+                        $.each(data.messages, function(index, message) {
+                            var messageClass = message.is_sender ? 'message-right' : (message.is_system ? 'message-system' : 'message-left');
+                            var messageHtml = '<div class="message ' + messageClass + '" data-id="' + message.id + '">';
+                            
+                            if (!message.is_system) {
+                                messageHtml += '<div class="message-sender">' + message.sender_name + '</div>';
+                            }
+                            
+                            messageHtml += '<div class="message-content">';
+                            
+                            if (message.parent_message) {
+                                messageHtml += '<div class="message-reply-to">';
+                                messageHtml += '<small class="text-muted">Yanıtlanan mesaj:</small>';
+                                messageHtml += message.parent_message;
+                                messageHtml += '</div>';
+                            }
+                            
+                            messageHtml += '<div class="message-bubble">';
+                            
+                            if (message.file) {
+                                messageHtml += '<div class="message-file mb-2">';
+                                messageHtml += '<i class="mdi mdi-file"></i>';
+                                messageHtml += '<a href="' + message.file_url + '" target="_blank" class="text-primary">' + message.file_name + '</a>';
+                                messageHtml += '</div>';
+                            }
+                            
+                            messageHtml += message.content;
+                            messageHtml += '</div></div>';
+                            
+                            messageHtml += '<div class="message-time">';
+                            messageHtml += message.created_at;
+                            
+                            if (message.is_sender) {
+                                if (message.read_count > 1) {
+                                    var readClass = message.read_count === message.total_members ? 'text-primary' : '';
+                                    messageHtml += '<i class="mdi mdi-check-all ' + readClass + '"></i>';
+                                } else {
+                                    messageHtml += '<i class="mdi mdi-check"></i>';
+                                }
+                            }
+                            
+                            messageHtml += '</div></div>';
+                            
+                            messagesHtml += messageHtml;
+                            
+                            // Diğer kullanıcılardan gelen mesaj varsa bildirim sesini çalmak için işaretle
+                            if (!message.is_sender && !message.is_system) {
+                                hasNewMessagesFromOthers = true;
+                            }
+                        });
+                        
+                        // Yeni mesajları ekle
+                        if (messagesHtml) {
+                            $('#chatMessages').append(messagesHtml);
+                            
+                            // Eğer kullanıcı en alttaysa otomatik kaydır
+                            if (shouldScroll) {
+                                chatBody.scrollTop = chatBody.scrollHeight;
+                            }
+                            
+                            // Diğer kullanıcılardan yeni mesaj geldiyse sesli bildirim çal
+                            if (hasNewMessagesFromOthers) {
+                                newMessageSound.play().catch(function(error) {
+                                    console.log('Sesli bildirim çalınamadı:', error);
+                                });
+                                
+                                // Sayfanın başlığını değiştir
+                                if (document.hidden) {
+                                    var originalTitle = document.title;
+                                    var titleInterval = setInterval(function() {
+                                        document.title = document.title === originalTitle ? '🔔 Yeni Mesaj!' : originalTitle;
+                                    }, 1000);
+                                    
+                                    // Sayfa görünür olduğunda başlığı sıfırla
+                                    $(document).on('visibilitychange', function() {
+                                        if (!document.hidden) {
+                                            clearInterval(titleInterval);
+                                            document.title = originalTitle;
+                                        }
+                                    });
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Her 2 saniyede bir yeni mesajları kontrol et
+        setInterval(checkForNewMessages, 2000);
+        
+        // Kullanıcı sayfaya döndüğünde mesajları hemen kontrol et
+        $(document).on('visibilitychange', function() {
+            if (!document.hidden) {
+                checkForNewMessages();
+            }
+        });
+    });
+</script>
+{% endblock %} 

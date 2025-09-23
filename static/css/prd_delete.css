@@ -1,0 +1,103 @@
+/* PRD Delete Page Styles */
+.prd-delete-container {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.alert-warning {
+    border-left: 4px solid #ffc107;
+}
+
+.info-card {
+    background-color: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 0.375rem;
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+.info-card .row {
+    margin: 0;
+}
+
+.info-card .col-4 {
+    font-weight: 500;
+    color: #6c757d;
+}
+
+.info-card .col-8 {
+    color: #212529;
+}
+
+.prd-summary {
+    background-color: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 0.375rem;
+    padding: 1rem;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.prd-summary p {
+    margin-bottom: 0.5rem;
+}
+
+.prd-summary p:last-child {
+    margin-bottom: 0;
+}
+
+.consequences-list {
+    list-style: none;
+    padding-left: 0;
+}
+
+.consequences-list li {
+    padding: 0.25rem 0;
+    color: #6c757d;
+    position: relative;
+    padding-left: 1.5rem;
+}
+
+.consequences-list li:before {
+    content: "⚠️";
+    position: absolute;
+    left: 0;
+    top: 0.25rem;
+}
+
+.btn-danger {
+    background-color: #dc3545;
+    border-color: #dc3545;
+}
+
+.btn-danger:hover {
+    background-color: #c82333;
+    border-color: #bd2130;
+}
+
+.card-footer {
+    background-color: #f8f9fa;
+    border-top: 1px solid #e9ecef;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .info-card .row {
+        flex-direction: column;
+    }
+    
+    .info-card .col-4,
+    .info-card .col-8 {
+        width: 100%;
+        margin-bottom: 0.5rem;
+    }
+    
+    .card-footer .d-flex {
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .card-footer .btn {
+        width: 100%;
+    }
+}

@@ -1,0 +1,349 @@
+{% extends 'base.html' %}
+
+{% block page_title %}Ek Hizmet{% endblock %}
+
+{% block extra_css %}
+<style>
+  .form-section {
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    background: #f8f9fa;
+  }
+  
+  .form-section h6 {
+    color: #495057;
+    margin-bottom: 1rem;
+    font-weight: 600;
+  }
+  
+  .field-help {
+    font-size: 0.875rem;
+    color: #6c757d;
+    margin-top: 0.25rem;
+  }
+  
+  .pricing-examples {
+    background: #e3f2fd;
+    border: 1px solid #bbdefb;
+    border-radius: 6px;
+    padding: 1rem;
+    margin-top: 1rem;
+  }
+  
+  .example-item {
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+  }
+  
+  .example-item strong {
+    color: #1976d2;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+  <div class="col-12 col-lg-8">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="mb-0">
+          {% if object %}Ek Hizmet Düzenle{% else %}Yeni Ek Hizmet Oluştur{% endif %}
+        </h5>
+      </div>
+      <div class="card-body">
+        <form method="post">
+          {% csrf_token %}
+          
+          <!-- Temel Bilgiler -->
+          <div class="form-section">
+            <h6><i class="fas fa-info-circle me-2"></i>Temel Bilgiler</h6>
+            
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Kategori *</label>
+                {{ form.group }}
+                {% if form.group.errors %}
+                  <div class="text-danger small">{{ form.group.errors }}</div>
+                {% endif %}
+              </div>
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Hizmet Adı *</label>
+                {{ form.name }}
+                {% if form.name.errors %}
+                  <div class="text-danger small">{{ form.name.errors }}</div>
+                {% endif %}
+              </div>
+            </div>
+            
+            <div class="mb-3">
+              <label class="form-label">Açıklama</label>
+              {{ form.description }}
+              <div class="field-help">Hizmetin detaylı açıklaması</div>
+              {% if form.description.errors %}
+                <div class="text-danger small">{{ form.description.errors }}</div>
+              {% endif %}
+            </div>
+          </div>
+          
+          <!-- Fiyatlandırma -->
+          <div class="form-section">
+            <h6><i class="fas fa-tag me-2"></i>Fiyatlandırma</h6>
+            
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Fiyatlandırma Türü *</label>
+                {{ form.pricing_type }}
+                {% if form.pricing_type.errors %}
+                  <div class="text-danger small">{{ form.pricing_type.errors }}</div>
+                {% endif %}
+              </div>
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Giriş Türü *</label>
+                {{ form.input_type }}
+                {% if form.input_type.errors %}
+                  <div class="text-danger small">{{ form.input_type.errors }}</div>
+                {% endif %}
+              </div>
+            </div>
+            
+            <div class="row" id="priceFields">
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Fiyat</label>
+                {{ form.price }}
+                <div class="field-help">Sabit fiyat veya birim fiyatı</div>
+                {% if form.price.errors %}
+                  <div class="text-danger small">{{ form.price.errors }}</div>
+                {% endif %}
+              </div>
+              <div class="col-md-6 mb-3" id="percentageField" style="display: none;">
+                <label class="form-label">Yüzde (%)</label>
+                {{ form.percentage }}
+                <div class="field-help">Paket fiyatının yüzdesi</div>
+                {% if form.percentage.errors %}
+                  <div class="text-danger small">{{ form.percentage.errors }}</div>
+                {% endif %}
+              </div>
+            </div>
+            
+            <div class="row" id="unitFields" style="display: none;">
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Birim Etiketi</label>
+                {{ form.unit_label }}
+                <div class="field-help">Örn: sayfa, saat, gün, ay</div>
+                {% if form.unit_label.errors %}
+                  <div class="text-danger small">{{ form.unit_label.errors }}</div>
+                {% endif %}
+              </div>
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Varsayılan Miktar</label>
+                {{ form.default_quantity }}
+                {% if form.default_quantity.errors %}
+                  <div class="text-danger small">{{ form.default_quantity.errors }}</div>
+                {% endif %}
+              </div>
+            </div>
+            
+            <div class="row" id="quantityFields" style="display: none;">
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Minimum Miktar</label>
+                {{ form.min_quantity }}
+                {% if form.min_quantity.errors %}
+                  <div class="text-danger small">{{ form.min_quantity.errors }}</div>
+                {% endif %}
+              </div>
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Maksimum Miktar</label>
+                {{ form.max_quantity }}
+                {% if form.max_quantity.errors %}
+                  <div class="text-danger small">{{ form.max_quantity.errors }}</div>
+                {% endif %}
+              </div>
+            </div>
+            
+            <div class="mb-3" id="optionsField" style="display: none;">
+              <label class="form-label">Seçenekler (JSON)</label>
+              {{ form.options }}
+              <div class="field-help">{{ form.options.help_text }}</div>
+              {% if form.options.errors %}
+                <div class="text-danger small">{{ form.options.errors }}</div>
+              {% endif %}
+            </div>
+          </div>
+          
+          <!-- Ayarlar -->
+          <div class="form-section">
+            <h6><i class="fas fa-cog me-2"></i>Ayarlar</h6>
+            
+            <div class="row">
+              <div class="col-md-4 mb-3">
+                <div class="form-check">
+                  {{ form.is_required }}
+                  <label class="form-check-label" for="{{ form.is_required.id_for_label }}">
+                    Zorunlu
+                  </label>
+                </div>
+                {% if form.is_required.errors %}
+                  <div class="text-danger small">{{ form.is_required.errors }}</div>
+                {% endif %}
+              </div>
+              <div class="col-md-4 mb-3">
+                <div class="form-check">
+                  {{ form.is_active }}
+                  <label class="form-check-label" for="{{ form.is_active.id_for_label }}">
+                    Aktif
+                  </label>
+                </div>
+                {% if form.is_active.errors %}
+                  <div class="text-danger small">{{ form.is_active.errors }}</div>
+                {% endif %}
+              </div>
+              <div class="col-md-4 mb-3">
+                <label class="form-label">Sıra</label>
+                {{ form.order }}
+                {% if form.order.errors %}
+                  <div class="text-danger small">{{ form.order.errors }}</div>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+          
+          <div class="d-flex gap-2">
+            <button class="btn btn-primary" type="submit">
+              <i class="fas fa-save me-1"></i>
+              {% if object %}Güncelle{% else %}Oluştur{% endif %}
+            </button>
+            <a class="btn btn-secondary" href="{% url 'accounting:package_manager' %}">
+              <i class="fas fa-times me-1"></i>İptal
+            </a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Yardım Paneli -->
+  <div class="col-12 col-lg-4">
+    <div class="card">
+      <div class="card-header">
+        <h6 class="mb-0"><i class="fas fa-question-circle me-2"></i>Yardım</h6>
+      </div>
+      <div class="card-body">
+        <div class="mb-3">
+          <h6 class="text-primary">Fiyatlandırma Türleri</h6>
+          <div class="pricing-examples">
+            <div class="example-item">
+              <strong>Sabit Fiyat:</strong> SSL Sertifikası - 500₺
+            </div>
+            <div class="example-item">
+              <strong>Yüzde (%):</strong> Komisyon - %10
+            </div>
+            <div class="example-item">
+              <strong>Birim Başına:</strong> Logo Tasarımı - 200₺/adet
+            </div>
+            <div class="example-item">
+              <strong>Sayfa Başına:</strong> İçerik Yazımı - 50₺/sayfa
+            </div>
+            <div class="example-item">
+              <strong>Saat Başına:</strong> Danışmanlık - 300₺/saat
+            </div>
+            <div class="example-item">
+              <strong>Aylık:</strong> Hosting - 100₺/ay
+            </div>
+          </div>
+        </div>
+        
+        <div class="mb-3">
+          <h6 class="text-primary">Giriş Türleri</h6>
+          <ul class="list-unstyled small">
+            <li class="mb-2">
+              <i class="fas fa-check-square text-success me-2"></i>
+              <strong>Seçmeli:</strong> On/Off seçenek
+            </li>
+            <li class="mb-2">
+              <i class="fas fa-dot-circle text-info me-2"></i>
+              <strong>Tek Seçim:</strong> Radio button
+            </li>
+            <li class="mb-2">
+              <i class="fas fa-hashtag text-warning me-2"></i>
+              <strong>Sayı Girişi:</strong> Miktar belirleme
+            </li>
+            <li class="mb-2">
+              <i class="fas fa-list text-primary me-2"></i>
+              <strong>Açılır Liste:</strong> Seçenekler arasından seçim
+            </li>
+          </ul>
+        </div>
+        
+        <div class="alert alert-info">
+          <h6 class="alert-heading"><i class="fas fa-lightbulb me-2"></i>Örnek Kullanımlar</h6>
+          <ul class="mb-0 small">
+            <li><strong>Web Sitesi:</strong> SSL, Hosting, Domain</li>
+            <li><strong>Mobil Uygulama:</strong> Push Notification, API Entegrasyonu</li>
+            <li><strong>SaaS:</strong> Kullanıcı Lisansı, Depolama Alanı</li>
+            <li><strong>WordPress:</strong> Tema Özelleştirme, Plugin Kurulumu</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const pricingType = document.getElementById('{{ form.pricing_type.id_for_label }}');
+  const inputType = document.getElementById('{{ form.input_type.id_for_label }}');
+  
+  function updateFields() {
+    const pricingValue = pricingType.value;
+    const inputValue = inputType.value;
+    
+    // Fiyatlandırma alanlarını güncelle
+    const percentageField = document.getElementById('percentageField');
+    const unitFields = document.getElementById('unitFields');
+    const quantityFields = document.getElementById('quantityFields');
+    const optionsField = document.getElementById('optionsField');
+    
+    // Yüzde alanını göster/gizle
+    if (pricingValue === 'percentage') {
+      percentageField.style.display = 'block';
+      unitFields.style.display = 'none';
+      quantityFields.style.display = 'none';
+    } else if (pricingValue === 'fixed') {
+      percentageField.style.display = 'none';
+      unitFields.style.display = 'none';
+      quantityFields.style.display = 'none';
+    } else {
+      percentageField.style.display = 'none';
+      unitFields.style.display = 'block';
+      quantityFields.style.display = 'block';
+    }
+    
+    // Giriş türüne göre alanları güncelle
+    if (inputValue === 'select') {
+      optionsField.style.display = 'block';
+    } else {
+      optionsField.style.display = 'none';
+    }
+    
+    if (inputValue === 'number') {
+      quantityFields.style.display = 'block';
+    } else if (pricingValue !== 'percentage' && pricingValue !== 'fixed') {
+      quantityFields.style.display = 'block';
+    }
+  }
+  
+  // Event listeners
+  pricingType.addEventListener('change', updateFields);
+  inputType.addEventListener('change', updateFields);
+  
+  // İlk yükleme
+  updateFields();
+});
+</script>
+{% endblock %}
+
+

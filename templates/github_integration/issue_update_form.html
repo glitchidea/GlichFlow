@@ -1,0 +1,80 @@
+{% extends 'base.html' %}
+
+{% block title %}GitHub Issue Güncelle{% endblock %}
+
+{% block page_title %}GitHub Issue Güncelle{% endblock %}
+
+{% block breadcrumbs %}
+<ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="{% url 'dashboard:home' %}">Ana Sayfa</a></li>
+    {% if github_issue.task %}
+    <li class="breadcrumb-item"><a href="{% url 'tasks:task_list' %}">Görevler</a></li>
+    <li class="breadcrumb-item"><a href="{% url 'tasks:task_detail' github_issue.task.id %}">{{ github_issue.task.title }}</a></li>
+    {% endif %}
+    <li class="breadcrumb-item"><a href="{% url 'github_integration:issue_comments' github_issue.id %}">GitHub Issue #{{ github_issue.issue_number }}</a></li>
+    <li class="breadcrumb-item active">Güncelle</li>
+</ol>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">
+                        <i class="fab fa-github github-icon me-2"></i> GitHub Issue #{{ github_issue.issue_number }} Güncelle
+                    </h5>
+                    <a href="{{ github_issue.issue_url }}" target="_blank" class="btn btn-sm btn-outline-secondary">
+                        <i class="fas fa-external-link-alt me-1"></i> GitHub'da Görüntüle
+                    </a>
+                </div>
+            </div>
+            <div class="card-body">
+                <form method="post" action="{% url 'github_integration:issue_update' github_issue.id %}">
+                    {% csrf_token %}
+                    
+                    <div class="mb-3">
+                        <label for="title" class="form-label">Başlık</label>
+                        <input type="text" class="form-control" id="title" name="title" value="{{ github_issue.issue_title }}" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="body" class="form-label">Açıklama</label>
+                        <textarea class="form-control" id="body" name="body" rows="8">{{ github_issue.issue_body }}</textarea>
+                        <div class="form-text">
+                            <i class="fas fa-info-circle me-1"></i> Markdown formatlaması desteklenir.
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Not:</strong> Bu güncelleme hem GitHub'daki issue'ı hem de sistemimizdeki kaydı güncelleyecektir.
+                    </div>
+                    
+                    <div class="d-flex justify-content-between mt-4">
+                        <a href="{% url 'github_integration:issue_comments' github_issue.id %}" class="btn btn-secondary">
+                            <i class="fas fa-times me-2"></i> İptal
+                        </a>
+                        <div>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-2"></i> Kaydet
+                            </button>
+                            
+                            {% if github_issue.status == 'open' %}
+                            <a href="{% url 'github_integration:issue_close' github_issue.id %}" class="btn btn-danger" onclick="return confirm('GitHub issue kapatmak istediğinizden emin misiniz?');">
+                                <i class="fas fa-times-circle me-2"></i> Kapat
+                            </a>
+                            {% else %}
+                            <a href="{% url 'github_integration:issue_reopen' github_issue.id %}" class="btn btn-success" onclick="return confirm('GitHub issue yeniden açmak istediğinizden emin misiniz?');">
+                                <i class="fas fa-check-circle me-2"></i> Yeniden Aç
+                            </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

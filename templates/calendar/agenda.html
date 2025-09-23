@@ -1,0 +1,167 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load calendar_tags %}
+
+{% block title %}Ajanda{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'calendar/css/calendar.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="agenda-header">
+                <div class="row align-items-center">
+                    <div class="col-md-6">
+                        <h2 class="agenda-title">
+                            <i class="fas fa-list"></i>
+                            Ajanda
+                        </h2>
+                    </div>
+                    <div class="col-md-6 text-end">
+                        <div class="agenda-filters">
+                            <div class="btn-group" role="group">
+                                <a href="?date=all" class="btn btn-outline-primary {% if date_filter == 'all' %}active{% endif %}">
+                                    Tümü
+                                </a>
+                                <a href="?date=today" class="btn btn-outline-primary {% if date_filter == 'today' %}active{% endif %}">
+                                    Bugün
+                                </a>
+                                <a href="?date=week" class="btn btn-outline-primary {% if date_filter == 'week' %}active{% endif %}">
+                                    Bu Hafta
+                                </a>
+                                <a href="?date=month" class="btn btn-outline-primary {% if date_filter == 'month' %}active{% endif %}">
+                                    Bu Ay
+                                </a>
+                                <a href="?date=overdue" class="btn btn-outline-danger {% if date_filter == 'overdue' %}active{% endif %}">
+                                    Süresi Geçmiş
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="agenda-content">
+                {% if page_obj %}
+                    <div class="events-list">
+                        {% for event in page_obj %}
+                            <div class="event-item {% if event.is_overdue %}overdue{% endif %} {% if event.is_completed %}completed{% endif %}">
+                                <div class="event-header">
+                                    <div class="event-type">
+                                        <span class="event-type-indicator" style="background-color: {{ event.color }}"></span>
+                                        <span class="event-type-label">{{ event.get_event_type_display }}</span>
+                                    </div>
+                                    <div class="event-priority">
+                                        {% if event.priority == 'urgent' %}
+                                            <span class="badge bg-danger">Acil</span>
+                                        {% elif event.priority == 'high' %}
+                                            <span class="badge bg-warning">Yüksek</span>
+                                        {% elif event.priority == 'medium' %}
+                                            <span class="badge bg-info">Orta</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">Düşük</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                
+                                <div class="event-content">
+                                    <h5 class="event-title">
+                                        {% if event.is_completed %}
+                                            <i class="fas fa-check-circle text-success"></i>
+                                        {% elif event.is_overdue %}
+                                            <i class="fas fa-exclamation-triangle text-danger"></i>
+                                        {% endif %}
+                                        {{ event.title }}
+                                    </h5>
+                                    
+                                    {% if event.description %}
+                                        <p class="event-description">{{ event.description|truncatechars:150 }}</p>
+                                    {% endif %}
+                                    
+                                    <div class="event-meta">
+                                        <div class="event-dates">
+                                            <i class="fas fa-calendar"></i>
+                                            <span class="start-date">{{ event.start_date|date:"d.m.Y H:i" }}</span>
+                                            {% if event.end_date and event.end_date != event.start_date %}
+                                                <span class="date-separator">-</span>
+                                                <span class="end-date">{{ event.end_date|date:"d.m.Y H:i" }}</span>
+                                            {% endif %}
+                                        </div>
+                                        
+                                        {% if event.duration_hours %}
+                                            <div class="event-duration">
+                                                <i class="fas fa-clock"></i>
+                                                <span>{{ event.duration_hours|floatformat:1 }} saat</span>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                
+                                <div class="event-actions">
+                                    {% if event.get_absolute_url %}
+                                        <a href="{{ event.get_absolute_url }}" class="btn btn-sm btn-primary">
+                                            <i class="fas fa-external-link-alt"></i> Git
+                                        </a>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                    
+                    <!-- Sayfalama -->
+                    {% if page_obj.has_other_pages %}
+                        <nav aria-label="Ajanda sayfalama">
+                            <ul class="pagination justify-content-center">
+                                {% if page_obj.has_previous %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}&date={{ date_filter }}">Önceki</a>
+                                    </li>
+                                {% endif %}
+                                
+                                {% for num in page_obj.paginator.page_range %}
+                                    {% if page_obj.number == num %}
+                                        <li class="page-item active">
+                                            <span class="page-link">{{ num }}</span>
+                                        </li>
+                                    {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page={{ num }}&date={{ date_filter }}">{{ num }}</a>
+                                        </li>
+                                    {% endif %}
+                                {% endfor %}
+                                
+                                {% if page_obj.has_next %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ page_obj.next_page_number }}&date={{ date_filter }}">Sonraki</a>
+                                    </li>
+                                {% endif %}
+                            </ul>
+                        </nav>
+                    {% endif %}
+                {% else %}
+                    <div class="empty-state">
+                        <div class="empty-state-icon">
+                            <i class="fas fa-calendar-times"></i>
+                        </div>
+                        <h4>Etkinlik Bulunamadı</h4>
+                        <p>Seçilen filtreye göre etkinlik bulunmamaktadır.</p>
+                        <a href="{% url 'calendar:calendar' %}" class="btn btn-primary">
+                            <i class="fas fa-calendar-alt"></i> Takvime Dön
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Ajanda sayfası için özel JavaScript buraya eklenebilir
+    console.log('Ajanda sayfası yüklendi');
+});
+</script>
+{% endblock %}

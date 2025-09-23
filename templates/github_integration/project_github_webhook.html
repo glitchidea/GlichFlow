@@ -1,0 +1,177 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}GitHub Webhook Ayarları{% endblock %}
+
+{% block page_title %}GitHub Webhook Ayarları - {{ project.name }}{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'projects:project_list' %}">Projeler</a></li>
+<li class="breadcrumb-item"><a href="{% url 'projects:project_detail' project.id %}">{{ project.name }}</a></li>
+<li class="breadcrumb-item active">GitHub Webhook Ayarları</li>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">GitHub Webhook Ayarları</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-4">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="d-inline-block bg-primary bg-opacity-10 p-3 rounded-circle me-3">
+                            <i class="fab fa-github fa-2x text-primary"></i>
+                        </div>
+                        <div>
+                            <h5 class="mb-1">{{ repository.repository_owner }}/{{ repository.repository_name }}</h5>
+                            <p class="mb-0 text-muted">
+                                <a href="{{ repository.repository_url }}" target="_blank" class="text-decoration-none">
+                                    <i class="fas fa-external-link-alt me-1"></i> GitHub Repository'sini Görüntüle
+                                </a>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="alert alert-info">
+                    <h5 class="alert-heading"><i class="fas fa-info-circle me-2"></i> Webhook Nedir?</h5>
+                    <p>
+                        Webhook'lar, GitHub'daki değişiklikleri gerçek zamanlı olarak sistemimize bildiren bir mekanizmadır.
+                        Bu sayede, GitHub repository'sindeki değişiklikler anında sisteme yansıtılır.
+                    </p>
+                    <hr>
+                    <p class="mb-0">
+                        Bu webhook sayesinde, GitHub repository'nizde yapılan değişiklikler (commit'ler, pull request'ler, issue'lar) 
+                        otomatik olarak sistemimize senkronize edilir.
+                    </p>
+                </div>
+                
+                <div class="card bg-light mb-4">
+                    <div class="card-body">
+                        <h5 class="card-title">Webhook Durumu</h5>
+                        
+                        {% if webhook %}
+                            <div class="alert alert-success">
+                                <div class="d-flex align-items-center">
+                                    <div class="me-3">
+                                        <i class="fas fa-check-circle fa-2x"></i>
+                                    </div>
+                                    <div>
+                                        <h5 class="alert-heading mb-1">Webhook Aktif</h5>
+                                        <p class="mb-0">
+                                            Bu repository için webhook yapılandırılmış ve {{ webhook.updated_at|date:"d F Y H:i" }} tarihinde güncellenmiş.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <h6>Webhook Detayları</h6>
+                                <ul class="list-group">
+                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                        <span>ID</span>
+                                        <span>{{ webhook.id }}</span>
+                                    </li>
+                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                        <span>URL</span>
+                                        <span class="text-truncate ms-2" style="max-width: 300px;">{{ webhook_url }}</span>
+                                    </li>
+                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                        <span>Events</span>
+                                        <span>
+                                            {% for event in webhook.events %}
+                                                <span class="badge bg-primary me-1">{{ event }}</span>
+                                            {% endfor %}
+                                        </span>
+                                    </li>
+                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                        <span>Aktif</span>
+                                        <span>
+                                            {% if webhook.active %}
+                                                <span class="badge bg-success">Evet</span>
+                                            {% else %}
+                                                <span class="badge bg-danger">Hayır</span>
+                                            {% endif %}
+                                        </span>
+                                    </li>
+                                </ul>
+                            </div>
+                            
+                            <form method="post">
+                                {% csrf_token %}
+                                <input type="hidden" name="webhook_action" value="delete">
+                                <div class="d-grid">
+                                    <button type="submit" class="btn btn-danger" onclick="return confirm('Webhook\'u silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.')">
+                                        <i class="fas fa-trash-alt me-2"></i> Webhook'u Sil
+                                    </button>
+                                </div>
+                            </form>
+                        {% else %}
+                            <div class="alert alert-warning">
+                                <div class="d-flex align-items-center">
+                                    <div class="me-3">
+                                        <i class="fas fa-exclamation-triangle fa-2x"></i>
+                                    </div>
+                                    <div>
+                                        <h5 class="alert-heading mb-1">Webhook Bulunamadı</h5>
+                                        <p class="mb-0">
+                                            Bu repository için henüz bir webhook yapılandırılmamış. Gerçek zamanlı senkronizasyon için webhook oluşturabilirsiniz.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <h6>Webhook Oluşturma</h6>
+                                <p class="text-muted">
+                                    Webhook oluşturarak GitHub'daki değişiklikleri gerçek zamanlı olarak sistemimize gönderebilirsiniz.
+                                    Aşağıdaki olaylar için bildirim alacaksınız:
+                                </p>
+                                <ul class="list-group mb-3">
+                                    <li class="list-group-item d-flex align-items-center">
+                                        <span class="badge bg-primary me-2">push</span>
+                                        <span>Yeni commit'ler yapıldığında</span>
+                                    </li>
+                                    <li class="list-group-item d-flex align-items-center">
+                                        <span class="badge bg-primary me-2">pull_request</span>
+                                        <span>Pull request açıldığında, güncellendiğinde veya kapandığında</span>
+                                    </li>
+                                    <li class="list-group-item d-flex align-items-center">
+                                        <span class="badge bg-primary me-2">issues</span>
+                                        <span>Issue açıldığında, güncellendiğinde veya kapandığında</span>
+                                    </li>
+                                </ul>
+                                
+                                <div class="alert alert-info">
+                                    <small>
+                                        <i class="fas fa-info-circle me-1"></i>
+                                        Webhook URL'i: <code>{{ webhook_url }}</code>
+                                    </small>
+                                </div>
+                            </div>
+                            
+                            <form method="post">
+                                {% csrf_token %}
+                                <input type="hidden" name="webhook_action" value="create">
+                                <div class="d-grid">
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-plus me-2"></i> Webhook Oluştur
+                                    </button>
+                                </div>
+                            </form>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="d-grid gap-2">
+                    <a href="{% url 'projects:project_detail' project.id %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-2"></i> Projeye Dön
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

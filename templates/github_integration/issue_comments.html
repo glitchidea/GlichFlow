@@ -1,0 +1,708 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}GitHub Issue Yorumları - #{{ github_issue.issue_number }}: {{ github_issue.issue_title }}{% endblock %}
+
+{% block page_title %}GitHub Issue #{{ github_issue.issue_number }}: {{ github_issue.issue_title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .chat-container {
+        display: flex;
+        height: calc(100vh - 260px);
+        min-height: 500px;
+        background-color: #fff;
+        border-radius: 0.25rem;
+        overflow: hidden;
+        border: 1px solid rgba(0,0,0,.125);
+    }
+    
+    .chat-sidebar {
+        width: 300px;
+        border-right: 1px solid rgba(0,0,0,.125);
+        overflow-y: auto;
+        background-color: #f8f9fa;
+    }
+    
+    .chat-main {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .chat-header {
+        padding: 15px;
+        border-bottom: 1px solid rgba(0,0,0,.125);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    
+    .chat-header-left {
+        display: flex;
+        align-items: center;
+    }
+    
+    .chat-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        overflow: hidden;
+        background-color: #e9ecef;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 10px;
+    }
+    
+    .chat-avatar img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    
+    .chat-avatar .initial {
+        font-size: 1.2rem;
+        font-weight: 700;
+        color: #6c757d;
+    }
+    
+    .chat-body {
+        flex: 1;
+        overflow-y: auto;
+        padding: 15px;
+        background-color: #f5f6fa;
+    }
+    
+    .chat-footer {
+        padding: 15px;
+        border-top: 1px solid rgba(0,0,0,.125);
+    }
+    
+    .message {
+        margin-bottom: 15px;
+        display: flex;
+        flex-direction: column;
+        max-width: 85%;
+    }
+    
+    .message.message-right {
+        align-items: flex-end;
+        align-self: flex-end;
+    }
+    
+    .message.message-left {
+        align-items: flex-start;
+    }
+    
+    .message-sender {
+        font-size: 0.75rem;
+        margin-bottom: 2px;
+        font-weight: 600;
+        color: #6c757d;
+        display: flex;
+        align-items: center;
+    }
+    
+    .message-bubble {
+        padding: 10px 15px;
+        border-radius: 15px;
+        position: relative;
+        max-width: 100%;
+        word-wrap: break-word;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    }
+    
+    .message-left .message-bubble {
+        background-color: white;
+        border-top-left-radius: 0;
+    }
+    
+    .message-right .message-bubble {
+        background-color: #dcf8c6;
+        border-top-right-radius: 0;
+    }
+    
+    .message-time {
+        font-size: 0.7rem;
+        color: #6c757d;
+        margin-top: 3px;
+        display: flex;
+        align-items: center;
+    }
+    
+    .github-icon {
+        vertical-align: middle;
+        margin-right: 5px;
+        font-size: 16px;
+        color: #333;
+    }
+    
+    .github-user {
+        display: inline-flex;
+        align-items: center;
+        color: #24292e;
+        font-weight: 600;
+    }
+    
+    .github-message {
+        border-left: 3px solid #24292e;
+        background-color: #f6f8fa;
+    }
+    
+    .auto-refresh-toggle {
+        display: flex;
+        align-items: center;
+        font-size: 0.9rem;
+    }
+    
+    .last-refresh {
+        font-size: 0.8rem;
+        color: #6c757d;
+        margin-left: 10px;
+    }
+    
+    .github-comment-badge {
+        display: inline-flex;
+        align-items: center;
+        background-color: #0d1117;
+        color: white;
+        border-radius: 3px;
+        padding: 2px 5px;
+        font-size: 0.7rem;
+        margin-left: 5px;
+    }
+    
+    .message-actions {
+        font-size: 0.75rem;
+        margin-top: 3px;
+    }
+    
+    .typing-indicator {
+        display: flex;
+        align-items: center;
+    }
+    
+    .typing-indicator span {
+        height: 4px;
+        width: 4px;
+        margin: 0 1px;
+        background-color: #aaa;
+        border-radius: 50%;
+        display: inline-block;
+        animation: blink 1.5s infinite;
+    }
+    
+    .typing-indicator span:nth-child(2) {
+        animation-delay: 0.2s;
+    }
+    
+    .typing-indicator span:nth-child(3) {
+        animation-delay: 0.4s;
+    }
+    
+    @keyframes blink {
+        0% { opacity: 0.1; }
+        20% { opacity: 1; }
+        100% { opacity: 0.1; }
+    }
+    
+    .message-new {
+        animation: newMessage 1s;
+    }
+    
+    @keyframes newMessage {
+        0% { background-color: rgba(255, 249, 196, 0.7); }
+        100% { background-color: transparent; }
+    }
+    
+    .message-actions {
+        opacity: 0;
+        transition: opacity 0.2s;
+    }
+    
+    .message:hover .message-actions {
+        opacity: 1;
+    }
+    
+    .emoji-picker-container {
+        position: absolute;
+        bottom: 200px;
+        right: 100px;
+        z-index: 10;
+        display: none;
+    }
+    
+    .new-message-dot {
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        background-color: #ff5252;
+        border-radius: 50%;
+        margin-left: 5px;
+        animation: pulse 1.5s infinite;
+    }
+    
+    @keyframes pulse {
+        0% { transform: scale(0.8); opacity: 0.7; }
+        50% { transform: scale(1.2); opacity: 1; }
+        100% { transform: scale(0.8); opacity: 0.7; }
+    }
+</style>
+{% endblock %}
+
+{% block breadcrumbs %}
+<ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="{% url 'dashboard:home' %}">Ana Sayfa</a></li>
+    {% if github_issue.task %}
+    <li class="breadcrumb-item"><a href="{% url 'tasks:task_list' %}">Görevler</a></li>
+    <li class="breadcrumb-item"><a href="{% url 'tasks:task_detail' github_issue.task.id %}">{{ github_issue.task.title }}</a></li>
+    {% endif %}
+    <li class="breadcrumb-item active">GitHub Issue #{{ github_issue.issue_number }}</li>
+</ol>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">
+                        <a href="{{ github_issue.issue_url }}" target="_blank" class="text-decoration-none">
+                            <i class="fab fa-github github-icon"></i> Issue: #{{ github_issue.issue_number }}
+                        </a> - {{ github_issue.issue_title }}
+                    </h5>
+                    <div>
+                        <a href="{{ github_issue.issue_url }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                            <i class="fas fa-external-link-alt"></i> GitHub'da Görüntüle
+                        </a>
+                        {% if can_modify_github %}
+                        <a href="{% url 'github_integration:issue_update' github_issue.id %}" class="btn btn-sm btn-outline-primary">
+                            <i class="fas fa-edit"></i> Düzenle
+                        </a>
+                        {% if github_issue.status == 'open' %}
+                        <a href="{% url 'github_integration:issue_close' github_issue.id %}" class="btn btn-sm btn-outline-danger" 
+                           onclick="return confirm('GitHub issue kapatmak istediğinizden emin misiniz?');">
+                            <i class="fas fa-times-circle"></i> Kapat
+                        </a>
+                        {% else %}
+                        <a href="{% url 'github_integration:issue_reopen' github_issue.id %}" class="btn btn-sm btn-outline-success" 
+                           onclick="return confirm('GitHub issue yeniden açmak istediğinizden emin misiniz?');">
+                            <i class="fas fa-check-circle"></i> Yeniden Aç
+                        </a>
+                        {% endif %}
+                        <a href="{% url 'github_integration:issue_sync_comments' github_issue.id %}" class="btn btn-sm btn-outline-primary" id="syncCommentsBtn">
+                            <i class="fas fa-sync"></i> Yorumları Senkronize Et
+                        </a>
+                        {% endif %}
+                        {% if github_issue.task %}
+                        <a href="{% url 'tasks:task_detail' github_issue.task.id %}" class="btn btn-sm btn-outline-secondary">
+                            <i class="fas fa-tasks"></i> Göreve Git
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-12">
+                        <div class="alert alert-light">
+                            <div class="d-flex">
+                                <div class="flex-shrink-0">
+                                    <div class="chat-avatar">
+                                        <span class="initial">{{ github_issue.issue_title|make_list|first|upper }}</span>
+                                    </div>
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <h6>
+                                        Durum: <span class="badge {% if github_issue.status == 'open' %}bg-success{% else %}bg-secondary{% endif %}">{{ github_issue.get_status_display }}</span>
+                                        <small class="text-muted ms-2">Repository: {{ github_issue.repository.repository_owner }}/{{ github_issue.repository.repository_name }}</small>
+                                    </h6>
+                                    <p class="mb-0">{{ github_issue.issue_body|linebreaksbr }}</p>
+                                    <small class="text-muted">Oluşturulma: {{ github_issue.github_created_at|date:"d F Y, H:i" }}</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Mesajlar -->
+                <div class="chat-container">
+                    <div class="chat-main">
+                        <div class="chat-header">
+                            <div class="chat-header-left">
+                                <div class="chat-avatar">
+                                    <i class="fab fa-github fa-lg"></i>
+                                </div>
+                                <div>
+                                    <h5 class="mb-0">GitHub Issue Yorumları</h5>
+                                    <small class="text-muted">Issue #{{ github_issue.issue_number }}: {{ github_issue.issue_title }}</small>
+                                </div>
+                            </div>
+                            <div class="chat-header-right">
+                                <div class="auto-refresh-toggle">
+                                    <div class="form-check form-switch me-2">
+                                        <input class="form-check-input" type="checkbox" id="autoRefreshToggle" checked>
+                                        <label class="form-check-label" for="autoRefreshToggle">Otomatik Yenile <span id="newMessageIndicator" class="new-message-dot" style="display: none;"></span></label>
+                                    </div>
+                                    <span id="lastRefreshTime" class="last-refresh"></span>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="chatMessages" class="chat-body d-flex flex-column">
+                            {% if messages_list %}
+                                {% for message in messages_list %}
+                                    <div class="message {% if message.sender == request.user %}message-right{% else %}message-left{% endif %}">
+                                        <div class="message-sender">
+                                            {% if message.sender.github_profile %}
+                                                <span class="github-user">
+                                                    <i class="fab fa-github me-1"></i>
+                                                    {{ message.sender.username }}
+                                                </span>
+                                            {% else %}
+                                                {{ message.sender.username }}
+                                            {% endif %}
+                                            
+                                            {% if "Bu mesaj GitHub'dan otomatik olarak alındı" in message.content %}
+                                                <span class="github-comment-badge">
+                                                    <i class="fab fa-github me-1"></i> GitHub
+                                                </span>
+                                            {% endif %}
+                                        </div>
+                                        <div class="message-bubble {% if 'Bu mesaj GitHub' in message.content %}github-message{% endif %}">
+                                            {{ message.content|linebreaksbr }}
+                                        </div>
+                                        <div class="message-time">
+                                            {{ message.created_at|date:"d.m.Y H:i" }}
+                                        </div>
+                                        <div class="message-actions">
+                                            <a href="#" class="text-muted quote-message" data-content="{{ message.content }}">
+                                                <i class="fas fa-quote-right"></i> Alıntıla
+                                            </a>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            {% else %}
+                                <div class="text-center my-5">
+                                    <p class="mb-3"><i class="fas fa-comments fa-3x text-muted"></i></p>
+                                    <p>Henüz bu issue için mesaj bulunmuyor.</p>
+                                    {% if can_modify_github %}
+                                    <p>GitHub yorumlarını senkronize etmek için yukarıdaki "Yorumları Senkronize Et" butonuna tıklayın.</p>
+                                    {% else %}
+                                    <p>Yorumların görüntülenebilmesi için bir proje yöneticisinin yorumları senkronize etmesi gerekiyor.</p>
+                                    {% endif %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        {% if message_group and can_modify_github %}
+                            <div class="chat-footer">
+                                <form id="messageForm" method="post" action="{% url 'github_integration:issue_comments' github_issue.id %}">
+                                    {% csrf_token %}
+                                    <div class="input-group">
+                                        <textarea id="messageContent" class="form-control" placeholder="Mesajınızı yazın..." name="content" rows="3" required></textarea>
+                                        <div class="input-group-append">
+                                            <button class="btn btn-outline-secondary" type="button" id="emojiButton">
+                                                <i class="far fa-smile"></i>
+                                            </button>
+                                            <button class="btn btn-primary" type="submit" id="sendMessageBtn">
+                                                <i class="fas fa-paper-plane"></i> Gönder
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="d-flex justify-content-between align-items-center mt-2">
+                                        <small class="form-text text-muted">Bu mesaj GitHub issue'da yorum olarak yayınlanacaktır.</small>
+                                        <div id="typingIndicator" class="typing-indicator" style="display: none;">
+                                            <small class="me-1">Yazıyor...</small>
+                                            <span></span>
+                                            <span></span>
+                                            <span></span>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                        {% elif message_group and not can_modify_github %}
+                            <div class="chat-footer bg-light">
+                                <div class="text-center py-3">
+                                    <i class="fas fa-lock text-muted me-2"></i>
+                                    <span class="text-muted">GitHub issue yorumları yalnızca proje yöneticileri ve sistem yöneticileri tarafından düzenlenebilir.</span>
+                                </div>
+                            </div>
+                        {% endif %}
+                        
+                        <div id="emojiPickerContainer" class="emoji-picker-container">
+                            <!-- Emoji picker will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const chatMessages = document.getElementById('chatMessages');
+        const messageForm = document.getElementById('messageForm');
+        const messageContent = document.getElementById('messageContent');
+        const autoRefreshToggle = document.getElementById('autoRefreshToggle');
+        const lastRefreshTime = document.getElementById('lastRefreshTime');
+        const typingIndicator = document.getElementById('typingIndicator');
+        const quoteButtons = document.querySelectorAll('.quote-message');
+        const newMessageIndicator = document.getElementById('newMessageIndicator');
+        const syncCommentsBtn = document.getElementById('syncCommentsBtn');
+        
+        // Sayfa başlığını sakla
+        const originalTitle = document.title;
+        
+        // Yeni mesaj bildirimi için ses
+        const notificationSound = new Audio('/static/sounds/notification.mp3');
+        
+        // Mevcut mesaj sayısı
+        let currentMessageCount = document.querySelectorAll('.message').length;
+        
+        // İlk yüklendiğinde mesajları aşağı kaydır
+        scrollToBottom();
+        
+        // Son yenileme zamanını güncelle
+        updateLastRefreshTime();
+        
+        // İlk yüklemede hemen yorum senkronizasyonu yap - otomatik olarak
+        if (autoRefreshToggle.checked) {
+            setTimeout(refreshMessages, 1000);
+        }
+        
+        // Mesaj alıntılama
+        quoteButtons.forEach(button => {
+            button.addEventListener('click', function(e) {
+                e.preventDefault();
+                const content = this.getAttribute('data-content');
+                const quoteContent = `> ${content.split('\n').join('\n> ')}\n\n`;
+                messageContent.value = quoteContent + messageContent.value;
+                messageContent.focus();
+            });
+        });
+        
+        // Mesaj gönderme
+        if (messageForm) {
+            messageForm.addEventListener('submit', function(e) {
+                const content = messageContent.value.trim();
+                if (!content) {
+                    e.preventDefault();
+                } else {
+                    // Mesaj gönderilirken submit butonunu devre dışı bırak
+                    document.getElementById('sendMessageBtn').disabled = true;
+                    document.getElementById('sendMessageBtn').innerHTML = '<i class="fas fa-spinner fa-spin"></i> Gönderiliyor...';
+                }
+            });
+        }
+        
+        // Yazma göstergesi
+        if (messageContent) {
+            let typingTimer;
+            
+            messageContent.addEventListener('input', function() {
+                typingIndicator.style.display = 'flex';
+                
+                clearTimeout(typingTimer);
+                typingTimer = setTimeout(function() {
+                    typingIndicator.style.display = 'none';
+                }, 2000);
+            });
+        }
+        
+        // Otomatik yenileme
+        let refreshInterval;
+        
+        function startAutoRefresh() {
+            refreshInterval = setInterval(refreshMessages, 10000); // 10 saniyede bir yenile
+        }
+        
+        function stopAutoRefresh() {
+            clearInterval(refreshInterval);
+        }
+        
+        autoRefreshToggle.addEventListener('change', function() {
+            if (this.checked) {
+                startAutoRefresh();
+                refreshMessages(); // Hemen bir kez yenile
+                newMessageIndicator.style.display = 'none';
+                document.title = originalTitle;
+            } else {
+                stopAutoRefresh();
+            }
+        });
+        
+        // Sayfa yüklendiğinde otomatik yenilemeyi başlat
+        if (autoRefreshToggle.checked) {
+            startAutoRefresh();
+        }
+        
+        // Senkronize et butonuna basıldığında da mesajları hemen yenile
+        if (syncCommentsBtn) {
+            syncCommentsBtn.addEventListener('click', function(e) {
+                // Normal davranışı devam ettir ve mesajları yenileme zamanını güncelle
+                setTimeout(function() {
+                    refreshMessages();
+                }, 2000); // 2 saniye sonra yenile (sunucunun yanıt vermesi için zaman tanı)
+            });
+        }
+        
+        // Mesajları yenile
+        function refreshMessages() {
+            fetch(`{% url 'github_integration:issue_comments' github_issue.id %}?refresh=true`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Mesajları güncelle
+                        updateMessages(data.messages);
+                        updateLastRefreshTime();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error refreshing messages:', error);
+                });
+        }
+        
+        // Son yenileme zamanını güncelle
+        function updateLastRefreshTime() {
+            const now = new Date();
+            const timeStr = now.getHours().toString().padStart(2, '0') + ':' + 
+                           now.getMinutes().toString().padStart(2, '0') + ':' + 
+                           now.getSeconds().toString().padStart(2, '0');
+            lastRefreshTime.textContent = 'Son yenileme: ' + timeStr;
+        }
+        
+        // Mesajları güncelle
+        function updateMessages(messages) {
+            if (messages && messages.length > 0) {
+                // Yeni mesaj kontrolü
+                if (messages.length > currentMessageCount) {
+                    // Yeni mesaj var
+                    if (!document.hasFocus() || !autoRefreshToggle.checked) {
+                        // Kullanıcı sayfada değilse veya otomatik yenileme kapalıysa bildirim göster
+                        document.title = '(Yeni Mesaj) ' + originalTitle;
+                        newMessageIndicator.style.display = 'inline-block';
+                        
+                        // Bildirim sesi çal
+                        try {
+                            notificationSound.play();
+                        } catch (e) {
+                            console.log('Bildirim sesi çalınamadı:', e);
+                        }
+                    }
+                }
+                
+                // Mevcut mesajları temizle
+                chatMessages.innerHTML = '';
+                
+                // Yeni mesajları ekle
+                messages.forEach((message, index) => {
+                    const messageElement = createMessageElement(message);
+                    
+                    // Eğer bu yeni bir mesajsa, animasyon sınıfını ekle
+                    if (index >= currentMessageCount) {
+                        messageElement.classList.add('message-new');
+                    }
+                    
+                    chatMessages.appendChild(messageElement);
+                });
+                
+                // Mesaj sayısını güncelle
+                currentMessageCount = messages.length;
+                
+                // Sohbeti aşağı kaydır
+                scrollToBottom();
+                
+                // Quote butonlarını yeniden bağla
+                rebindQuoteButtons();
+            }
+        }
+        
+        // Mesaj elementi oluştur
+        function createMessageElement(message) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${message.is_self ? 'message-right' : 'message-left'}`;
+            
+            const senderDiv = document.createElement('div');
+            senderDiv.className = 'message-sender';
+            
+            if (message.has_github_profile) {
+                senderDiv.innerHTML = `<span class="github-user"><i class="fab fa-github me-1"></i>${message.sender_name}</span>`;
+            } else {
+                senderDiv.textContent = message.sender_name;
+            }
+            
+            if (message.is_from_github) {
+                const badge = document.createElement('span');
+                badge.className = 'github-comment-badge';
+                badge.innerHTML = '<i class="fab fa-github me-1"></i> GitHub';
+                senderDiv.appendChild(badge);
+            }
+            
+            const bubbleDiv = document.createElement('div');
+            bubbleDiv.className = 'message-bubble';
+            if (message.is_from_github) {
+                bubbleDiv.classList.add('github-message');
+            }
+            bubbleDiv.innerHTML = message.content.replace(/\n/g, '<br>');
+            
+            const timeDiv = document.createElement('div');
+            timeDiv.className = 'message-time';
+            timeDiv.textContent = message.created_at;
+            
+            const actionsDiv = document.createElement('div');
+            actionsDiv.className = 'message-actions';
+            actionsDiv.innerHTML = `<a href="#" class="text-muted quote-message" data-content="${message.content.replace(/"/g, '&quot;')}">
+                <i class="fas fa-quote-right"></i> Alıntıla
+            </a>`;
+            
+            messageDiv.appendChild(senderDiv);
+            messageDiv.appendChild(bubbleDiv);
+            messageDiv.appendChild(timeDiv);
+            messageDiv.appendChild(actionsDiv);
+            
+            return messageDiv;
+        }
+        
+        // Sohbeti aşağı kaydır
+        function scrollToBottom() {
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+        
+        // Alıntılama işlevi için event listeners'ı yeniden bağla
+        function rebindQuoteButtons() {
+            document.querySelectorAll('.quote-message').forEach(button => {
+                button.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const content = this.getAttribute('data-content');
+                    const quoteContent = `> ${content.split('\n').join('\n> ')}\n\n`;
+                    messageContent.value = quoteContent + messageContent.value;
+                    messageContent.focus();
+                });
+            });
+        }
+        
+        // Sayfa odaklandığında başlığı sıfırla
+        window.addEventListener('focus', function() {
+            document.title = originalTitle;
+            if (autoRefreshToggle.checked) {
+                newMessageIndicator.style.display = 'none';
+            }
+        });
+        
+        // Yeni mesajlar eklendiğinde quote butonlarını yeniden bağla
+        const observer = new MutationObserver(function(mutations) {
+            mutations.forEach(function(mutation) {
+                if (mutation.type === 'childList') {
+                    rebindQuoteButtons();
+                }
+            });
+        });
+        
+        observer.observe(chatMessages, { childList: true });
+    });
+</script>
+{% endblock %} 

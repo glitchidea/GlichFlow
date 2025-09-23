@@ -1,0 +1,473 @@
+/* Ideas App Styles - Fikir Not Defteri */
+
+/* Ana Kart Stilleri */
+.idea-card {
+    background: white;
+    border: 1px solid #e9ecef;
+    border-radius: 12px;
+    padding: 1.25rem;
+    transition: all 0.3s ease;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.idea-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    border-color: #3b7ddd;
+}
+
+.idea-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1rem;
+}
+
+.idea-title {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #2c3e50;
+    flex: 1;
+    margin-right: 1rem;
+}
+
+.idea-title a {
+    color: inherit;
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+.idea-title a:hover {
+    color: #3b7ddd;
+}
+
+.idea-badges {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    align-items: flex-end;
+}
+
+.idea-badges .badge {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+}
+
+.idea-content {
+    flex: 1;
+    margin-bottom: 1rem;
+}
+
+.idea-description {
+    color: #6c757d;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    margin-bottom: 0.75rem;
+}
+
+.idea-technologies {
+    margin-top: 0.5rem;
+}
+
+.idea-technologies small {
+    font-size: 0.8rem;
+}
+
+.idea-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: auto;
+    padding-top: 1rem;
+    border-top: 1px solid #f8f9fa;
+}
+
+.idea-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.idea-actions .btn {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.8rem;
+}
+
+/* Detay Sayfası Stilleri */
+.idea-section {
+    margin-bottom: 2rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid #f8f9fa;
+}
+
+.idea-section:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+}
+
+.idea-section h6 {
+    color: #3b7ddd;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.idea-section h6 i {
+    font-size: 1rem;
+}
+
+.idea-content {
+    background: #f8f9fa;
+    padding: 1rem;
+    border-radius: 8px;
+    border-left: 4px solid #3b7ddd;
+    line-height: 1.6;
+}
+
+/* İstatistik Kartları */
+.stat-item {
+    text-align: center;
+}
+
+.stat-value {
+    font-size: 1.5rem;
+    font-weight: bold;
+    margin-bottom: 0.25rem;
+}
+
+.stat-label {
+    font-size: 0.8rem;
+    color: #6c757d;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Form Stilleri */
+.form-label {
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 0.5rem;
+}
+
+.form-control, .form-select {
+    border-radius: 8px;
+    border: 1px solid #dee2e6;
+    transition: all 0.2s ease;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: #3b7ddd;
+    box-shadow: 0 0 0 0.2rem rgba(59, 125, 221, 0.25);
+}
+
+.form-text {
+    font-size: 0.8rem;
+    color: #6c757d;
+    margin-top: 0.25rem;
+}
+
+/* Hızlı Ekleme Formu */
+#quickAddForm {
+    background: #f8f9fa;
+    padding: 1rem;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+}
+
+#quickAddForm .form-control {
+    border-radius: 6px;
+    font-size: 0.9rem;
+}
+
+#quickAddForm .btn {
+    border-radius: 6px;
+    font-weight: 500;
+}
+
+/* Filtre Kartı */
+.card .card-header h6 {
+    color: #2c3e50;
+    font-weight: 600;
+    margin: 0;
+}
+
+.card .card-header h6 i {
+    color: #3b7ddd;
+    margin-right: 0.5rem;
+}
+
+/* Badge Renkleri */
+.badge.bg-success { background-color: #28a745 !important; }
+.badge.bg-info { background-color: #17a2b8 !important; }
+.badge.bg-warning { background-color: #ffc107 !important; color: #212529 !important; }
+.badge.bg-danger { background-color: #dc3545 !important; }
+.badge.bg-primary { background-color: #3b7ddd !important; }
+.badge.bg-secondary { background-color: #6c757d !important; }
+
+/* Öncelik ve Durum Renkleri */
+.priority-low { color: #28a745; }
+.priority-medium { color: #17a2b8; }
+.priority-high { color: #ffc107; }
+.priority-urgent { color: #dc3545; }
+
+.status-draft { color: #6c757d; }
+.status-active { color: #3b7ddd; }
+.status-on_hold { color: #ffc107; }
+.status-completed { color: #28a745; }
+.status-cancelled { color: #dc3545; }
+
+/* Responsive Tasarım */
+@media (max-width: 768px) {
+    .idea-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .idea-badges {
+        flex-direction: row;
+        margin-top: 0.5rem;
+        align-items: flex-start;
+    }
+    
+    .idea-footer {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+    
+    .idea-actions {
+        width: 100%;
+        justify-content: flex-end;
+    }
+    
+    .stat-item {
+        margin-bottom: 1rem;
+    }
+}
+
+/* Animasyonlar */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.idea-card {
+    animation: fadeInUp 0.3s ease-out;
+}
+
+/* Loading States */
+.loading {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 20px;
+    height: 20px;
+    margin: -10px 0 0 -10px;
+    border: 2px solid #f3f3f3;
+    border-top: 2px solid #3b7ddd;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Özel Butonlar */
+.btn-idea-primary {
+    background-color: #3b7ddd;
+    border-color: #3b7ddd;
+    color: white;
+}
+
+.btn-idea-primary:hover {
+    background-color: #2c5aa0;
+    border-color: #2c5aa0;
+    color: white;
+}
+
+.btn-idea-outline {
+    border-color: #3b7ddd;
+    color: #3b7ddd;
+}
+
+.btn-idea-outline:hover {
+    background-color: #3b7ddd;
+    border-color: #3b7ddd;
+    color: white;
+}
+
+/* Boş Durum Stilleri */
+.empty-state {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: #6c757d;
+}
+
+.empty-state i {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    opacity: 0.5;
+}
+
+.empty-state h5 {
+    margin-bottom: 0.5rem;
+    color: #495057;
+}
+
+.empty-state p {
+    margin-bottom: 1.5rem;
+}
+
+/* Önizleme Kartı */
+.idea-preview .card {
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+}
+
+.idea-preview .card-body {
+    padding: 1rem;
+}
+
+.idea-preview .card-title {
+    color: #2c3e50;
+    font-size: 1rem;
+    margin-bottom: 0.5rem;
+}
+
+.idea-preview .card-text {
+    color: #6c757d;
+    font-size: 0.9rem;
+    line-height: 1.4;
+}
+
+/* Yardım Kartı */
+.help-card {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border: 1px solid #dee2e6;
+    border-radius: 12px;
+}
+
+.help-card .list-unstyled li {
+    padding: 0.25rem 0;
+    font-size: 0.9rem;
+}
+
+.help-card .list-unstyled li i {
+    margin-right: 0.5rem;
+}
+
+/* Sayfalama */
+.pagination .page-link {
+    border-radius: 6px;
+    margin: 0 2px;
+    border: 1px solid #dee2e6;
+    color: #3b7ddd;
+}
+
+.pagination .page-link:hover {
+    background-color: #3b7ddd;
+    border-color: #3b7ddd;
+    color: white;
+}
+
+.pagination .page-item.active .page-link {
+    background-color: #3b7ddd;
+    border-color: #3b7ddd;
+}
+
+/* Alert Stilleri */
+.alert-warning {
+    background-color: #fff3cd;
+    border-color: #ffeaa7;
+    color: #856404;
+}
+
+.alert-warning i {
+    color: #f39c12;
+}
+
+/* Modal Stilleri */
+.modal-content {
+    border-radius: 12px;
+    border: none;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+.modal-header {
+    border-bottom: 1px solid #e9ecef;
+    border-radius: 12px 12px 0 0;
+}
+
+.modal-footer {
+    border-top: 1px solid #e9ecef;
+    border-radius: 0 0 12px 12px;
+}
+
+/* Proje Kartları */
+.project-card {
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.project-card:hover {
+    border-color: #3b7ddd;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.project-card .card-title {
+    color: #2c3e50;
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.project-card .card-text {
+    font-size: 0.85rem;
+    line-height: 1.4;
+    margin-bottom: 0.75rem;
+}
+
+.project-card .badge {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+}
+
+.project-card .select-project-btn {
+    font-size: 0.8rem;
+    padding: 0.375rem 0.75rem;
+    transition: all 0.2s ease;
+}
+
+.project-card .select-project-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Proje durumu badge renkleri */
+.badge.bg-başlamadı { background-color: #6c757d !important; }
+.badge.bg-devam-ediyor { background-color: #3b7ddd !important; }
+.badge.bg-beklemede { background-color: #ffc107 !important; color: #212529 !important; }
+.badge.bg-tamamlandı { background-color: #28a745 !important; }
+.badge.bg-iptal-edildi { background-color: #dc3545 !important; }
+

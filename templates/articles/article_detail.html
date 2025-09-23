@@ -1,0 +1,365 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ article.title }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/articles.css' %}">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Hero Section -->
+    <div class="article-hero mb-5">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-8 mx-auto text-center">
+                    <!-- Breadcrumb -->
+                    <nav aria-label="breadcrumb" class="mb-4">
+                        <ol class="breadcrumb justify-content-center">
+                            <li class="breadcrumb-item"><a href="{% url 'dashboard:index' %}">Ana Sayfa</a></li>
+                            <li class="breadcrumb-item"><a href="{% url 'articles:article_list' %}">Makaleler</a></li>
+                            <li class="breadcrumb-item active" aria-current="page">{{ article.title|truncatewords:5 }}</li>
+                        </ol>
+                    </nav>
+                    
+                    <!-- Makale Başlığı -->
+                    <h1 class="article-title mb-4">{{ article.title }}</h1>
+                    
+                    <!-- Meta Bilgiler -->
+                    <div class="article-meta-info mb-4">
+                        <div class="d-flex justify-content-center align-items-center flex-wrap gap-3">
+                            <!-- Kategori ve Durum -->
+                            <div class="d-flex gap-2">
+                                <span class="badge bg-light text-dark fs-6 px-3 py-2">
+                                    <i class="fas fa-tag me-1"></i>{{ article.get_category_display }}
+                                </span>
+                                <span class="badge bg-light text-dark fs-6 px-3 py-2">
+                                    <i class="fas fa-circle me-1"></i>{{ article.get_status_display }}
+                                </span>
+                                {% if article.is_featured %}
+                                <span class="badge bg-light text-dark fs-6 px-3 py-2">
+                                    <i class="fas fa-star me-1"></i>Öne Çıkan
+                                </span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- Yazar ve Tarih -->
+                        <div class="d-flex justify-content-center align-items-center flex-wrap gap-4 mt-3">
+                            <div class="d-flex align-items-center">
+                                <div class="author-avatar me-2">
+                                    <i class="fas fa-user-circle fa-2x text-dark"></i>
+                                </div>
+                                <div>
+                                    <div class="fw-bold">{{ article.author.get_full_name|default:article.author.username }}</div>
+                                    <small class="text-muted">@{{ article.author.username }}</small>
+                                </div>
+                            </div>
+                            
+                            <div class="vr"></div>
+                            
+                            <div class="d-flex align-items-center text-muted">
+                                <i class="fas fa-calendar-alt me-2"></i>
+                                <span>{{ article.created_at|date:"d F Y" }}</span>
+                            </div>
+                            
+                            <div class="vr"></div>
+                            
+                            <div class="d-flex align-items-center text-muted">
+                                <i class="fas fa-eye me-2"></i>
+                                <span>{{ article.view_count }} görüntülenme</span>
+                            </div>
+                            
+                            <div class="vr"></div>
+                            
+                            <div class="d-flex align-items-center text-muted">
+                                <i class="fas fa-clock me-2"></i>
+                                <span>{{ article.reading_time }} dakika okuma</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Etiketler -->
+                    {% if article.get_tags_list %}
+                    <div class="article-tags mb-4">
+                        {% for tag in article.get_tags_list %}
+                        <span class="badge bg-light text-dark me-2 mb-2 px-3 py-2">
+                            <i class="fas fa-hashtag me-1"></i>{{ tag }}
+                        </span>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Admin Actions -->
+                    {% if can_edit or can_delete %}
+                    <div class="admin-actions mt-4">
+                        <div class="btn-group" role="group">
+                            {% if can_edit %}
+                            <a href="{% url 'articles:article_update' article.slug %}" class="btn btn-outline-primary">
+                                <i class="fas fa-edit me-1"></i>Düzenle
+                            </a>
+                            {% endif %}
+                            {% if can_delete %}
+                            <a href="{% url 'articles:article_delete' article.slug %}" class="btn btn-outline-danger">
+                                <i class="fas fa-trash me-1"></i>Sil
+                            </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <!-- Makale İçeriği -->
+            <article class="article-content">
+                <!-- Öne Çıkan Görsel -->
+                {% if article.featured_image %}
+                <div class="article-featured-image mb-5">
+                    <img src="{{ article.featured_image.url }}" class="img-fluid rounded-3 shadow-lg" alt="{{ article.title }}">
+                </div>
+                {% endif %}
+                <!-- Makale İçeriği -->
+                <div class="article-body">
+                    {{ article.get_content_html|safe }}
+                </div>
+
+                <!-- Makale Alt Bilgileri -->
+                <footer class="article-footer mt-5 pt-4">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-center text-muted">
+                                <i class="fas fa-edit me-2"></i>
+                                <span>Son güncelleme: {{ article.updated_at|date:"d.m.Y H:i" }}</span>
+                            </div>
+                        </div>
+                        <div class="col-md-6 text-end">
+                            <div class="d-flex align-items-center justify-content-end text-muted">
+                                <i class="fas fa-calendar-check me-2"></i>
+                                <span>
+                                    {% if article.published_at %}
+                                    Yayınlanma: {{ article.published_at|date:"d.m.Y H:i" }}
+                                    {% else %}
+                                    Henüz yayınlanmadı
+                                    {% endif %}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </footer>
+            </article>
+
+            <!-- Yorumlar -->
+            <section class="comments-section mt-5">
+                <div class="d-flex align-items-center mb-4">
+                    <h4 class="mb-0 me-3">
+                        <i class="fas fa-comments text-dark"></i> Yorumlar
+                    </h4>
+                    <span class="badge bg-light text-dark fs-6 px-3 py-2">{{ comments.count }}</span>
+                </div>
+                
+                <!-- Yorum Formu -->
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-body p-4">
+                        <h6 class="card-title mb-3">
+                            <i class="fas fa-edit me-2"></i>Yorum Yap
+                        </h6>
+                        <form id="commentForm" method="post" action="{% url 'articles:article_comment_create' article.slug %}">
+                            {% csrf_token %}
+                            <div class="mb-3">
+                                {{ comment_form.content }}
+                            </div>
+                            <div class="d-flex justify-content-end">
+                                <button type="submit" class="btn btn-primary px-4">
+                                    <i class="fas fa-paper-plane me-2"></i>Yorum Gönder
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Yorum Listesi -->
+                <div class="comments-list">
+                    {% for comment in comments %}
+                    <div class="card border-0 shadow-sm mb-3">
+                        <div class="card-body p-4">
+                            <div class="d-flex justify-content-between align-items-start mb-3">
+                                <div class="d-flex align-items-center">
+                                    <div class="comment-avatar me-3">
+                                        <i class="fas fa-user-circle fa-2x text-dark"></i>
+                                    </div>
+                                    <div>
+                                        <h6 class="mb-1 fw-bold">{{ comment.author.get_full_name|default:comment.author.username }}</h6>
+                                        <small class="text-muted">
+                                            <i class="fas fa-clock me-1"></i>{{ comment.created_at|date:"d.m.Y H:i" }}
+                                        </small>
+                                    </div>
+                                </div>
+                                {% if not comment.is_approved %}
+                                <span class="badge bg-light text-dark">
+                                    <i class="fas fa-hourglass-half me-1"></i>Onay Bekliyor
+                                </span>
+                                {% endif %}
+                            </div>
+                            <div class="comment-content">
+                                {{ comment.content|linebreaks }}
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="text-center py-5">
+                        <div class="empty-comments">
+                            <i class="fas fa-comment-slash fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted mb-2">Henüz yorum yok</h5>
+                            <p class="text-muted">İlk yorumu siz yaparak tartışmayı başlatın!</p>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </section>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <div class="sticky-top" style="top: 20px;">
+                <!-- Benzer Makaleler -->
+                {% if similar_articles %}
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-header bg-light text-dark border-0">
+                        <h6 class="mb-0">
+                            <i class="fas fa-newspaper me-2"></i>Benzer Makaleler
+                        </h6>
+                    </div>
+                    <div class="card-body p-0">
+                        {% for similar in similar_articles %}
+                        <div class="p-3 border-bottom">
+                            <div class="d-flex">
+                                <div class="flex-shrink-0">
+                                    {% if similar.featured_image %}
+                                    <img src="{{ similar.featured_image.url }}" class="rounded-2" width="60" height="60" style="object-fit: cover;" alt="{{ similar.title }}">
+                                    {% else %}
+                                    <div class="bg-light rounded-2 d-flex align-items-center justify-content-center" width="60" height="60">
+                                        <i class="fas fa-newspaper text-muted"></i>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <h6 class="mb-2">
+                                        <a href="{% url 'articles:article_detail' similar.slug %}" class="text-decoration-none text-dark">
+                                            {{ similar.title|truncatewords:8 }}
+                                        </a>
+                                    </h6>
+                                    <div class="d-flex align-items-center text-muted small">
+                                        <span class="me-3">
+                                            <i class="fas fa-eye me-1"></i>{{ similar.view_count }}
+                                        </span>
+                                        <span>
+                                            <i class="fas fa-clock me-1"></i>{{ similar.reading_time }} dk
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Makale İstatistikleri -->
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-header bg-light text-dark border-0">
+                        <h6 class="mb-0">
+                            <i class="fas fa-chart-bar me-2"></i>İstatistikler
+                        </h6>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="row text-center">
+                            <div class="col-6">
+                                <div class="border-end">
+                                    <h3 class="text-dark mb-1 fw-bold">{{ article.view_count }}</h3>
+                                    <small class="text-muted">Görüntülenme</small>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <h3 class="text-dark mb-1 fw-bold">{{ comments.count }}</h3>
+                                <small class="text-muted">Yorum</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Kategori ve Etiketler -->
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-header bg-light text-dark border-0">
+                        <h6 class="mb-0">
+                            <i class="fas fa-tags me-2"></i>Kategori ve Etiketler
+                        </h6>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="mb-4">
+                            <h6 class="fw-bold mb-2">Kategori:</h6>
+                            <a href="{% url 'articles:article_category_list' article.category %}" class="badge bg-light text-dark fs-6 px-3 py-2">
+                                <i class="fas fa-tag me-1"></i>{{ article.get_category_display }}
+                            </a>
+                        </div>
+                        {% if article.get_tags_list %}
+                        <div>
+                            <h6 class="fw-bold mb-2">Etiketler:</h6>
+                            <div class="d-flex flex-wrap gap-1">
+                                {% for tag in article.get_tags_list %}
+                                <span class="badge bg-light text-dark px-2 py-1">
+                                    <i class="fas fa-hashtag me-1"></i>{{ tag }}
+                                </span>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Yazar Bilgisi -->
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-light text-dark border-0">
+                        <h6 class="mb-0">
+                            <i class="fas fa-user me-2"></i>Yazar
+                        </h6>
+                    </div>
+                    <div class="card-body p-4 text-center">
+                        <div class="author-avatar-large mb-3">
+                            <i class="fas fa-user fa-3x"></i>
+                        </div>
+                        <h5 class="fw-bold mb-1">{{ article.author.get_full_name|default:article.author.username }}</h5>
+                        <p class="text-muted mb-3">@{{ article.author.username }}</p>
+                        <a href="{% url 'articles:article_author_list' article.author.username %}" class="btn btn-outline-primary">
+                            <i class="fas fa-newspaper me-2"></i>Diğer Makaleleri
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/articles.js' %}"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Syntax highlighting
+    hljs.highlightAll();
+    
+    // Yorum formu - articles.js dosyasında initializeCommentForm() fonksiyonu ile yönetiliyor
+    
+    // Kod blokları için kopyala butonları
+    if (typeof initializeCodeCopyButtons === 'function') {
+        initializeCodeCopyButtons();
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,182 @@
+<div class="prd-detail-content">
+    <!-- PRD Başlığı ve Durum -->
+    <div class="mb-4">
+        <h4 class="mb-2">{{ prd.title }}</h4>
+        <div class="d-flex align-items-center gap-2">
+            <span class="badge bg-{{ prd.status }}">
+                {{ prd.get_status_display }}
+            </span>
+            <small class="text-muted">
+                <i class="fas fa-user"></i> {{ prd.created_by.get_full_name|default:prd.created_by.username }}
+                <i class="fas fa-calendar ms-2"></i> {{ prd.created_at|date:"d.m.Y H:i" }}
+            </small>
+        </div>
+    </div>
+
+    <!-- PRD İçeriği -->
+    <div class="prd-sections">
+        <!-- Ürün Özeti -->
+        {% if prd.product_summary %}
+        <div class="prd-section mb-4">
+            <h5 class="text-primary">
+                <i class="fas fa-cube"></i> Ürün Özeti
+            </h5>
+            <div class="prd-content">
+                {{ prd.product_summary|linebreaks }}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Hedef Kitle -->
+        {% if prd.target_audience %}
+        <div class="prd-section mb-4">
+            <h5 class="text-primary">
+                <i class="fas fa-users"></i> Hedef Kitle
+            </h5>
+            <div class="prd-content">
+                {{ prd.target_audience|linebreaks }}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Fonksiyonel Gereksinimler -->
+        {% if prd.functional_requirements %}
+        <div class="prd-section mb-4">
+            <h5 class="text-primary">
+                <i class="fas fa-list-check"></i> Fonksiyonel Gereksinimler
+            </h5>
+            <div class="prd-content">
+                {{ prd.functional_requirements|linebreaks }}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Fonksiyonel Olmayan Gereksinimler -->
+        {% if prd.non_functional_requirements %}
+        <div class="prd-section mb-4">
+            <h5 class="text-primary">
+                <i class="fas fa-shield-alt"></i> Fonksiyonel Olmayan Gereksinimler
+            </h5>
+            <div class="prd-content">
+                {{ prd.non_functional_requirements|linebreaks }}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Kullanıcı Hikayeleri -->
+        {% if prd.user_stories %}
+        <div class="prd-section mb-4">
+            <h5 class="text-primary">
+                <i class="fas fa-book"></i> Kullanıcı Hikayeleri
+            </h5>
+            <div class="prd-content">
+                {{ prd.user_stories|linebreaks }}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Kabul Kriterleri -->
+        {% if prd.acceptance_criteria %}
+        <div class="prd-section mb-4">
+            <h5 class="text-primary">
+                <i class="fas fa-check-circle"></i> Kabul Kriterleri
+            </h5>
+            <div class="prd-content">
+                {{ prd.acceptance_criteria|linebreaks }}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Teknik Gereksinimler -->
+        {% if prd.technical_requirements %}
+        <div class="prd-section mb-4">
+            <h5 class="text-primary">
+                <i class="fas fa-cogs"></i> Teknik Gereksinimler
+            </h5>
+            <div class="prd-content">
+                {{ prd.technical_requirements|linebreaks }}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Tasarım Kısıtlamaları -->
+        {% if prd.design_constraints %}
+        <div class="prd-section mb-4">
+            <h5 class="text-primary">
+                <i class="fas fa-palette"></i> Tasarım Kısıtlamaları
+            </h5>
+            <div class="prd-content">
+                {{ prd.design_constraints|linebreaks }}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- PRD Dosyası -->
+        {% if prd.document %}
+        <div class="prd-section mb-4">
+            <h5 class="text-primary">
+                <i class="fas fa-paperclip"></i> PRD Dosyası
+            </h5>
+            <div class="document-preview">
+                <div class="btn-group" role="group">
+                    <a href="{% url 'projects:prd_document_view' prd.id %}" class="btn btn-outline-primary" target="_blank">
+                        <i class="fas fa-eye"></i> Görüntüle
+                    </a>
+                    <a href="{{ prd.document.url }}" class="btn btn-outline-secondary" target="_blank">
+                        <i class="fas fa-download"></i> İndir
+                    </a>
+                </div>
+                <div class="mt-2">
+                    <small class="text-muted">{{ prd.document.name|slice:"-50:" }}</small>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Atama Bilgileri -->
+    {% if prd.assigned_to %}
+    <div class="prd-section mt-4 pt-3 border-top">
+        <h6 class="text-muted">
+            <i class="fas fa-link"></i> Atandığı:
+            {% if prd.project %}
+                <a href="{% url 'projects:project_detail' prd.project.id %}" class="text-decoration-none">
+                    {{ prd.project.name }}
+                </a>
+            {% elif prd.task %}
+                <a href="{% url 'tasks:task_detail' prd.task.id %}" class="text-decoration-none">
+                    {{ prd.task.title }}
+                </a>
+            {% endif %}
+        </h6>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+.prd-detail-content {
+    max-height: 70vh;
+    overflow-y: auto;
+}
+
+.prd-section h5 {
+    font-size: 1.1rem;
+    margin-bottom: 0.75rem;
+    border-bottom: 1px solid #e9ecef;
+    padding-bottom: 0.5rem;
+}
+
+.prd-content {
+    background-color: #f8f9fa;
+    padding: 1rem;
+    border-radius: 0.375rem;
+    border-left: 4px solid #3b7ddd;
+}
+
+.document-preview {
+    background-color: #f8f9fa;
+    padding: 1rem;
+    border-radius: 0.375rem;
+    text-align: center;
+}
+</style>

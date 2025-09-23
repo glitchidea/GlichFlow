@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+
+{% block title %}Dosya Yükle - {{ project.name }} | GlichFlow{% endblock %}
+
+{% block page_title %}Dosya Yükle{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'projects:project_list' %}">Projeler</a></li>
+<li class="breadcrumb-item"><a href="{% url 'projects:project_detail' project.id %}">{{ project.name }}</a></li>
+<li class="breadcrumb-item active">Dosya Yükle</li>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-6 mx-auto">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-upload me-2"></i> Dosya Yükle
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Dosya Adı *</label>
+                        <input type="text" class="form-control" id="name" name="name" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Açıklama</label>
+                        <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label for="file" class="form-label">Dosya *</label>
+                        <input class="form-control" type="file" id="file" name="file" required>
+                        <div class="form-text">
+                            Maksimum dosya boyutu: 10MB
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{% url 'projects:project_detail' project.id %}" class="btn btn-secondary me-md-2">
+                            <i class="fas fa-times me-1"></i> İptal
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-upload me-1"></i> Yükle
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

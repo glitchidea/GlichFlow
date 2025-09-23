@@ -1,0 +1,17 @@
+{% extends 'sellers/base_seller.html' %}
+{% load static %}
+
+{% block page_title %}Önizleme Desteklenmiyor{% endblock %}
+
+{% block seller_content %}
+<div class="alert alert-warning d-flex justify-content-between align-items-center">
+    <div>
+        <strong>Bu dosya türü için önizleme desteklenmiyor.</strong><br>
+        {% if reason %}<small class="text-muted">Sebep: {{ reason }}</small>{% endif %}
+    </div>
+    <a class="btn btn-sm btn-outline-primary" href="{{ file.file.url }}">
+        <i class="fas fa-download"></i> Dosyayı indir
+    </a>
+{% endblock %}
+
+

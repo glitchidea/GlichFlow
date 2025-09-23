@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">{{ title }}</h1>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Ekip Silme Onayı</h6>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-danger">
+                        <h5 class="alert-heading"><i class="fas fa-exclamation-triangle mr-2"></i>Dikkat!</h5>
+                        <p>
+                            <strong>"{{ team.name }}"</strong> ekibini silmek istediğinizden emin misiniz?
+                        </p>
+                        <hr>
+                        <p class="mb-0">
+                            Bu işlem geri alınamaz. Ekip silindiğinde, ekip üyeleri ile olan tüm ilişkileri kaldırılır, 
+                            ancak kullanıcılar ve projeler silinmez.
+                        </p>
+                    </div>
+
+                    <div class="mb-4">
+                        <strong>Ekip Bilgileri:</strong>
+                        <ul class="list-group mt-2">
+                            <li class="list-group-item">
+                                <strong>Ekip Adı:</strong> {{ team.name }}
+                            </li>
+                            <li class="list-group-item">
+                                <strong>Açıklama:</strong> {% if team.description %}{{ team.description }}{% else %}<span class="text-muted">Açıklama yok</span>{% endif %}
+                            </li>
+                            <li class="list-group-item">
+                                <strong>Lider:</strong> {% if team.leader %}{{ team.leader.get_full_name }}{% else %}<span class="text-muted">Atanmamış</span>{% endif %}
+                            </li>
+                            <li class="list-group-item">
+                                <strong>Üye Sayısı:</strong> {{ team.members.count }}
+                            </li>
+                            <li class="list-group-item">
+                                <strong>Proje Sayısı:</strong> {{ team.projects.count }}
+                            </li>
+                            <li class="list-group-item">
+                                <strong>Oluşturulma Tarihi:</strong> {{ team.created_at|date:"d.m.Y H:i" }}
+                            </li>
+                        </ul>
+                    </div>
+                    
+                    <form method="post" action="{% url 'teams:team_delete' team_id=team.id %}">
+                        {% csrf_token %}
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'teams:team_detail' team_id=team.id %}" class="btn btn-secondary">
+                                <i class="fas fa-times mr-1"></i> İptal
+                            </a>
+                            <button type="submit" class="btn btn-danger">
+                                <i class="fas fa-trash mr-1"></i> Ekibi Sil
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

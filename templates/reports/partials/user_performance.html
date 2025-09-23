@@ -1,0 +1,116 @@
+<!-- Kullanıcı Performans Raporu -->
+<div class="report-section">
+    <h4 class="mb-3">Kullanıcı Performans Analizi</h4>
+    
+    <div class="row mb-4">
+        <div class="col-lg-8">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Performans Karşılaştırması</h5>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container" style="height: 300px;">
+                        <canvas id="userPerformanceChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <div class="row h-100">
+                <div class="col-12">
+                    <div class="card mb-4">
+                        <div class="card-body text-center">
+                            <h5 class="text-muted mb-2">Toplam Tamamlanan Görev</h5>
+                            <h2 class="mb-0">{{ total_completed_tasks }}</h2>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-12">
+                    <div class="card mb-4">
+                        <div class="card-body text-center">
+                            <h5 class="text-muted mb-2">Ortalama Tamamlama Süresi</h5>
+                            <h2 class="mb-0">{{ avg_completion_days|floatformat:1 }} gün</h2>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <h5 class="text-muted mb-2">Zamanında Tamamlama Oranı</h5>
+                            <h2 class="mb-0">{{ on_time_percentage|floatformat:1 }}%</h2>
+                            <div class="progress mt-2" style="height: 8px;">
+                                <div class="progress-bar bg-success" role="progressbar" style="width: {{ on_time_percentage }}%;" aria-valuenow="{{ on_time_percentage }}" aria-valuemin="0" aria-valuemax="100"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">Performans Tablosu</h5>
+                    <div class="btn-group" role="group">
+                        <button type="button" class="btn btn-sm btn-outline-primary active">Tüm Kullanıcılar</button>
+                        <button type="button" class="btn btn-sm btn-outline-primary">En İyi 10</button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-centered table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Kullanıcı</th>
+                                    <th>Tamamlanan Görevler</th>
+                                    <th>Ortalama Süre</th>
+                                    <th>Zamanında Tamamlama</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in user_performance %}
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="avatar avatar-sm me-2">
+                                                <div class="avatar-title rounded-circle bg-soft-primary text-primary">
+                                                    {{ item.user__first_name|slice:":1" }}{{ item.user__last_name|slice:":1" }}
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <h6 class="mb-0">{{ item.user__first_name }} {{ item.user__last_name }}</h6>
+                                                <small class="text-muted">{{ item.user__username }}</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>{{ item.completed_tasks }}</td>
+                                    <td>{{ item.avg_days|floatformat:1 }} gün</td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="progress flex-grow-1 me-2" style="height: 5px;">
+                                                <div class="progress-bar {% if item.on_time_percentage >= 75 %}bg-success{% elif item.on_time_percentage >= 50 %}bg-warning{% else %}bg-danger{% endif %}" role="progressbar" style="width: {{ item.on_time_percentage }}%;" aria-valuenow="{{ item.on_time_percentage }}" aria-valuemin="0" aria-valuemax="100"></div>
+                                            </div>
+                                            <span>{{ item.on_time_percentage|floatformat:0 }}%</span>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="4" class="text-center py-3">
+                                        <div class="text-muted">Henüz kullanıcı performans verisi bulunmuyor</div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div> 

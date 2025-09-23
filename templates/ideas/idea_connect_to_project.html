@@ -1,0 +1,173 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Fikri Projeye Bağla - {{ idea.title }}{% endblock %}
+{% block page_title %}Fikri Projeye Bağla{% endblock %}
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'ideas:idea_list' %}">Fikir Not Defteri</a></li>
+<li class="breadcrumb-item"><a href="{% url 'ideas:idea_detail' idea.pk %}">{{ idea.title }}</a></li>
+<li class="breadcrumb-item active">Projeye Bağla</li>
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/ideas.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card border-info">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-link"></i> Fikri Projeye Bağla
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <h6><i class="fas fa-info-circle"></i> Bilgi</h6>
+                    <p class="mb-0">Bu fikri mevcut projelerinizden birine bağlayabilirsiniz. Bağlandıktan sonra fikir aktif duruma geçecektir.</p>
+                </div>
+
+                <div class="idea-preview mb-4">
+                    <h6>Bağlanacak Fikir:</h6>
+                    <div class="card">
+                        <div class="card-body">
+                            <h6 class="card-title">{{ idea.title }}</h6>
+                            {% if idea.description %}
+                            <p class="card-text">{{ idea.description|truncatewords:30 }}</p>
+                            {% endif %}
+                            <div class="d-flex justify-content-between align-items-center">
+                                <small class="text-muted">
+                                    <i class="fas fa-calendar"></i> {{ idea.created_at|date:"d.m.Y" }}
+                                </small>
+                                <div>
+                                    <span class="badge bg-{{ idea.priority_color }}">{{ idea.get_priority_display }}</span>
+                                    <span class="badge bg-{{ idea.status_color }}">{{ idea.get_status_display }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {% if user_projects %}
+                <div class="mb-4">
+                    <h6>Mevcut Projeleriniz:</h6>
+                    <div class="row">
+                        {% for project in user_projects %}
+                        <div class="col-md-6 mb-3">
+                            <div class="card project-card" data-project-id="{{ project.pk }}">
+                                <div class="card-body">
+                                    <h6 class="card-title">{{ project.name }}</h6>
+                                    {% if project.description %}
+                                    <p class="card-text small text-muted">{{ project.description|truncatewords:15 }}</p>
+                                    {% endif %}
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <span class="badge bg-{{ project.get_status_display|lower|cut:' ' }}">{{ project.get_status_display }}</span>
+                                        <small class="text-muted">
+                                            <i class="fas fa-user"></i> {{ project.manager.get_full_name|default:project.manager.username }}
+                                        </small>
+                                    </div>
+                                    <div class="mt-2">
+                                        <button type="button" class="btn btn-primary btn-sm w-100 select-project-btn" data-project-id="{{ project.pk }}">
+                                            <i class="fas fa-link"></i> Bu Projeye Bağla
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <form method="post" id="connectForm" style="display: none;">
+                    {% csrf_token %}
+                    <input type="hidden" id="selected_project_id" name="project_id">
+                </form>
+
+                <div class="d-flex justify-content-between">
+                    <a href="{% url 'ideas:idea_detail' idea.pk %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left"></i> İptal
+                    </a>
+                    <div class="text-muted">
+                        <i class="fas fa-info-circle"></i> Yukarıdaki projelerden birini seçin
+                    </div>
+                </div>
+                {% else %}
+                <div class="alert alert-warning">
+                    <h6><i class="fas fa-exclamation-triangle"></i> Uyarı</h6>
+                    <p class="mb-0">Bağlayabileceğiniz proje bulunmamaktadır. Önce bir proje oluşturmanız gerekiyor.</p>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <a href="{% url 'ideas:idea_detail' idea.pk %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left"></i> Geri Dön
+                    </a>
+                    <a href="{% url 'projects:project_create' %}" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Yeni Proje Oluştur
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Alternatif Seçenekler -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="fas fa-lightbulb"></i> Alternatif Seçenekler</h6>
+            </div>
+            <div class="card-body">
+                <p class="text-muted">Bu fikri mevcut projeye bağlamak yerine şunları da yapabilirsiniz:</p>
+                <div class="d-grid gap-2">
+                    <a href="{% url 'projects:project_create' %}" class="btn btn-outline-primary">
+                        <i class="fas fa-plus"></i> Yeni Proje Oluştur
+                    </a>
+                    <a href="{% url 'ideas:idea_update' idea.pk %}" class="btn btn-outline-info">
+                        <i class="fas fa-edit"></i> Fikri Düzenle
+                    </a>
+                    <a href="{% url 'ideas:idea_detail' idea.pk %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-eye"></i> Fikri Görüntüle
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Proje seçme butonları
+    const selectButtons = document.querySelectorAll('.select-project-btn');
+    const connectForm = document.getElementById('connectForm');
+    const selectedProjectId = document.getElementById('selected_project_id');
+    
+    selectButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const projectId = this.getAttribute('data-project-id');
+            const projectCard = this.closest('.project-card');
+            const projectName = projectCard.querySelector('.card-title').textContent;
+            
+            // Onay iste
+            if (confirm(`"${projectName}" projesine bağlamak istediğinizden emin misiniz?`)) {
+                selectedProjectId.value = projectId;
+                connectForm.submit();
+            }
+        });
+    });
+    
+    // Proje kartlarına hover efekti
+    const projectCards = document.querySelectorAll('.project-card');
+    projectCards.forEach(card => {
+        card.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-2px)';
+            this.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
+        });
+        
+        card.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0)';
+            this.style.boxShadow = '0 0.125rem 0.25rem rgba(0, 0, 0, 0.075)';
+        });
+    });
+});
+</script>
+{% endblock %}

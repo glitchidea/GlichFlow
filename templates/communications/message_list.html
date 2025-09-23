@@ -1,0 +1,142 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }} | GlichFlow{% endblock %}
+
+{% block page_title %}{{ title }}{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item active">Mesajlar</li>
+{% endblock %}
+
+{% block page_actions %}
+<a href="{% url 'communications:message_create' %}" class="btn btn-primary">
+    <i class="fas fa-plus"></i> Yeni Mesaj
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <ul class="nav nav-tabs card-header-tabs">
+                    <li class="nav-item">
+                        <a class="nav-link {% if active_tab == 'inbox' %}active{% endif %}" href="{% url 'communications:inbox' %}">
+                            <i class="fas fa-inbox me-1"></i> Gelen Mesajlar
+                            {% if active_tab == 'inbox' and unread_count > 0 %}
+                            <span class="badge bg-danger">{{ unread_count }}</span>
+                            {% endif %}
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if active_tab == 'sent' %}active{% endif %}" href="{% url 'communications:sent' %}">
+                            <i class="fas fa-paper-plane me-1"></i> Gönderilen Mesajlar
+                        </a>
+                    </li>
+                </ul>
+            </div>
+            <div class="card-body">
+                {% if messages_list %}
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width: 40px;"></th>
+                                <th>
+                                    {% if active_tab == 'inbox' %}
+                                    Gönderen
+                                    {% else %}
+                                    Alıcı
+                                    {% endif %}
+                                </th>
+                                <th>Konu</th>
+                                <th>Tarih</th>
+                                <th>İşlemler</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for message in messages_list %}
+                            <tr {% if active_tab == 'inbox' and not message.read %}class="fw-bold"{% endif %}>
+                                <td class="text-center">
+                                    {% if active_tab == 'inbox' and not message.read %}
+                                    <span class="text-primary"><i class="fas fa-envelope"></i></span>
+                                    {% else %}
+                                    <span class="text-muted"><i class="fas fa-envelope-open"></i></span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        {% if active_tab == 'inbox' %}
+                                        {% with user=message.sender %}
+                                        {% if user.profile_picture %}
+                                        <img src="{{ user.profile_picture.url }}" class="rounded-circle me-2" style="width: 32px; height: 32px;" alt="{{ user.get_full_name }}">
+                                        {% else %}
+                                        <div class="bg-secondary bg-opacity-10 rounded-circle me-2 d-flex align-items-center justify-content-center text-secondary" style="width: 32px; height: 32px;">
+                                            <i class="fas fa-user"></i>
+                                        </div>
+                                        {% endif %}
+                                        <span>{{ user.get_full_name|default:user.username }}</span>
+                                        {% endwith %}
+                                        {% else %}
+                                        {% with user=message.recipient %}
+                                        {% if user.profile_picture %}
+                                        <img src="{{ user.profile_picture.url }}" class="rounded-circle me-2" style="width: 32px; height: 32px;" alt="{{ user.get_full_name }}">
+                                        {% else %}
+                                        <div class="bg-secondary bg-opacity-10 rounded-circle me-2 d-flex align-items-center justify-content-center text-secondary" style="width: 32px; height: 32px;">
+                                            <i class="fas fa-user"></i>
+                                        </div>
+                                        {% endif %}
+                                        <span>{{ user.get_full_name|default:user.username }}</span>
+                                        {% endwith %}
+                                        {% endif %}
+                                    </div>
+                                </td>
+                                <td>
+                                    <a href="{% url 'communications:message_detail' message.id %}" class="text-decoration-none">
+                                        {{ message.subject }}
+                                    </a>
+                                </td>
+                                <td>{{ message.created_at|date:"d.m.Y H:i" }}</td>
+                                <td>
+                                    <div class="btn-group">
+                                        <a href="{% url 'communications:message_detail' message.id %}" class="btn btn-sm btn-outline-primary" data-bs-toggle="tooltip" title="Görüntüle">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        {% if active_tab == 'inbox' %}
+                                        <a href="{% url 'communications:message_create' %}?reply_to={{ message.sender.id }}&subject=Re: {{ message.subject|urlencode }}" class="btn btn-sm btn-outline-secondary" data-bs-toggle="tooltip" title="Yanıtla">
+                                            <i class="fas fa-reply"></i>
+                                        </a>
+                                        {% endif %}
+                                        <a href="{% url 'communications:message_delete' message.id %}" class="btn btn-sm btn-outline-danger" data-bs-toggle="tooltip" title="Sil">
+                                            <i class="fas fa-trash"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-5">
+                    <div class="d-inline-block bg-primary bg-opacity-10 p-4 rounded-circle mb-3">
+                        <i class="fas fa-envelope fa-3x text-primary"></i>
+                    </div>
+                    <h4>Mesaj Bulunamadı</h4>
+                    <p class="text-muted">
+                        {% if active_tab == 'inbox' %}
+                        Gelen kutunuzda henüz mesaj bulunmuyor.
+                        {% else %}
+                        Henüz mesaj göndermediniz.
+                        {% endif %}
+                    </p>
+                    <a href="{% url 'communications:message_create' %}" class="btn btn-primary mt-2">
+                        <i class="fas fa-plus me-1"></i> Yeni Mesaj Oluştur
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

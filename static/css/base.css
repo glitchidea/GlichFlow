@@ -1,0 +1,160 @@
+/* Base Styles for GlichFlow */
+
+body {
+    background-color: #f5f7fb;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    overflow-x: hidden;
+    margin: 0;
+    padding: 0;
+}
+
+/* Ana tema renkleri */
+:root {
+    --bs-primary: #3b7ddd;
+    --bs-primary-rgb: 59, 125, 221;
+    --sidebar-width: 250px;
+    --topbar-height: 60px;
+    --primary-color: #3b7ddd;
+    --sidebar-bg: #222e3c;
+    --sidebar-text: #e9ecef;
+}
+
+/* Sidebar için gölge */
+.shadow-sm {
+    box-shadow: 0 .125rem .25rem rgba(0,0,0,.075) !important;
+}
+
+/* Aktif menü öğesi */
+.sidebar .sidebar-link.active {
+    color: var(--bs-primary);
+    background-color: rgba(var(--bs-primary-rgb), 0.1);
+    font-weight: 500;
+}
+
+/* Profil resimleri için global stil */
+img.rounded-circle {
+    max-width: 150px !important;
+    max-height: 150px !important;
+    width: auto !important;
+    height: auto !important;
+    object-fit: cover;
+    object-position: center;
+    border-radius: 50% !important;
+}
+
+/* Tablolardaki avatarlar için özel stil */
+td img.rounded-circle,
+.table img.rounded-circle,
+.list-group-item img.rounded-circle {
+    max-width: 40px !important;
+    max-height: 40px !important;
+    width: 40px !important;
+    height: 40px !important;
+}
+
+/* Küçük profil resimleri için stil (header ve sidebar) */
+.topbar img.rounded-circle,
+.sidebar img.rounded-circle,
+.dropdown-menu img.rounded-circle,
+.dropdown img.rounded-circle {
+    max-width: 50px !important;
+    max-height: 50px !important;
+    width: 50px !important;
+    height: 50px !important;
+}
+
+/* Avatar placeholder için stil */
+.avatar-sm,
+.avatar.avatar-sm {
+    width: 40px !important;
+    height: 40px !important;
+    font-size: 16px !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50% !important;
+}
+
+/* Avatar sistemimiz için özel ayarlar */
+.avatar, .avatar > div {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    border-radius: 50%;
+}
+
+/* Avatar container için stil */
+
+/* PRD Status Badge Overrides - Global */
+.badge.bg-draft { background-color: #f8f9fc !important; color: #5a5c69 !important; }
+.badge.bg-review { background-color: #fff3cd !important; color: #856404 !important; }
+.badge.bg-approved { background-color: #d1edff !important; color: #0c5460 !important; }
+.badge.bg-rejected { background-color: #f8d7da !important; color: #721c24 !important; }
+.badge.bg-archived { background-color: #e2e3e5 !important; color: #383d41 !important; }
+
+/* Additional specificity for PRD status badges */
+span.badge.bg-draft { background-color: #f8f9fc !important; color: #5a5c69 !important; }
+span.badge.bg-review { background-color: #fff3cd !important; color: #856404 !important; }
+span.badge.bg-approved { background-color: #d1edff !important; color: #0c5460 !important; }
+span.badge.bg-rejected { background-color: #f8d7da !important; color: #721c24 !important; }
+span.badge.bg-archived { background-color: #e2e3e5 !important; color: #383d41 !important; }
+
+/* Force override for any Bootstrap text-white classes */
+.badge.bg-draft.text-white { color: #5a5c69 !important; }
+.badge.bg-review.text-white { color: #856404 !important; }
+.badge.bg-approved.text-white { color: #0c5460 !important; }
+.badge.bg-rejected.text-white { color: #721c24 !important; }
+.badge.bg-archived.text-white { color: #383d41 !important; }
+
+/* Maximum specificity overrides for PRD status badges */
+.card .badge.bg-draft { background-color: #f8f9fc !important; color: #5a5c69 !important; }
+.card .badge.bg-review { background-color: #fff3cd !important; color: #856404 !important; }
+.card .badge.bg-approved { background-color: #d1edff !important; color: #0c5460 !important; }
+.card .badge.bg-rejected { background-color: #f8d7da !important; color: #721c24 !important; }
+.card .badge.bg-archived { background-color: #e2e3e5 !important; color: #383d41 !important; }
+
+/* Override any inline styles */
+.badge.bg-draft[style*="color"] { color: #5a5c69 !important; }
+.badge.bg-review[style*="color"] { color: #856404 !important; }
+.badge.bg-approved[style*="color"] { color: #0c5460 !important; }
+.badge.bg-rejected[style*="color"] { color: #721c24 !important; }
+.badge.bg-archived[style*="color"] { color: #383d41 !important; }
+
+/* Debug styles - make PRD status badges very obvious */
+.badge.bg-approved { 
+    background-color: #d1edff !important; 
+    color: #0c5460 !important; 
+    border: 2px solid #0c5460 !important;
+    font-weight: bold !important;
+}
+.badge.bg-draft { 
+    background-color: #f8f9fc !important; 
+    color: #5a5c69 !important; 
+    border: 2px solid #5a5c69 !important;
+    font-weight: bold !important;
+}
+.badge.bg-review { 
+    background-color: #fff3cd !important; 
+    color: #856404 !important; 
+    border: 2px solid #856404 !important;
+    font-weight: bold !important;
+}
+.badge.bg-rejected { 
+    background-color: #f8d7da !important; 
+    color: #721c24 !important; 
+    border: 2px solid #721c24 !important;
+    font-weight: bold !important;
+}
+.badge.bg-archived { 
+    background-color: #e2e3e5 !important; 
+    color: #383d41 !important; 
+    border: 2px solid #383d41 !important;
+    font-weight: bold !important;
+}
+.avatar, .avatar-title {
+    width: 32px !important;
+    height: 32px !important;
+    position: relative;
+    margin: 0 auto;
+}

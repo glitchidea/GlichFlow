@@ -1,0 +1,52 @@
+<!-- Topbar -->
+<div class="topbar">
+    <button type="button" id="sidebarCollapse" class="btn btn-sm btn-primary">
+        <i class="fas fa-bars"></i>
+    </button>
+    
+    <div class="ms-auto d-flex align-items-center">
+        <div class="dropdown me-3">
+            <a href="#" class="btn btn-sm btn-outline-secondary position-relative" id="notificationsDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="fas fa-bell"></i>
+                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" id="unreadNotificationCount" style="display: none;">
+                    0
+                </span>
+            </a>
+            <ul class="dropdown-menu dropdown-menu-end notification-dropdown" aria-labelledby="notificationsDropdown" style="width: 320px; max-height: 400px; overflow-y: auto;">
+                <li><h6 class="dropdown-header">Bildirimler</h6></li>
+                <div id="notificationItems">
+                    <!-- JS ile doldurulacak -->
+                    <li><div class="dropdown-item text-center text-muted p-2">Yükleniyor...</div></li>
+                </div>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item text-center" href="{% url 'communications:notification_list' %}">Tüm bildirimleri gör</a></li>
+            </ul>
+        </div>
+        
+        <div class="dropdown">
+            <a href="#" class="d-flex align-items-center text-decoration-none dropdown-toggle" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                {% if request.user.profile_picture %}
+                <img src="{{ request.user.profile_picture.url }}" class="rounded-circle me-2" width="30" height="30" alt="{{ request.user.get_full_name }}">
+                {% else %}
+                <div class="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center me-2" style="width: 30px; height: 30px; font-size: 14px;">
+                    {{ request.user.username.0|upper }}
+                </div>
+                {% endif %}
+                <span>{{ request.user.username }}</span>
+            </a>
+            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                <li><a class="dropdown-item" href="{% url 'accounts:user_profile' user_id=request.user.id %}"><i class="fas fa-user me-2"></i> Profilim</a></li>
+                <li><a class="dropdown-item" href="{% url 'accounts:user_settings' %}"><i class="fas fa-cog me-2"></i> Bilgilerim</a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li>
+                    <form method="post" action="{% url 'accounts:logout' %}" class="dropdown-item p-0">
+                        {% csrf_token %}
+                        <button type="submit" class="dropdown-item">
+                            <i class="fas fa-sign-out-alt me-2"></i> Çıkış Yap
+                        </button>
+                    </form>
+                </li>
+            </ul>
+        </div>
+    </div>
+</div>

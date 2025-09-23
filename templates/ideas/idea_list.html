@@ -1,0 +1,196 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load account_tags %}
+
+{% block title %}Fikir Not Defteri{% endblock %}
+{% block page_title %}Fikir Not Defteri{% endblock %}
+{% block breadcrumb %}
+<li class="breadcrumb-item active">Fikir Not Defteri</li>
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/ideas.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Sol Panel - Filtreler ve Hızlı Ekleme -->
+    <div class="col-lg-3">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="fas fa-plus-circle"></i> Hızlı Fikir Ekle</h6>
+            </div>
+            <div class="card-body">
+                <form id="quickAddForm" action="{% url 'ideas:idea_quick_add' %}" method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <input type="text" class="form-control" id="quickTitle" name="title" placeholder="Fikir başlığı..." required>
+                    </div>
+                    <div class="mb-3">
+                        <textarea class="form-control" id="quickDescription" name="description" rows="3" placeholder="Kısa açıklama..."></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-sm w-100">
+                        <i class="fas fa-plus"></i> Hızlı Ekle
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Filtreler -->
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="fas fa-filter"></i> Filtreler</h6>
+            </div>
+            <div class="card-body">
+                <form method="get" id="filterForm">
+                    <div class="mb-3">
+                        <label class="form-label">Arama</label>
+                        <input type="text" class="form-control" name="search" value="{{ search_query }}" placeholder="Başlık, açıklama, teknoloji...">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Öncelik</label>
+                        <select class="form-select" name="priority">
+                            <option value="">Tümü</option>
+                            {% for value, label in priority_choices %}
+                            <option value="{{ value }}" {% if priority_filter == value %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Durum</label>
+                        <select class="form-select" name="status">
+                            <option value="">Tümü</option>
+                            {% for value, label in status_choices %}
+                            <option value="{{ value }}" {% if status_filter == value %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-search"></i> Filtrele
+                        </button>
+                        <a href="{% url 'ideas:idea_list' %}" class="btn btn-outline-secondary btn-sm">
+                            <i class="fas fa-times"></i> Temizle
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sağ Panel - Fikir Listesi -->
+    <div class="col-lg-9">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h6 class="mb-0">
+                    <i class="fas fa-lightbulb"></i> Fikirlerim 
+                    <span class="badge bg-primary">{{ page_obj.paginator.count }}</span>
+                </h6>
+                <a href="{% url 'ideas:idea_create' %}" class="btn btn-primary btn-sm">
+                    <i class="fas fa-plus"></i> Yeni Fikir
+                </a>
+            </div>
+            <div class="card-body">
+                {% if page_obj %}
+                    <div class="row">
+                        {% for idea in page_obj %}
+                        <div class="col-md-6 mb-4">
+                            <div class="idea-card">
+                                <div class="idea-header">
+                                    <h6 class="idea-title">
+                                        <a href="{% url 'ideas:idea_detail' idea.pk %}">{{ idea.title }}</a>
+                                    </h6>
+                                    <div class="idea-badges">
+                                        <span class="badge bg-{{ idea.priority_color }}">{{ idea.get_priority_display }}</span>
+                                        <span class="badge bg-{{ idea.status_color }}">{{ idea.get_status_display }}</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="idea-content">
+                                    {% if idea.description %}
+                                    <p class="idea-description">{{ idea.description|truncatewords:20 }}</p>
+                                    {% endif %}
+                                    
+                                    {% if idea.technologies %}
+                                    <div class="idea-technologies">
+                                        <small class="text-muted">
+                                            <i class="fas fa-code"></i> {{ idea.technologies|truncatewords:10 }}
+                                        </small>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="idea-footer">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <small class="text-muted">
+                                            <i class="fas fa-calendar"></i> {{ idea.created_at|date:"d.m.Y" }}
+                                            {% if idea.is_connected_to_project %}
+                                            <br><span class="badge bg-success"><i class="fas fa-link"></i> Projeye Bağlı</span>
+                                            {% endif %}
+                                        </small>
+                                        <div class="idea-actions">
+                                            <a href="{% url 'ideas:idea_detail' idea.pk %}" class="btn btn-outline-primary btn-sm">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            <a href="{% url 'ideas:idea_update' idea.pk %}" class="btn btn-outline-secondary btn-sm">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                    <!-- Sayfalama -->
+                    {% if page_obj.has_other_pages %}
+                    <nav aria-label="Fikir sayfalama">
+                        <ul class="pagination justify-content-center">
+                            {% if page_obj.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page=1{% if search_query %}&search={{ search_query }}{% endif %}{% if priority_filter %}&priority={{ priority_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}">İlk</a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if priority_filter %}&priority={{ priority_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}">Önceki</a>
+                            </li>
+                            {% endif %}
+
+                            <li class="page-item active">
+                                <span class="page-link">{{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
+                            </li>
+
+                            {% if page_obj.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if priority_filter %}&priority={{ priority_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}">Sonraki</a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if search_query %}&search={{ search_query }}{% endif %}{% if priority_filter %}&priority={{ priority_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}">Son</a>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                    {% endif %}
+                {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-lightbulb fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">Henüz fikir eklenmemiş</h5>
+                        <p class="text-muted">İlk fikrinizi eklemek için yukarıdaki "Yeni Fikir" butonunu kullanın.</p>
+                        <a href="{% url 'ideas:idea_create' %}" class="btn btn-primary">
+                            <i class="fas fa-plus"></i> İlk Fikrimi Ekle
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/ideas.js' %}"></script>
+{% endblock %}
+

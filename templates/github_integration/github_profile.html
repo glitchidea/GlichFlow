@@ -1,0 +1,369 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}GitHub Profili{% endblock %}
+
+{% block page_title %}GitHub Profili{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'dashboard:index' %}">Dashboard</a></li>
+<li class="breadcrumb-item active">GitHub Profili</li>
+{% endblock %}
+
+{% block page_actions %}
+<div class="btn-group">
+    <a href="{% url 'github_integration:github_oauth_settings' %}" class="btn btn-info me-2">
+        <i class="fas fa-cog"></i> OAuth Ayarları
+    </a>
+    <a href="{% url 'github_integration:github_disconnect' %}" class="btn btn-danger">
+        <i class="fas fa-unlink"></i> GitHub Bağlantısını Kaldır
+    </a>
+</div>
+{% endblock %}
+
+{% block content %}
+{% if demo_mode %}
+<div class="alert alert-warning mb-4">
+    <i class="fas fa-exclamation-triangle me-2"></i>
+    <strong>Demo Mod Aktif:</strong> Şu anda demo modunda çalışıyorsunuz. Gösterilen veriler gerçek GitHub hesabınızdan alınmamıştır.
+    <p class="mb-0 mt-2">
+        <a href="{% url 'github_integration:github_disconnect' %}" class="btn btn-sm btn-outline-dark">Bağlantıyı Kaldır</a>
+        <a href="{% url 'github_integration:github_connect' %}" class="btn btn-sm btn-dark">Gerçek GitHub Hesabına Bağlan</a>
+    </p>
+</div>
+{% endif %}
+
+<div class="row">
+    <div class="col-md-6 mb-4">
+        <!-- GitHub Profil Bilgileri -->
+        <div class="card h-100">
+            <div class="card-header">
+                <h5 class="card-title mb-0">GitHub Profil Bilgileri</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-4 text-center">
+                    {% if user_info.avatar_url %}
+                    <img src="{{ user_info.avatar_url }}" alt="{{ user_info.login }}" class="rounded-circle mb-3" width="100">
+                    {% else %}
+                    <i class="fab fa-github fa-5x mb-3 text-dark"></i>
+                    {% endif %}
+                    
+                    <h4 class="mb-1">{{ user_info.name|default:user_info.login }}</h4>
+                    <p class="mb-0 text-muted">
+                        <a href="{{ user_info.html_url }}" target="_blank" class="text-decoration-none">
+                            <i class="fab fa-github"></i> {{ user_info.login }}
+                        </a>
+                    </p>
+                </div>
+                
+                <ul class="list-group list-group-flush">
+                    {% if user_info.email %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <span><i class="fas fa-envelope me-2"></i> E-posta</span>
+                        <span>{{ user_info.email }}</span>
+                    </li>
+                    {% endif %}
+                    
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <span><i class="fas fa-building me-2"></i> Şirket</span>
+                        <span>{{ user_info.company|default:"Belirtilmemiş" }}</span>
+                    </li>
+                    
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <span><i class="fas fa-map-marker-alt me-2"></i> Konum</span>
+                        <span>{{ user_info.location|default:"Belirtilmemiş" }}</span>
+                    </li>
+                    
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <span><i class="fas fa-calendar-alt me-2"></i> Katılma Tarihi</span>
+                        <span>{{ user_info.created_at|date:"d F Y" }}</span>
+                    </li>
+                    
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <span><i class="fas fa-users me-2"></i> Takipçi</span>
+                        <span>{{ user_info.followers }}</span>
+                    </li>
+                    
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <span><i class="fas fa-user-friends me-2"></i> Takip Edilen</span>
+                        <span>{{ user_info.following }}</span>
+                    </li>
+                    
+                    <!-- Bağlantı bilgileri -->
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <span><i class="fas fa-link me-2"></i> Bağlantı Durumu</span>
+                        <span>
+                            {% if github_profile.use_personal_oauth %}
+                            <span class="badge bg-info">Kişisel OAuth</span>
+                            {% else %}
+                            <span class="badge bg-secondary">Sistem OAuth</span>
+                            {% endif %}
+                        </span>
+                    </li>
+                    
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <span><i class="fas fa-key me-2"></i> Token Süresi</span>
+                        <span>
+                            {% if github_profile.token_expires_at %}
+                                {% if github_profile.is_token_valid %}
+                                <span class="badge bg-success">{{ github_profile.token_expires_at|date:"d F Y H:i" }}</span>
+                                {% else %}
+                                <span class="badge bg-danger">Süresi Dolmuş</span>
+                                {% endif %}
+                            {% else %}
+                                <span class="badge bg-secondary">Belirsiz</span>
+                            {% endif %}
+                        </span>
+                    </li>
+                    
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <span><i class="fas fa-sync me-2"></i> Son Senkronizasyon</span>
+                        <span>{{ github_profile.last_sync|date:"d F Y H:i"|default:"Henüz yok" }}</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6 mb-4">
+        <!-- Bağlı Projeler ve Son PR'lar -->
+        <div class="card h-100">
+            <div class="card-header">
+                <ul class="nav nav-tabs card-header-tabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <a class="nav-link active" id="linked-repos-tab" data-bs-toggle="tab" href="#linked-repos" role="tab" aria-selected="true">
+                            <i class="fas fa-link me-2"></i> Bağlı Projeler
+                        </a>
+                    </li>
+                    {% if recent_prs %}
+                    <li class="nav-item" role="presentation">
+                        <a class="nav-link" id="pull-requests-tab" data-bs-toggle="tab" href="#pull-requests" role="tab" aria-selected="false">
+                            <i class="fas fa-code-branch me-2"></i> Son Pull Request'ler
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </div>
+            <div class="card-body">
+                <div class="tab-content">
+                    <div class="tab-pane fade show active" id="linked-repos" role="tabpanel">
+                        {% if linked_repos %}
+                        <div class="list-group">
+                            {% for repo in linked_repos %}
+                            <div class="list-group-item">
+                                <div class="d-flex w-100 justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="mb-1">
+                                            <a href="{% url 'projects:project_detail' repo.project.id %}">{{ repo.project.name }}</a>
+                                        </h6>
+                                        <small class="text-muted">
+                                            <a href="{{ repo.repository_url }}" target="_blank" class="text-decoration-none">
+                                                <i class="fab fa-github"></i> {{ repo.repository_owner }}/{{ repo.repository_name }}
+                                            </a>
+                                        </small>
+                                    </div>
+                                    <div class="btn-group">
+                                        <a href="{% url 'github_integration:project_github_sync' repo.project.id %}" class="btn btn-sm btn-outline-primary" title="Senkronize Et">
+                                            <i class="fas fa-sync"></i>
+                                        </a>
+                                        <a href="{% url 'github_integration:project_github_issues_import' repo.project.id %}" class="btn btn-sm btn-outline-success" title="Issue'ları İçe Aktar">
+                                            <i class="fas fa-file-import"></i>
+                                        </a>
+                                    </div>
+                                </div>
+                                <small class="text-muted d-block mt-1">
+                                    Son Senkronizasyon: 
+                                    {% if repo.last_synced %}
+                                        {{ repo.last_synced|date:"d F Y H:i" }}
+                                    {% else %}
+                                        <span class="text-muted">Henüz yok</span>
+                                    {% endif %}
+                                </small>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <div class="text-center py-5">
+                            <img src="{% static 'images/empty-state.svg' %}" alt="Henüz bağlı repo yok" class="img-fluid mb-3" style="max-width: 150px;">
+                            <h5 class="text-muted">Henüz bağlı proje bulunmuyor</h5>
+                            <p class="text-muted mb-3">GitHub repository'lerini projelerinize bağlayarak senkronizasyon yapabilirsiniz.</p>
+                            <div class="mt-3">
+                                <div class="dropdown">
+                                    <button class="btn btn-primary dropdown-toggle" type="button" id="connectProjectDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                        <i class="fas fa-link me-1"></i> Proje Bağla
+                                    </button>
+                                    <ul class="dropdown-menu" aria-labelledby="connectProjectDropdown">
+                                        {% for project in user.managed_projects.all %}
+                                        <li><a class="dropdown-item" href="{% url 'github_integration:project_github_connect' project.id %}">{{ project.name }}</a></li>
+                                        {% empty %}
+                                        <li><span class="dropdown-item disabled">Yönettiğiniz proje bulunamadı</span></li>
+                                        {% endfor %}
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    {% if recent_prs %}
+                    <div class="tab-pane fade" id="pull-requests" role="tabpanel">
+                        <div class="list-group">
+                            {% for pr in recent_prs %}
+                            <a href="{{ pr.html_url }}" target="_blank" class="list-group-item list-group-item-action">
+                                <div class="d-flex w-100 justify-content-between align-items-center">
+                                    <h6 class="mb-1">{{ pr.title }}</h6>
+                                    <span class="badge {% if pr.state == 'open' %}bg-success{% else %}bg-secondary{% endif %}">
+                                        {{ pr.state|title }}
+                                    </span>
+                                </div>
+                                <div class="d-flex w-100 justify-content-between">
+                                    <small class="text-muted">
+                                        <i class="fas fa-code-branch me-1"></i>
+                                        {{ pr.repository.full_name }} #{{ pr.number }}
+                                    </small>
+                                    <small class="text-muted">{{ pr.updated_at|date:"d F Y" }}</small>
+                                </div>
+                            </a>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-12 mb-4">
+        <!-- GitHub Repository'leri -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">GitHub Repository'leri</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Repository</th>
+                                <th>Açıklama</th>
+                                <th>Oluşturulma Tarihi</th>
+                                <th>Son Güncelleme</th>
+                                <th>İşlemler</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for repo in repositories %}
+                            <tr>
+                                <td>
+                                    <a href="{{ repo.html_url }}" target="_blank" class="text-decoration-none">
+                                        <i class="fab fa-github"></i> {{ repo.name }}
+                                    </a>
+                                    {% if repo.private %}
+                                    <span class="badge bg-dark ms-1">Özel</span>
+                                    {% endif %}
+                                    {% if repo.fork %}
+                                    <span class="badge bg-secondary ms-1">Fork</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ repo.description|truncatechars:50|default:"Açıklama yok" }}</td>
+                                <td>{{ repo.created_at|date:"d F Y" }}</td>
+                                <td>{{ repo.updated_at|date:"d F Y" }}</td>
+                                <td>
+                                    <div class="btn-group">
+                                        <a href="{{ repo.html_url }}" class="btn btn-sm btn-outline-primary" target="_blank">
+                                            <i class="fas fa-external-link-alt"></i>
+                                        </a>
+                                        {% if not repo.fork %}
+                                        <button type="button" class="btn btn-sm btn-outline-success" 
+                                                data-bs-toggle="modal" data-bs-target="#connectRepoModal"
+                                                data-repo-name="{{ repo.name }}"
+                                                data-repo-owner="{{ repo.owner.login }}">
+                                            <i class="fas fa-link"></i>
+                                        </button>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="5" class="text-center py-4">
+                                    <div class="d-flex flex-column align-items-center">
+                                        <i class="fas fa-database fa-3x text-muted mb-3"></i>
+                                        <h5>Repository bulunamadı</h5>
+                                        <p class="text-muted">GitHub hesabınızda henüz repository bulunmuyor veya verilere erişim sağlanamadı.</p>
+                                        <a href="https://github.com/new" target="_blank" class="btn btn-primary">
+                                            <i class="fab fa-github me-2"></i> Yeni Repository Oluştur
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Repository Bağlama Modal -->
+<div class="modal fade" id="connectRepoModal" tabindex="-1" aria-labelledby="connectRepoModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="connectRepoModalLabel">Repository'yi Projeye Bağla</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i> Bu repository'yi mevcut bir projeye bağlamak için aşağıdan bir proje seçin.
+                </div>
+                
+                <form id="connectRepoForm" method="post" action="{% url 'github_integration:github_profile' %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="repository_name" id="repositoryName">
+                    <input type="hidden" name="repository_owner" id="repositoryOwner">
+                    
+                    <div class="mb-3">
+                        <label for="projectSelect" class="form-label">Proje</label>
+                        <select class="form-select" id="projectSelect" name="project_id" required>
+                            <option value="">Proje Seçin</option>
+                            {% for project in user.assigned_projects.all %}
+                            <option value="{{ project.id }}">{{ project.name }}</option>
+                            {% endfor %}
+                            {% for project in user.managed_projects.all %}
+                            <option value="{{ project.id }}">{{ project.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                <button type="button" class="btn btn-primary" onclick="document.getElementById('connectRepoForm').submit();">
+                    <i class="fas fa-link me-2"></i> Bağla
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var connectRepoModal = document.getElementById('connectRepoModal');
+        if (connectRepoModal) {
+            connectRepoModal.addEventListener('show.bs.modal', function (event) {
+                var button = event.relatedTarget;
+                var repoName = button.getAttribute('data-repo-name');
+                var repoOwner = button.getAttribute('data-repo-owner');
+                
+                document.getElementById('repositoryName').value = repoName;
+                document.getElementById('repositoryOwner').value = repoOwner;
+                document.getElementById('connectRepoModalLabel').textContent = `"${repoName}" Repository'sini Bağla`;
+            });
+        }
+    });
+</script>
+{% endblock %} 

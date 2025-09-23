@@ -1,0 +1,390 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/articles.css' %}">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/theme/monokai.min.css">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <!-- Başlık -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="h3 mb-0">
+                        <i class="fas fa-edit text-primary"></i> {{ title }}
+                    </h1>
+                    <p class="text-muted mb-0">Markdown formatında makale yazın</p>
+                </div>
+                <div>
+                    <a href="{% url 'articles:article_list' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left"></i> Geri Dön
+                    </a>
+                </div>
+            </div>
+
+            <!-- Makale Formu -->
+            <div class="row">
+                <div class="col-lg-8">
+                    <div class="card">
+                        <div class="card-body">
+                            <form method="post" enctype="multipart/form-data" id="articleForm" action="{% if article %}{% url 'articles:article_update' article.slug %}{% else %}{% url 'articles:article_create' %}{% endif %}">
+                                {% csrf_token %}
+                                
+                                <!-- Başlık -->
+                                <div class="mb-3">
+                                    <label for="{{ form.title.id_for_label }}" class="form-label">
+                                        <i class="fas fa-heading"></i> Başlık *
+                                    </label>
+                                    {{ form.title }}
+                                    {% if form.title.errors %}
+                                    <div class="text-danger small mt-1">
+                                        {% for error in form.title.errors %}
+                                        <div>{{ error }}</div>
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+
+                                <!-- Kategori -->
+                                <div class="mb-3">
+                                    <label for="{{ form.category.id_for_label }}" class="form-label">
+                                        <i class="fas fa-folder"></i> Kategori *
+                                    </label>
+                                    {{ form.category }}
+                                    {% if form.category.errors %}
+                                    <div class="text-danger small mt-1">
+                                        {% for error in form.category.errors %}
+                                        <div>{{ error }}</div>
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+
+                                <!-- Etiketler -->
+                                <div class="mb-3">
+                                    <label for="{{ form.tags.id_for_label }}" class="form-label">
+                                        <i class="fas fa-tags"></i> Etiketler
+                                    </label>
+                                    {{ form.tags }}
+                                    <div class="form-text">Virgülle ayırın: linux, ubuntu, kurulum</div>
+                                    {% if form.tags.errors %}
+                                    <div class="text-danger small mt-1">
+                                        {% for error in form.tags.errors %}
+                                        <div>{{ error }}</div>
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+
+                                <!-- Özet -->
+                                <div class="mb-3">
+                                    <label for="{{ form.excerpt.id_for_label }}" class="form-label">
+                                        <i class="fas fa-align-left"></i> Özet
+                                    </label>
+                                    {{ form.excerpt }}
+                                    <div class="form-text">Makale özeti (opsiyonel)</div>
+                                    {% if form.excerpt.errors %}
+                                    <div class="text-danger small mt-1">
+                                        {% for error in form.excerpt.errors %}
+                                        <div>{{ error }}</div>
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+
+                                <!-- İçerik -->
+                                <div class="mb-3">
+                                    <label for="{{ form.content.id_for_label }}" class="form-label">
+                                        <i class="fas fa-file-alt"></i> İçerik (Markdown) *
+                                    </label>
+                                    <div class="markdown-editor-container">
+                                        <div class="editor-toolbar">
+                                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="insertMarkdown('**', '**')" title="Kalın">
+                                                <i class="fas fa-bold"></i>
+                                            </button>
+                                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="insertMarkdown('*', '*')" title="İtalik">
+                                                <i class="fas fa-italic"></i>
+                                            </button>
+                                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="insertMarkdown('`', '`')" title="Kod">
+                                                <i class="fas fa-code"></i>
+                                            </button>
+                                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="insertMarkdown('```\n', '\n```')" title="Kod Bloğu">
+                                                <i class="fas fa-terminal"></i>
+                                            </button>
+                                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="insertMarkdown('# ', '')" title="Başlık">
+                                                <i class="fas fa-heading"></i>
+                                            </button>
+                                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="insertMarkdown('- ', '')" title="Liste">
+                                                <i class="fas fa-list"></i>
+                                            </button>
+                                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="insertMarkdown('[', '](url)')" title="Link">
+                                                <i class="fas fa-link"></i>
+                                            </button>
+                                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="insertMarkdown('![', '](url)')" title="Resim">
+                                                <i class="fas fa-image"></i>
+                                            </button>
+                                        </div>
+                                        {{ form.content }}
+                                    </div>
+                                    {% if form.content.errors %}
+                                    <div class="text-danger small mt-1">
+                                        {% for error in form.content.errors %}
+                                        <div>{{ error }}</div>
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+
+                                <!-- Öne Çıkan Görsel -->
+                                {% if is_admin %}
+                                <div class="mb-3">
+                                    <label for="{{ form.featured_image.id_for_label }}" class="form-label">
+                                        <i class="fas fa-image"></i> Öne Çıkan Görsel
+                                    </label>
+                                    {{ form.featured_image }}
+                                    {% if form.featured_image.errors %}
+                                    <div class="text-danger small mt-1">
+                                        {% for error in form.featured_image.errors %}
+                                        <div>{{ error }}</div>
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                {% endif %}
+
+                                <!-- Durum -->
+                                {% if is_admin %}
+                                <div class="mb-3">
+                                    <label for="{{ form.status.id_for_label }}" class="form-label">
+                                        <i class="fas fa-flag"></i> Durum
+                                    </label>
+                                    {{ form.status }}
+                                    {% if form.status.errors %}
+                                    <div class="text-danger small mt-1">
+                                        {% for error in form.status.errors %}
+                                        <div>{{ error }}</div>
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                {% endif %}
+
+                                <!-- Öne Çıkan -->
+                                {% if is_admin %}
+                                <div class="mb-3">
+                                    <div class="form-check">
+                                        {{ form.is_featured }}
+                                        <label class="form-check-label" for="{{ form.is_featured.id_for_label }}">
+                                            <i class="fas fa-star"></i> Öne Çıkan Makale
+                                        </label>
+                                    </div>
+                                    {% if form.is_featured.errors %}
+                                    <div class="text-danger small mt-1">
+                                        {% for error in form.is_featured.errors %}
+                                        <div>{{ error }}</div>
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                {% endif %}
+
+                                <!-- Form Butonları -->
+                                <div class="d-flex justify-content-between">
+                                    <a href="{% url 'articles:article_list' %}" class="btn btn-outline-secondary">
+                                        <i class="fas fa-times"></i> İptal
+                                    </a>
+                                    <div>
+                                        <button type="button" class="btn btn-outline-info me-2" onclick="previewMarkdown()">
+                                            <i class="fas fa-eye"></i> Önizleme
+                                        </button>
+                                        <button type="submit" class="btn btn-primary">
+                                            <i class="fas fa-save"></i> Kaydet
+                                        </button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sidebar -->
+                <div class="col-lg-4">
+                    <!-- Markdown Yardımı -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h6 class="mb-0"><i class="fas fa-question-circle"></i> Markdown Yardımı</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="markdown-help">
+                                <div class="mb-2">
+                                    <code>**kalın**</code> → <strong>kalın</strong>
+                                </div>
+                                <div class="mb-2">
+                                    <code>*italik*</code> → <em>italik</em>
+                                </div>
+                                <div class="mb-2">
+                                    <code>`kod`</code> → <code>kod</code>
+                                </div>
+                                <div class="mb-2">
+                                    <code># Başlık</code> → <h6>Başlık</h6>
+                                </div>
+                                <div class="mb-2">
+                                    <code>- Liste</code> → • Liste
+                                </div>
+                                <div class="mb-2">
+                                    <code>[Link](url)</code> → <a href="#">Link</a>
+                                </div>
+                                <div class="mb-2">
+                                    <code>![Resim](url)</code> → Resim
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Makale İpuçları -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h6 class="mb-0"><i class="fas fa-lightbulb"></i> İpuçları</h6>
+                        </div>
+                        <div class="card-body">
+                            <ul class="list-unstyled small">
+                                <li class="mb-2">
+                                    <i class="fas fa-check text-success"></i> 
+                                    Başlık açıklayıcı ve çekici olsun
+                                </li>
+                                <li class="mb-2">
+                                    <i class="fas fa-check text-success"></i> 
+                                    Etiketleri virgülle ayırın
+                                </li>
+                                <li class="mb-2">
+                                    <i class="fas fa-check text-success"></i> 
+                                    Kod blokları için ``` kullanın
+                                </li>
+                                <li class="mb-2">
+                                    <i class="fas fa-check text-success"></i> 
+                                    Başlıklar için # kullanın
+                                </li>
+                                <li class="mb-2">
+                                    <i class="fas fa-check text-success"></i> 
+                                    Özet kısa ve öz olsun
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Önizleme Modal -->
+<div class="modal fade" id="previewModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Markdown Önizleme</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="previewContent"></div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/articles.js' %}"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/markdown/markdown.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/4.3.0/marked.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // CodeMirror editor
+    const textarea = document.getElementById('{{ form.content.id_for_label }}');
+    if (textarea) {
+        const editor = CodeMirror.fromTextArea(textarea, {
+            mode: 'markdown',
+            theme: 'monokai',
+            lineNumbers: true,
+            lineWrapping: true,
+            indentUnit: 2,
+            tabSize: 2,
+            autofocus: true
+        });
+        
+        // Editor boyutunu ayarla
+        editor.setSize('100%', '400px');
+        
+                 // Global editor referansı
+         window.markdownEditor = editor;
+         
+         // Form submit edilmeden önce textarea'yı güncelle
+         const form = document.getElementById('articleForm');
+         if (form) {
+             form.addEventListener('submit', function(e) {
+                 // Editor içeriğini textarea'ya kaydet
+                 editor.save();
+                 
+                 // İçerik kontrolü
+                 const content = editor.getValue().trim();
+                 if (!content) {
+                     e.preventDefault();
+                     alert('Lütfen makale içeriğini girin.');
+                     editor.focus();
+                     return false;
+                 }
+                 
+                 // Başlık kontrolü
+                 const title = document.getElementById('id_title').value.trim();
+                 if (!title) {
+                     e.preventDefault();
+                     alert('Lütfen makale başlığını girin.');
+                     document.getElementById('id_title').focus();
+                     return false;
+                 }
+             });
+         }
+     }
+ });
+
+// Markdown ekleme fonksiyonu
+function insertMarkdown(before, after) {
+    if (window.markdownEditor) {
+        const cursor = window.markdownEditor.getCursor();
+        const selection = window.markdownEditor.getSelection();
+        
+        if (selection) {
+            window.markdownEditor.replaceSelection(before + selection + after);
+        } else {
+            window.markdownEditor.replaceRange(before + after, cursor);
+            window.markdownEditor.setCursor(cursor.line, cursor.ch + before.length);
+        }
+        window.markdownEditor.focus();
+    }
+}
+
+// Önizleme fonksiyonu
+function previewMarkdown() {
+    if (window.markdownEditor) {
+        const content = window.markdownEditor.getValue();
+        const previewContent = document.getElementById('previewContent');
+        
+        if (content.trim()) {
+            previewContent.innerHTML = marked.parse(content);
+        } else {
+            previewContent.innerHTML = '<p class="text-muted">Önizleme için içerik girin...</p>';
+        }
+        
+        const modal = new bootstrap.Modal(document.getElementById('previewModal'));
+        modal.show();
+    }
+}
+</script>
+{% endblock %}

@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+
+{% block title %}Zaman Ekle - {{ task.title }} | GlichFlow{% endblock %}
+
+{% block page_title %}Zaman Ekle{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'projects:project_list' %}">Projeler</a></li>
+<li class="breadcrumb-item"><a href="{% url 'projects:project_detail' task.project.id %}">{{ task.project.name }}</a></li>
+<li class="breadcrumb-item"><a href="{% url 'tasks:task_detail' task.id %}">{{ task.title }}</a></li>
+<li class="breadcrumb-item active">Zaman Ekle</li>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-6 mx-auto">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-clock me-2"></i> Zaman Kaydı Ekle
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="mb-3">
+                        <label for="date" class="form-label">Tarih *</label>
+                        <input type="date" class="form-control" id="date" name="date" value="{{ now|date:'Y-m-d' }}" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="hours" class="form-label">Süre (Saat) *</label>
+                        <input type="number" class="form-control" id="hours" name="hours" step="0.25" min="0.25" required>
+                        <div class="form-text">
+                            15 dakika = 0.25 saat, 30 dakika = 0.5 saat, 45 dakika = 0.75 saat
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label for="description" class="form-label">Açıklama</label>
+                        <textarea class="form-control" id="description" name="description" rows="3" placeholder="Bu süre içinde ne yaptığınızı kısaca açıklayın..."></textarea>
+                    </div>
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{% url 'tasks:task_detail' task.id %}" class="btn btn-secondary me-md-2">
+                            <i class="fas fa-times me-1"></i> İptal
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-1"></i> Kaydet
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

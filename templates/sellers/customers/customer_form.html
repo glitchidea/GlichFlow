@@ -1,0 +1,264 @@
+{% extends 'sellers/base_seller.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block page_title %}
+    {% if customer %}Müşteri Düzenle{% else %}Yeni Müşteri{% endif %}
+{% endblock %}
+
+{% block page_description %}
+    {% if customer %}Müşteri bilgilerini güncelleyin{% else %}Yeni müşteri ekleyin{% endif %}
+{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item">
+    <a href="{% url 'sellers:customer_list' %}">Müşteriler</a>
+</li>
+{% if customer %}
+<li class="breadcrumb-item">
+    <a href="{% url 'sellers:customer_detail' customer.pk %}">{{ customer.display_name }}</a>
+</li>
+<li class="breadcrumb-item active">Düzenle</li>
+{% else %}
+<li class="breadcrumb-item active">Yeni Müşteri</li>
+{% endif %}
+{% endblock %}
+
+{% block page_actions %}
+{% if customer %}
+<div class="btn-group">
+    <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal">
+        <i class="fas fa-trash"></i> Müşteriyi Sil
+    </button>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block seller_content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    {% if customer %}Müşteri Düzenle{% else %}Yeni Müşteri Ekle{% endif %}
+                </h6>
+            </div>
+            <div class="card-body">
+                <form method="post" id="customerForm">
+                    {% csrf_token %}
+                    
+                    <!-- Müşteri Türü -->
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="{{ form.customer_type.id_for_label }}" class="form-label">
+                                {{ form.customer_type.label }}
+                            </label>
+                            {{ form.customer_type }}
+                            {% if form.customer_type.errors %}
+                                <div class="text-danger">{{ form.customer_type.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Bireysel Müşteri Alanları -->
+                    <div id="individualFields" class="individual-fields" style="display: none;">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="{{ form.first_name.id_for_label }}" class="form-label">
+                                    {{ form.first_name.label }} <span class="text-danger">*</span>
+                                </label>
+                                {{ form.first_name }}
+                                {% if form.first_name.errors %}
+                                    <div class="text-danger">{{ form.first_name.errors }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <label for="{{ form.last_name.id_for_label }}" class="form-label">
+                                    {{ form.last_name.label }} <span class="text-danger">*</span>
+                                </label>
+                                {{ form.last_name }}
+                                {% if form.last_name.errors %}
+                                    <div class="text-danger">{{ form.last_name.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Şirket Alanları -->
+                    <div id="companyFields" class="company-fields" style="display: none;">
+                        <div class="row mb-3">
+                            <div class="col-md-8">
+                                <label for="{{ form.company_name.id_for_label }}" class="form-label">
+                                    {{ form.company_name.label }} <span class="text-danger">*</span>
+                                </label>
+                                {{ form.company_name }}
+                                {% if form.company_name.errors %}
+                                    <div class="text-danger">{{ form.company_name.errors }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-4">
+                                <label for="{{ form.tax_number.id_for_label }}" class="form-label">
+                                    {{ form.tax_number.label }}
+                                </label>
+                                {{ form.tax_number }}
+                                {% if form.tax_number.errors %}
+                                    <div class="text-danger">{{ form.tax_number.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- İletişim Bilgileri -->
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="{{ form.email.id_for_label }}" class="form-label">
+                                {{ form.email.label }} <span class="text-danger">*</span>
+                            </label>
+                            {{ form.email }}
+                            {% if form.email.errors %}
+                                <div class="text-danger">{{ form.email.errors }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <label for="{{ form.phone.id_for_label }}" class="form-label">
+                                {{ form.phone.label }}
+                            </label>
+                            {{ form.phone }}
+                            {% if form.phone.errors %}
+                                <div class="text-danger">{{ form.phone.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Adres Bilgileri -->
+                    <div class="row mb-3">
+                        <div class="col-12">
+                            <label for="{{ form.address.id_for_label }}" class="form-label">
+                                {{ form.address.label }}
+                            </label>
+                            {{ form.address }}
+                            {% if form.address.errors %}
+                                <div class="text-danger">{{ form.address.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="{{ form.city.id_for_label }}" class="form-label">
+                                {{ form.city.label }}
+                            </label>
+                            {{ form.city }}
+                            {% if form.city.errors %}
+                                <div class="text-danger">{{ form.city.errors }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <label for="{{ form.country.id_for_label }}" class="form-label">
+                                {{ form.country.label }}
+                            </label>
+                            {{ form.country }}
+                            {% if form.country.errors %}
+                                <div class="text-danger">{{ form.country.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Notlar -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <label for="{{ form.notes.id_for_label }}" class="form-label">
+                                {{ form.notes.label }}
+                            </label>
+                            {{ form.notes }}
+                            {% if form.notes.errors %}
+                                <div class="text-danger">{{ form.notes.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Form Hataları -->
+                    {% if form.non_field_errors %}
+                        <div class="alert alert-danger">
+                            {{ form.non_field_errors }}
+                        </div>
+                    {% endif %}
+
+                    <!-- Butonlar -->
+                    <div class="d-flex justify-content-end">
+                        <a href="{% if customer %}{% url 'sellers:customer_detail' customer.pk %}{% else %}{% url 'sellers:customer_list' %}{% endif %}" 
+                           class="btn btn-secondary me-2">
+                            <i class="fas fa-times"></i> İptal
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> 
+                            {% if customer %}Güncelle{% else %}Kaydet{% endif %}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block seller_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const customerTypeSelect = document.getElementById('{{ form.customer_type.id_for_label }}');
+    const individualFields = document.getElementById('individualFields');
+    const companyFields = document.getElementById('companyFields');
+    
+    function toggleFields() {
+        const value = customerTypeSelect.value;
+        
+        if (value === 'individual') {
+            individualFields.style.display = 'block';
+            companyFields.style.display = 'none';
+        } else if (value === 'company') {
+            individualFields.style.display = 'none';
+            companyFields.style.display = 'block';
+        } else {
+            individualFields.style.display = 'none';
+            companyFields.style.display = 'none';
+        }
+    }
+    
+    // İlk yüklemede alanları göster
+    toggleFields();
+    
+    // Müşteri türü değiştiğinde alanları güncelle
+    customerTypeSelect.addEventListener('change', toggleFields);
+});
+</script>
+
+<!-- Müşteri Silme Modal -->
+{% if customer %}
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteModalLabel">Müşteri Sil</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p><strong>{{ customer.display_name }}</strong> müşterisini silmek istediğinizden emin misiniz?</p>
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <strong>Dikkat:</strong> Bu işlem geri alınamaz. Müşteriye bağlı tüm projeler de silinecektir.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                <form method="post" action="{% url 'sellers:delete_customer' customer.pk %}" style="display: inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash"></i> Sil
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

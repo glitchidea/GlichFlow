@@ -1,0 +1,110 @@
+{% extends 'sellers/base_seller.html' %}
+{% load static %}
+
+{% block title %}Ödeme Makbuzu Sil - {{ payment_receipt.sale.project_name }}{% endblock %}
+
+{% block page_header %}
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">Ödeme Makbuzu Sil</h1>
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'sellers:index' %}">Ana Sayfa</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'sellers:sale_list' %}">Projeler</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'sellers:sale_detail' payment_receipt.sale.pk %}">{{ payment_receipt.sale.project_name }}</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Makbuz Sil</li>
+        </ol>
+    </nav>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3 bg-danger text-white">
+                <h6 class="m-0 font-weight-bold">
+                    <i class="fas fa-exclamation-triangle"></i> Ödeme Makbuzu Silme Onayı
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <strong>Dikkat:</strong> Bu işlem geri alınamaz. Ödeme makbuzu ve ilgili dosya kalıcı olarak silinecektir.
+                </div>
+                
+                <h5 class="mb-3">Silinecek Makbuz Bilgileri:</h5>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <strong>Makbuz Numarası:</strong><br>
+                            {{ payment_receipt.receipt_number }}
+                        </div>
+                        <div class="mb-3">
+                            <strong>Ödeme Türü:</strong><br>
+                            <span class="badge badge-info">{{ payment_receipt.get_payment_type_display }}</span>
+                        </div>
+                        <div class="mb-3">
+                            <strong>Ödeme Tarihi:</strong><br>
+                            {{ payment_receipt.payment_date|date:"d.m.Y" }}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <strong>Tutar:</strong><br>
+                            <h5 class="text-success">{{ payment_receipt.amount|floatformat:2 }} ₺</h5>
+                        </div>
+                        <div class="mb-3">
+                            <strong>Ödeme Yöntemi:</strong><br>
+                            {{ payment_receipt.payment_method }}
+                        </div>
+                        <div class="mb-3">
+                            <strong>Durum:</strong><br>
+                            {% if payment_receipt.status == 'completed' %}
+                                <span class="badge badge-success">Tamamlandı</span>
+                            {% elif payment_receipt.status == 'pending' %}
+                                <span class="badge badge-warning">Beklemede</span>
+                            {% elif payment_receipt.status == 'failed' %}
+                                <span class="badge badge-danger">Başarısız</span>
+                            {% else %}
+                                <span class="badge badge-secondary">{{ payment_receipt.get_status_display }}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                {% if payment_receipt.description %}
+                <div class="mb-3">
+                    <strong>Açıklama:</strong><br>
+                    {{ payment_receipt.description }}
+                </div>
+                {% endif %}
+                
+                {% if payment_receipt.notes %}
+                <div class="mb-3">
+                    <strong>Notlar:</strong><br>
+                    {{ payment_receipt.notes }}
+                </div>
+                {% endif %}
+                
+                <div class="mb-3">
+                    <strong>Proje:</strong><br>
+                    {{ payment_receipt.sale.project_name }} - {{ payment_receipt.sale.customer.display_name }}
+                </div>
+                
+                <hr>
+                
+                <form method="post" class="d-inline">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash"></i> Evet, Makbuzu Sil
+                    </button>
+                </form>
+                <a href="{% url 'sellers:sale_detail' payment_receipt.sale.pk %}" class="btn btn-secondary">
+                    <i class="fas fa-times"></i> İptal
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

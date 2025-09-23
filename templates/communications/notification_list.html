@@ -1,0 +1,153 @@
+{% extends 'base.html' %}
+{% load i18n %}
+
+{% block title %}{{ title }} | GlichFlow{% endblock %}
+
+{% block page_title %}{{ title }}{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item active">Bildirimler</li>
+{% endblock %}
+
+{% block page_actions %}
+<form action="{% url 'communications:mark_all_notifications_as_read' %}" method="post" class="d-inline">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-secondary" {% if not unread_count %}disabled{% endif %}>
+        <i class="fas fa-check-double"></i> Tümünü Okundu İşaretle
+    </button>
+</form>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Tüm Bildirimler</h5>
+                    {% if unread_count %}
+                    <span class="badge bg-danger">{{ unread_count }} okunmamış</span>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="card-body p-0">
+                {% if notifications_page %}
+                <div class="list-group list-group-flush">
+                    {% for notification in notifications_page %}
+                    <a href="{% url 'communications:notification_detail' notification_id=notification.id %}" 
+                       class="list-group-item list-group-item-action {% if not notification.is_read %}list-group-item-light border-start border-5 border-{{ notification.notification_type }}{% endif %}">
+                        <div class="d-flex">
+                            <div class="notification-icon me-3">
+                                {% if notification.notification_type == 'info' %}
+                                <span class="badge bg-info text-white rounded-circle p-2"><i class="fas fa-info"></i></span>
+                                {% elif notification.notification_type == 'success' %}
+                                <span class="badge bg-success text-white rounded-circle p-2"><i class="fas fa-check"></i></span>
+                                {% elif notification.notification_type == 'warning' %}
+                                <span class="badge bg-warning text-white rounded-circle p-2"><i class="fas fa-exclamation"></i></span>
+                                {% elif notification.notification_type == 'error' %}
+                                <span class="badge bg-danger text-white rounded-circle p-2"><i class="fas fa-times"></i></span>
+                                {% endif %}
+                            </div>
+                            <div class="flex-grow-1">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h6 class="mb-1">{{ notification.title }}</h6>
+                                    <small class="text-muted">{{ notification.created_at|timesince }} önce</small>
+                                </div>
+                                <p class="mb-1">{{ notification.content }}</p>
+                                <small class="text-muted">
+                                    {% if notification.sender %}
+                                    Gönderen: {{ notification.sender.get_full_name|default:notification.sender.username }}
+                                    {% endif %}
+                                    
+                                    {% if notification.related_project %}
+                                    • Proje: {{ notification.related_project.title }}
+                                    {% endif %}
+                                    
+                                    {% if notification.related_task %}
+                                    • Görev: {{ notification.related_task.title }}
+                                    {% endif %}
+                                </small>
+                            </div>
+                            {% if not notification.is_read %}
+                            <div class="ms-2 align-self-center">
+                                <span class="badge bg-{{ notification.notification_type }} rounded-pill">Yeni</span>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </a>
+                    {% endfor %}
+                </div>
+                
+                {% if notifications_page.has_other_pages %}
+                <div class="card-footer">
+                    <nav aria-label="Bildirim sayfaları">
+                        <ul class="pagination justify-content-center mb-0">
+                            {% if notifications_page.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page=1" aria-label="İlk">
+                                    <span aria-hidden="true">&laquo;&laquo;</span>
+                                </a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ notifications_page.previous_page_number }}" aria-label="Önceki">
+                                    <span aria-hidden="true">&laquo;</span>
+                                </a>
+                            </li>
+                            {% endif %}
+                            
+                            {% for num in notifications_page.paginator.page_range %}
+                                {% if notifications_page.number == num %}
+                                <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                                {% elif num > notifications_page.number|add:'-3' and num < notifications_page.number|add:'3' %}
+                                <li class="page-item"><a class="page-link" href="?page={{ num }}">{{ num }}</a></li>
+                                {% endif %}
+                            {% endfor %}
+                            
+                            {% if notifications_page.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ notifications_page.next_page_number }}" aria-label="Sonraki">
+                                    <span aria-hidden="true">&raquo;</span>
+                                </a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ notifications_page.paginator.num_pages }}" aria-label="Son">
+                                    <span aria-hidden="true">&raquo;&raquo;</span>
+                                </a>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                </div>
+                {% endif %}
+                
+                {% else %}
+                <div class="text-center p-4">
+                    <i class="fas fa-bell fa-3x text-muted mb-3"></i>
+                    <p class="lead">Henüz hiç bildiriminiz yok.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .border-info { border-color: #0dcaf0 !important; }
+    .border-success { border-color: #198754 !important; }
+    .border-warning { border-color: #ffc107 !important; }
+    .border-error { border-color: #dc3545 !important; }
+    
+    .notification-icon {
+        width: 32px;
+        text-align: center;
+    }
+    
+    .notification-icon .badge {
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+</style>
+{% endblock %} 

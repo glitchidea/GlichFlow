@@ -1,0 +1,286 @@
+{% extends 'sellers/base_seller.html' %}
+{% load static %}
+
+{% block page_title %}Satış Dashboard{% endblock %}
+{% block page_description %}Satış performansınızı ve istatistiklerinizi görüntüleyin{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item active">Dashboard</li>
+{% endblock %}
+
+{% block page_actions %}
+<a href="{% url 'sellers:sale_create' %}" class="btn btn-primary">
+    <i class="fas fa-plus"></i> Yeni Satış
+</a>
+{% endblock %}
+
+{% block seller_content %}
+<!-- İstatistik Kartları -->
+<div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-primary shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                            Toplam Müşteri
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_customers }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-users fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-success shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                            Toplam Proje
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_projects }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-project-diagram fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-info shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                            Aktif Projeler
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ active_projects }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-tasks fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-warning shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                            Bu Ay Gelir
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ monthly_revenue|floatformat:2 }} ₺</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-dollar-sign fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+                <div class="row mt-2">
+                    <div class="col-12 text-end">
+                        <a href="{% url 'sellers:revenue_report' %}" class="btn btn-sm btn-outline-warning">
+                            <i class="fas fa-chart-line"></i> Tamamını Gör
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Son Projeler -->
+    <div class="col-lg-8 mb-4">
+        <div class="card shadow">
+            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                <h6 class="m-0 font-weight-bold text-primary">Son Projeler</h6>
+                <a href="{% url 'sellers:sale_list' %}" class="btn btn-sm btn-primary">Tümünü Gör</a>
+            </div>
+            <div class="card-body">
+                {% if recent_projects %}
+                    <div class="table-responsive">
+                        <table class="table table-bordered" width="100%" cellspacing="0">
+                            <thead>
+                                <tr>
+                                    <th>Proje Adı</th>
+                                    <th>Müşteri</th>
+                                    <th>Durum</th>
+                                    <th>Fiyat</th>
+                                    <th>Tarih</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for project in recent_projects %}
+                                <tr>
+                                    <td>
+                                        <a href="{% url 'sellers:sale_detail' project.pk %}">
+                                            {{ project.project_name }}
+                                        </a>
+                                    </td>
+                                    <td>{{ project.customer.display_name }}</td>
+                                    <td>
+                                        <span class="badge badge-{{ project.status|default:'secondary' }}">
+                                            {{ project.get_status_display }}
+                                        </span>
+                                    </td>
+                                    <td>{{ project.final_price|floatformat:2 }} ₺</td>
+                                    <td>{{ project.created_at|date:"d.m.Y" }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-project-diagram fa-3x text-gray-300 mb-3"></i>
+                        <p class="text-muted">Henüz proje bulunmuyor.</p>
+                        <a href="{% url 'sellers:sale_create' %}" class="btn btn-primary">
+                            <i class="fas fa-plus"></i> İlk Projeyi Oluştur
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Müşteri Dağılımı -->
+    <div class="col-lg-4 mb-4">
+        <div class="card shadow">
+            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                <h6 class="m-0 font-weight-bold text-primary">Müşteri Dağılımı</h6>
+                <a href="{% url 'sellers:customer_list' %}" class="btn btn-sm btn-primary">Tümünü Gör</a>
+            </div>
+            <div class="card-body">
+                {% if customer_stats %}
+                    <div class="chart-pie pt-4 pb-2">
+                        <canvas id="customerChart"></canvas>
+                    </div>
+                    <div class="mt-4 text-center small">
+                        {% for stat in customer_stats %}
+                        <span class="mr-2">
+                            <i class="fas fa-circle text-{{ stat.customer_type|default:'primary' }}"></i>
+                            {{ stat.customer_type|default:'Bilinmeyen' }}: {{ stat.count }}
+                        </span>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-users fa-3x text-gray-300 mb-3"></i>
+                        <p class="text-muted">Henüz müşteri bulunmuyor.</p>
+                        <a href="{% url 'sellers:customer_create' %}" class="btn btn-primary">
+                            <i class="fas fa-plus"></i> İlk Müşteriyi Ekle
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Hızlı İşlemler -->
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Hızlı İşlemler</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <a href="{% url 'sellers:customer_create' %}" class="btn btn-outline-primary btn-block">
+                            <i class="fas fa-user-plus"></i><br>
+                            Yeni Müşteri
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <a href="{% url 'sellers:sale_create' %}" class="btn btn-outline-success btn-block">
+                            <i class="fas fa-plus"></i><br>
+                            Yeni Satış
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <a href="{% url 'sellers:customer_list' %}" class="btn btn-outline-info btn-block">
+                            <i class="fas fa-users"></i><br>
+                            Müşteriler
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <a href="{% url 'sellers:sale_list' %}" class="btn btn-outline-warning btn-block">
+                            <i class="fas fa-list"></i><br>
+                            Tüm Satışlar
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block seller_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// Müşteri dağılımı grafiği
+{% if customer_stats %}
+const ctx = document.getElementById('customerChart').getContext('2d');
+const customerChart = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+        labels: [
+            {% for stat in customer_stats %}
+            '{{ stat.customer_type|default:"Bilinmeyen" }}',
+            {% endfor %}
+        ],
+        datasets: [{
+            data: [
+                {% for stat in customer_stats %}
+                {{ stat.count }},
+                {% endfor %}
+            ],
+            backgroundColor: [
+                '#4e73df',
+                '#1cc88a',
+                '#36b9cc',
+                '#f6c23e',
+                '#e74a3b'
+            ],
+            hoverBackgroundColor: [
+                '#2e59d9',
+                '#17a673',
+                '#2c9faf',
+                '#dda20a',
+                '#be2617'
+            ],
+            hoverBorderColor: "rgba(234, 236, 244, 1)",
+        }],
+    },
+    options: {
+        maintainAspectRatio: false,
+        tooltips: {
+            backgroundColor: "rgb(255,255,255)",
+            bodyFontColor: "#858796",
+            borderColor: '#dddfeb',
+            borderWidth: 1,
+            xPadding: 15,
+            yPadding: 15,
+            displayColors: false,
+            caretPadding: 10,
+        },
+        legend: {
+            display: false
+        },
+        cutoutPercentage: 80,
+    },
+});
+{% endif %}
+</script>
+{% endblock %}

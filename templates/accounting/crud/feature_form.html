@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+
+{% block page_title %}Paket Özelliği{% endblock %}
+
+{% block content %}
+<div class="row">
+  <div class="col-12 col-lg-6">
+    <div class="card">
+      <div class="card-header"><strong>Paket Özelliği</strong></div>
+      <div class="card-body">
+        <form method="post">
+          {% csrf_token %}
+          {{ form.as_p }}
+          <div class="d-flex gap-2">
+            <button class="btn btn-primary" type="submit">Kaydet</button>
+            <a class="btn btn-secondary" href="{% url 'accounting:package_manager' %}">İptal</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+

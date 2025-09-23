@@ -1,0 +1,104 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}GitHub Hesabınızı Bağlayın{% endblock %}
+
+{% block page_title %}GitHub Hesabınızı Bağlayın{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'dashboard:index' %}">Dashboard</a></li>
+<li class="breadcrumb-item active">GitHub Hesabı Bağla</li>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">GitHub Hesabınızı Bağlayın</h5>
+            </div>
+            <div class="card-body">
+                <div class="text-center mb-4">
+                    <i class="fab fa-github fa-5x mb-3 text-dark"></i>
+                    <h4>GitHub Entegrasyonu</h4>
+                    <p class="text-muted">
+                        GitHub hesabınızı bağlayarak projelerinizi ve görevlerinizi GitHub ile senkronize edebilirsiniz.
+                        Bu sayede, projelerinizin kod deposunu yönetebilir ve görevlerinizi GitHub issue'ları olarak izleyebilirsiniz.
+                    </p>
+                </div>
+                
+                <div class="alert alert-info mb-4">
+                    <h5 class="alert-heading"><i class="fas fa-info-circle me-2"></i> Bağlantı Seçenekleri</h5>
+                    <p>
+                        GitHub hesabınızı bağlamak için iki seçeneğiniz var:
+                    </p>
+                    <ol class="mb-0">
+                        <li>
+                            <strong>Hızlı Bağlantı:</strong> Doğrudan "GitHub ile Devam Et" butonuna tıklayarak varsayılan OAuth ayarlarıyla bağlanabilirsiniz.
+                        </li>
+                        <li>
+                            <strong>Kişisel OAuth:</strong> <a href="{% url 'github_integration:github_oauth_settings' %}">OAuth Ayarları</a> sayfasından kendi GitHub OAuth uygulamanızı oluşturabilir ve tam kontrol sağlayabilirsiniz.
+                        </li>
+                    </ol>
+                </div>
+                
+                <div class="mb-4">
+                    <h5>GitHub Entegrasyonu ile:</h5>
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item">
+                            <i class="fas fa-check-circle text-success me-2"></i>
+                            Projelerinizi GitHub repository'leri ile ilişkilendirebilirsiniz
+                        </li>
+                        <li class="list-group-item">
+                            <i class="fas fa-check-circle text-success me-2"></i>
+                            Görevleri GitHub issue'larına dönüştürebilirsiniz
+                        </li>
+                        <li class="list-group-item">
+                            <i class="fas fa-check-circle text-success me-2"></i>
+                            GitHub'daki issue'ları görev olarak içe aktarabilirsiniz
+                        </li>
+                        <li class="list-group-item">
+                            <i class="fas fa-check-circle text-success me-2"></i>
+                            Görev durumlarını otomatik olarak senkronize edebilirsiniz
+                        </li>
+                    </ul>
+                </div>
+                
+                {% if not system_oauth_ready %}
+                <div class="alert alert-warning mb-4">
+                    <h5 class="alert-heading"><i class="fas fa-exclamation-triangle me-2"></i> Kişisel GitHub OAuth Gerekiyor</h5>
+                    <p>
+                        Sistem genelinde GitHub OAuth bilgileri yapılandırılmamış. Devam etmek için kendinize ait OAuth bilgilerini girmeniz gerekiyor.
+                    </p>
+                    <hr>
+                    <p class="mb-0">
+                        <a href="{% url 'github_integration:github_oauth_settings' %}" class="btn btn-outline-dark">
+                            <i class="fas fa-cog me-2"></i> OAuth Ayarlarınızı Yapılandırın
+                        </a>
+                    </p>
+                </div>
+                {% endif %}
+                
+                <form method="post">
+                    {% csrf_token %}
+                    {{ form|crispy }}
+                    <div class="text-center">
+                        <button type="submit" class="btn btn-dark btn-lg" {% if not system_oauth_ready and not has_personal_oauth %}disabled{% endif %}>
+                            <i class="fab fa-github me-2"></i> GitHub ile Devam Et
+                        </button>
+                        
+                        {% if not system_oauth_ready and not has_personal_oauth %}
+                        <div class="text-muted mt-2 small">
+                            <i class="fas fa-info-circle me-1"></i> Devam etmek için önce <a href="{% url 'github_integration:github_oauth_settings' %}">GitHub OAuth ayarlarınızı</a> yapılandırmanız gerekiyor.
+                        </div>
+                        {% endif %}
+                    </div>
+                    <p class="text-muted text-center mt-3 small">
+                        <i class="fas fa-lock me-1"></i> GitHub hesap bilgileriniz güvenli bir şekilde saklanır ve sadece sizin yetkilendirdiğiniz işlemler için kullanılır.
+                    </p>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

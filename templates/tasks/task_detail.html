@@ -1,0 +1,1254 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ task.title }} - GlichFlow{% endblock %}
+
+{% block page_title %}{{ task.title }}{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'projects:project_list' %}">Projeler</a></li>
+<li class="breadcrumb-item"><a href="{% url 'projects:project_detail' task.project.id %}">{{ task.project.name }}</a></li>
+<li class="breadcrumb-item active">{{ task.title }}</li>
+{% endblock %}
+
+{% block page_actions %}
+<div class="btn-group">
+    <a href="{% url 'tasks:task_update' task.id %}" class="btn btn-primary">
+        <i class="fas fa-edit"></i> Düzenle
+    </a>
+    <button type="button" class="btn btn-primary dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false">
+        <span class="visually-hidden">Dropdown</span>
+    </button>
+    <ul class="dropdown-menu dropdown-menu-end">
+        <li><a class="dropdown-item" href="{% url 'tasks:add_time_log' task.id %}"><i class="fas fa-clock me-2"></i> Zaman Ekle</a></li>
+        
+        <!-- GitHub Entegrasyonu -->
+        {% if task.project.github_repository %}
+            {% if not task.github_issue %}
+            <li><a class="dropdown-item" href="{% url 'github_integration:task_github_sync' task.id %}">
+                <i class="fab fa-github me-2"></i> GitHub Issue Oluştur
+            </a></li>
+            {% else %}
+            <li><a class="dropdown-item" href="{% url 'github_integration:task_github_sync' task.id %}">
+                <i class="fas fa-sync me-2"></i> GitHub Issue Güncelle
+            </a></li>
+            {% endif %}
+        {% endif %}
+        
+        <li><hr class="dropdown-divider"></li>
+        <li><a class="dropdown-item text-danger" href="{% url 'tasks:task_delete' task.id %}"><i class="fas fa-trash me-2"></i> Sil</a></li>
+    </ul>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Görev Bilgileri -->
+    <div class="col-lg-4 mb-4">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Görev Bilgileri</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-4 text-center">
+                    <div class="d-inline-block bg-primary bg-opacity-10 p-3 rounded-circle mb-3">
+                        <i class="fas fa-tasks fa-3x text-primary"></i>
+                    </div>
+                    
+                    <h4 class="mb-1">{{ task.title }}</h4>
+                    
+                    <div class="mb-3">
+                        <div class="dropdown d-inline-block">
+                            <button 
+                                {% if task.status == 'todo' %}
+                                class="badge bg-warning text-dark dropdown-toggle border-0"
+                                {% elif task.status == 'in_progress' %}
+                                class="badge bg-primary dropdown-toggle border-0"
+                                {% elif task.status == 'review' %}
+                                class="badge bg-info dropdown-toggle border-0"
+                                {% elif task.status == 'completed' %}
+                                class="badge bg-success dropdown-toggle border-0"
+                                {% elif task.status == 'cancelled' %}
+                                class="badge bg-secondary dropdown-toggle border-0"
+                                {% endif %}
+                                type="button" id="taskStatusDetail" data-bs-toggle="dropdown" aria-expanded="false"
+                            >
+                                {% if task.status == 'todo' %}
+                                Yapılacak
+                                {% elif task.status == 'in_progress' %}
+                                Devam Ediyor
+                                {% elif task.status == 'review' %}
+                                İncelemede
+                                {% elif task.status == 'completed' %}
+                                Tamamlandı
+                                {% elif task.status == 'cancelled' %}
+                                İptal Edildi
+                                {% endif %}
+                            </button>
+                            {% if request.user.role == 'admin' or request.user == task.assignee or request.user == task.creator %}
+                            <ul class="dropdown-menu" aria-labelledby="taskStatusDetail">
+                                <li><a class="dropdown-item {% if task.status == 'todo' %}active{% endif %}" href="{% url 'tasks:update_status' task.id %}?status=todo&next={{ request.path }}">Yapılacak</a></li>
+                                <li><a class="dropdown-item {% if task.status == 'in_progress' %}active{% endif %}" href="{% url 'tasks:update_status' task.id %}?status=in_progress&next={{ request.path }}">Devam Ediyor</a></li>
+                                <li><a class="dropdown-item {% if task.status == 'review' %}active{% endif %}" href="{% url 'tasks:update_status' task.id %}?status=review&next={{ request.path }}">İncelemede</a></li>
+                                <li><a class="dropdown-item {% if task.status == 'completed' %}active{% endif %}" href="{% url 'tasks:update_status' task.id %}?status=completed&next={{ request.path }}">Tamamlandı</a></li>
+                                <li><a class="dropdown-item {% if task.status == 'cancelled' %}active{% endif %}" href="{% url 'tasks:update_status' task.id %}?status=cancelled&next={{ request.path }}">İptal Edildi</a></li>
+                            </ul>
+                            {% endif %}
+                        </div>
+                        
+                        {% if task.priority == 'low' %}
+                        <span class="badge bg-success">Düşük Öncelik</span>
+                        {% elif task.priority == 'medium' %}
+                        <span class="badge bg-info">Orta Öncelik</span>
+                        {% elif task.priority == 'high' %}
+                        <span class="badge bg-warning text-dark">Yüksek Öncelik</span>
+                        {% elif task.priority == 'urgent' %}
+                        <span class="badge bg-danger">Acil</span>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <hr>
+                
+                <div class="mb-3">
+                    <h6 class="card-subtitle mb-2 text-muted">Açıklama</h6>
+                    <p>{{ task.description|linebreaks|default:"Açıklama bulunmuyor." }}</p>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <h6 class="card-subtitle mb-2 text-muted">Proje</h6>
+                        <p class="mb-0">
+                            <a href="{% url 'projects:project_detail' task.project.id %}" class="text-decoration-none">
+                                {{ task.project.name }}
+                            </a>
+                        </p>
+                    </div>
+                    
+                    {% if task.parent_task %}
+                    <div class="col-md-6 mb-3">
+                        <h6 class="card-subtitle mb-2 text-muted">Üst Görev</h6>
+                        <p class="mb-0">
+                            <a href="{% url 'tasks:task_detail' task.parent_task.id %}" class="text-decoration-none">
+                                {{ task.parent_task.title }}
+                            </a>
+                        </p>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="col-md-6 mb-3">
+                        <h6 class="card-subtitle mb-2 text-muted">Başlangıç Tarihi</h6>
+                        <p class="mb-0">
+                            {% if task.start_date %}
+                            {{ task.start_date|date:"d F Y" }}
+                            {% else %}
+                            <span class="text-muted">Belirtilmedi</span>
+                            {% endif %}
+                        </p>
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <h6 class="card-subtitle mb-2 text-muted">Son Tarih</h6>
+                        <p class="mb-0">
+                            {% if task.due_date %}
+                                {% if task.is_overdue %}
+                                <span class="text-danger">{{ task.due_date|date:"d F Y" }}</span>
+                                {% else %}
+                                {{ task.due_date|date:"d F Y" }}
+                                {% endif %}
+                            {% else %}
+                                <span class="text-muted">Belirtilmedi</span>
+                            {% endif %}
+                        </p>
+                    </div>
+                    
+                    {% if task.completed_date %}
+                    <div class="col-md-6 mb-3">
+                        <h6 class="card-subtitle mb-2 text-muted">Tamamlanma Tarihi</h6>
+                        <p class="mb-0">{{ task.completed_date|date:"d F Y" }}</p>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="col-md-6 mb-3">
+                        <h6 class="card-subtitle mb-2 text-muted">Tahmini Süre</h6>
+                        <p class="mb-0">
+                            {% if task.estimate_hours %}
+                            {{ task.estimate_hours }} saat
+                            {% else %}
+                            <span class="text-muted">Belirtilmedi</span>
+                            {% endif %}
+                        </p>
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <h6 class="card-subtitle mb-2 text-muted">Harcanan Süre</h6>
+                        <p class="mb-0">
+                            {% if task.actual_hours %}
+                            {{ task.actual_hours }} saat
+                            {% else %}
+                            <span class="text-muted">Belirtilmedi</span>
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+                
+                <hr>
+                
+                <div class="mb-3">
+                    <h6 class="card-subtitle mb-2 text-muted">Oluşturan Kişi</h6>
+                    {% if task.creator %}
+                    <div class="d-flex align-items-center">
+                        {% if task.creator.profile_picture %}
+                        <img src="{{ task.creator.profile_picture.url }}" class="rounded-circle me-2" width="40" height="40" alt="{{ task.creator.get_full_name }}">
+                        {% else %}
+                        <div class="bg-secondary bg-opacity-10 rounded-circle me-2 d-flex align-items-center justify-content-center text-secondary" style="width: 40px; height: 40px;">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        {% endif %}
+                        <div>
+                            <p class="mb-0">{{ task.creator.get_full_name|default:task.creator.username }}</p>
+                            <small class="text-muted">{{ task.creator.email }}</small>
+                        </div>
+                    </div>
+                    {% else %}
+                    <p class="text-muted">Bilinmiyor</p>
+                    {% endif %}
+                </div>
+                
+                <div class="mb-3">
+                    <h6 class="card-subtitle mb-2 text-muted">Atanan Kişi</h6>
+                    {% if task.assignee %}
+                    <div class="d-flex align-items-center">
+                        {% if task.assignee.profile_picture %}
+                        <img src="{{ task.assignee.profile_picture.url }}" class="rounded-circle me-2" width="40" height="40" alt="{{ task.assignee.get_full_name }}">
+                        {% else %}
+                        <div class="bg-secondary bg-opacity-10 rounded-circle me-2 d-flex align-items-center justify-content-center text-secondary" style="width: 40px; height: 40px;">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        {% endif %}
+                        <div>
+                            <p class="mb-0">{{ task.assignee.get_full_name|default:task.assignee.username }}</p>
+                            <small class="text-muted">{{ task.assignee.email }}</small>
+                        </div>
+                    </div>
+                    {% else %}
+                    <p class="text-muted">Atanmadı</p>
+                    {% endif %}
+                </div>
+                
+                <hr>
+                
+                <!-- GitHub Issue Bilgileri -->
+                {% if task.github_issue %}
+                <div class="mb-3">
+                    <h6 class="card-subtitle mb-2 text-muted">GitHub Issue</h6>
+                    <div class="card bg-light border">
+                        <div class="card-header bg-dark text-white py-2">
+                            <div class="d-flex align-items-center">
+                                <i class="fab fa-github fa-lg me-2"></i>
+                                <span>GitHub Issue #{{ task.github_issue.issue_number }}</span>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-flex align-items-center mb-2">
+                                <div class="me-3">
+                                    <i class="fab fa-github fa-2x text-dark"></i>
+                                </div>
+                                <div>
+                                    <h6 class="mb-0">
+                                        <a href="{{ task.github_issue.issue_url }}" target="_blank" class="text-decoration-none">
+                                            {{ task.github_issue.issue_title }}
+                                        </a>
+                                    </h6>
+                                    <span class="badge {% if task.github_issue.status == 'open' %}bg-success{% else %}bg-secondary{% endif %} my-1">
+                                        {{ task.github_issue.get_status_display }}
+                                    </span>
+                                    <p class="mb-0 small text-muted">
+                                        <i class="fas fa-code-branch me-1"></i> Repository: 
+                                        <a href="{{ task.github_issue.repository.repository_url }}" target="_blank" class="text-decoration-none">
+                                            <strong>{{ task.github_issue.repository.repository_owner }}/{{ task.github_issue.repository.repository_name }}</strong>
+                                        </a>
+                                    </p>
+                                </div>
+                            </div>
+                            
+                            <div class="row mb-2">
+                                <div class="col-md-6">
+                                    <div class="card">
+                                        <div class="card-body py-2">
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <div>
+                                                    <small class="text-muted">Oluşturulma Tarihi:</small>
+                                                    <div>
+                                                        <i class="fas fa-calendar-alt me-1 text-primary"></i> {{ task.github_issue.github_created_at|date:"d F Y H:i" }}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="card">
+                                        <div class="card-body py-2">
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <div>
+                                                    <small class="text-muted">Son Güncelleme:</small>
+                                                    <div>
+                                                        <i class="fas fa-sync-alt me-1 text-success"></i> {{ task.github_issue.github_updated_at|date:"d F Y H:i" }}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="d-flex flex-wrap gap-2 mt-3">
+                                <a href="{{ task.github_issue.issue_url }}" target="_blank" class="btn btn-dark">
+                                    <i class="fab fa-github me-1"></i> GitHub'da Görüntüle
+                                </a>
+                                <a href="{% url 'github_integration:issue_comments' task.github_issue.id %}" class="btn btn-info">
+                                    <i class="fas fa-comments me-1"></i> Issue Yorumları
+                                    {% with comment_count=task.github_issue.comments.count %}
+                                        {% if comment_count > 0 %}
+                                        <span class="badge bg-light text-dark ms-1">{{ comment_count }}</span>
+                                        {% endif %}
+                                    {% endwith %}
+                                </a>
+                                
+                                {% if request.user.is_superuser or request.user == task.project.manager %}
+                                <a href="{% url 'github_integration:issue_update' task.github_issue.id %}" class="btn btn-primary">
+                                    <i class="fas fa-edit me-1"></i> Issue Düzenle
+                                </a>
+                                <a href="{% url 'github_integration:issue_sync_comments' task.github_issue.id %}" class="btn btn-secondary">
+                                    <i class="fas fa-sync me-1"></i> Yorumları Senkronize Et
+                                </a>
+                                
+                                {% if task.github_issue.status == 'open' %}
+                                <a href="{% url 'github_integration:issue_close' task.github_issue.id %}?close_task=yes" class="btn btn-danger"
+                                   onclick="return confirm('GitHub issue ve ilişkili görevi kapatmak istediğinizden emin misiniz?');">
+                                    <i class="fas fa-times-circle me-1"></i> Issue'yı Kapat
+                                </a>
+                                {% else %}
+                                <a href="{% url 'github_integration:issue_reopen' task.github_issue.id %}?reopen_task=yes" class="btn btn-success"
+                                   onclick="return confirm('GitHub issue ve ilişkili görevi yeniden açmak istediğinizden emin misiniz?');">
+                                    <i class="fas fa-check-circle me-1"></i> Issue'yı Yeniden Aç
+                                </a>
+                                {% endif %}
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% elif task.project.github_repository %}
+                <div class="mb-3">
+                    <h6 class="card-subtitle mb-2 text-muted">GitHub Issue</h6>
+                    <div class="card bg-light">
+                        <div class="card-body py-4 text-center">
+                            <div class="mb-3">
+                                <i class="fab fa-github fa-3x text-muted"></i>
+                            </div>
+                            <h6>Bu Görev Henüz GitHub Issue ile İlişkilendirilmemiş</h6>
+                            <p class="text-muted mb-3">GitHub repository ile ilişkilendirerek görevi otomatik olarak senkronize edebilirsiniz.</p>
+                            <a href="{% url 'github_integration:task_github_sync' task.id %}" class="btn btn-primary">
+                                <i class="fab fa-github me-2"></i> GitHub Issue Oluştur
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+                
+                <div class="small text-muted mt-3">
+                    <p class="mb-1"><i class="fas fa-clock me-1"></i> Oluşturulma: {{ task.created_at|date:"d F Y H:i" }}</p>
+                    <p class="mb-0"><i class="fas fa-edit me-1"></i> Son Güncelleme: {{ task.updated_at|date:"d F Y H:i" }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Sekme İçeriği -->
+    <div class="col-lg-8 mb-4">
+        <div class="card">
+            <div class="card-header p-0">
+                <ul class="nav nav-tabs card-header-tabs" id="taskTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="details-tab" data-bs-toggle="tab" data-bs-target="#details" type="button" role="tab" aria-controls="details" aria-selected="true">
+                            <i class="fas fa-info-circle me-1"></i> Detaylar
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="activities-tab" data-bs-toggle="tab" data-bs-target="#activities" type="button" role="tab" aria-controls="activities" aria-selected="false">
+                            <i class="fas fa-history me-1"></i> Aktiviteler
+                            {% if activity_logs %}<span class="badge bg-secondary ms-1">{{ activity_logs|length }}</span>{% endif %}
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="comments-tab" data-bs-toggle="tab" data-bs-target="#comments" type="button" role="tab" aria-controls="comments" aria-selected="false">
+                            <i class="fas fa-comments me-1"></i> Yorumlar
+                            {% if comments %}<span class="badge bg-secondary ms-1">{{ comments|length }}</span>{% endif %}
+                        </button>
+                    </li>
+                    {% if task.github_issue %}
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="github-comments-tab" data-bs-toggle="tab" data-bs-target="#github-comments" type="button" role="tab" aria-controls="github-comments" aria-selected="false">
+                            <i class="fab fa-github me-1"></i> GitHub Yorumları
+                            <span class="badge bg-secondary ms-1">{{ task.github_issue.comments.count }}</span>
+                        </button>
+                    </li>
+                    {% endif %}
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="prds-tab" data-bs-toggle="tab" data-bs-target="#prds" type="button" role="tab" aria-controls="prds" aria-selected="false">
+                            <i class="fas fa-file-alt me-1"></i> PRD'ler
+                            {% if prds %}<span class="badge bg-secondary ms-1">{{ prds|length }}</span>{% endif %}
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="attachments-tab" data-bs-toggle="tab" data-bs-target="#attachments" type="button" role="tab" aria-controls="attachments" aria-selected="false">
+                            <i class="fas fa-paperclip me-1"></i> Dosya Ekleri
+                            {% if attachments %}<span class="badge bg-secondary ms-1">{{ attachments|length }}</span>{% endif %}
+                        </button>
+                    </li>
+                </ul>
+            </div>
+            <div class="card-body">
+                <div class="tab-content" id="taskTabsContent">
+                    <!-- Alt Görevler Sekmesi -->
+                    <div class="tab-pane fade show active" id="subtasks" role="tabpanel" aria-labelledby="subtasks-tab">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="card-title mb-0">Alt Görevler</h5>
+                            <a href="{% url 'tasks:task_create_for_project' task.project.id %}" class="btn btn-sm btn-primary">
+                                <i class="fas fa-plus"></i> Alt Görev Ekle
+                            </a>
+                        </div>
+                        
+                        {% if subtasks %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Görev</th>
+                                        <th>Durum</th>
+                                        <th>Atanan</th>
+                                        <th>Son Tarih</th>
+                                        <th>İşlemler</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for subtask in subtasks %}
+                                    <tr>
+                                        <td>
+                                            <a href="{% url 'tasks:task_detail' subtask.id %}" class="text-decoration-none">
+                                                {{ subtask.title }}
+                                            </a>
+                                        </td>
+                                        <td>
+                                            {% if subtask.status == 'todo' %}
+                                            <span class="badge bg-warning text-dark">Yapılacak</span>
+                                            {% elif subtask.status == 'in_progress' %}
+                                            <span class="badge bg-primary">Devam Ediyor</span>
+                                            {% elif subtask.status == 'review' %}
+                                            <span class="badge bg-info">İncelemede</span>
+                                            {% elif subtask.status == 'completed' %}
+                                            <span class="badge bg-success">Tamamlandı</span>
+                                            {% elif subtask.status == 'cancelled' %}
+                                            <span class="badge bg-secondary">İptal Edildi</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if subtask.assignee %}
+                                            {{ subtask.assignee.get_full_name|default:subtask.assignee.username }}
+                                            {% else %}
+                                            <span class="text-muted">-</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if subtask.due_date %}
+                                                {% if subtask.is_overdue %}
+                                                <span class="text-danger">{{ subtask.due_date|date:"d M Y" }}</span>
+                                                {% else %}
+                                                {{ subtask.due_date|date:"d M Y" }}
+                                                {% endif %}
+                                            {% else %}
+                                                <span class="text-muted">-</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <div class="btn-group">
+                                                <a href="{% url 'tasks:task_detail' subtask.id %}" class="btn btn-sm btn-outline-primary" data-bs-toggle="tooltip" title="Görüntüle">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                                <a href="{% url 'tasks:task_update' subtask.id %}" class="btn btn-sm btn-outline-secondary" data-bs-toggle="tooltip" title="Düzenle">
+                                                    <i class="fas fa-edit"></i>
+                                                </a>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-tasks fa-3x text-muted mb-3"></i>
+                            <h5>Henüz alt görev bulunmuyor</h5>
+                            <p class="text-muted mb-3">Bu göreve alt görev ekleyerek daha büyük görevleri yönetilebilir parçalara ayırabilirsiniz.</p>
+                            <a href="{% url 'tasks:task_create_for_project' task.project.id %}" class="btn btn-primary">
+                                <i class="fas fa-plus"></i> Alt Görev Ekle
+                            </a>
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Zaman Kayıtları Sekmesi -->
+                    <div class="tab-pane fade" id="timelogs" role="tabpanel" aria-labelledby="timelogs-tab">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="card-title mb-0">Zaman Kayıtları</h5>
+                            <a href="{% url 'tasks:add_time_log' task.id %}" class="btn btn-sm btn-primary">
+                                <i class="fas fa-plus"></i> Zaman Ekle
+                            </a>
+                        </div>
+                        
+                        {% if time_logs %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Kullanıcı</th>
+                                        <th>Tarih</th>
+                                        <th>Süre (Saat)</th>
+                                        <th>Açıklama</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for log in time_logs %}
+                                    <tr>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                {% if log.user.profile_picture %}
+                                                <img src="{{ log.user.profile_picture.url }}" class="rounded-circle me-2" width="32" height="32" alt="{{ log.user.get_full_name }}">
+                                                {% else %}
+                                                <div class="bg-secondary bg-opacity-10 rounded-circle me-2 d-flex align-items-center justify-content-center text-secondary" style="width: 32px; height: 32px;">
+                                                    <i class="fas fa-user"></i>
+                                                </div>
+                                                {% endif %}
+                                                <span>{{ log.user.get_full_name|default:log.user.username }}</span>
+                                            </div>
+                                        </td>
+                                        <td>{{ log.date|date:"d M Y" }}</td>
+                                        <td>{{ log.hours }}</td>
+                                        <td>{{ log.description|default:"-" }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                                <tfoot class="table-light">
+                                    <tr>
+                                        <th colspan="2">Toplam</th>
+                                        <th>{{ task.actual_hours|default:"0" }}</th>
+                                        <th></th>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                        {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-clock fa-3x text-muted mb-3"></i>
+                            <h5>Henüz zaman kaydı bulunmuyor</h5>
+                            <p class="text-muted mb-3">Bu göreve harcanan zamanı takip etmek için zaman kaydı ekleyin.</p>
+                            <a href="{% url 'tasks:add_time_log' task.id %}" class="btn btn-primary">
+                                <i class="fas fa-plus"></i> Zaman Ekle
+                            </a>
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Yorumlar Sekmesi -->
+                    <div class="tab-pane fade" id="comments" role="tabpanel" aria-labelledby="comments-tab">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="card-title mb-0">Yorumlar</h5>
+                        </div>
+                        
+                        <form method="post" action="{% url 'tasks:add_comment' task.id %}" class="mb-4">
+                            {% csrf_token %}
+                            <div class="mb-3">
+                                <textarea class="form-control" id="content" name="content" rows="3" placeholder="Yorumunuzu yazın..."></textarea>
+                            </div>
+                            <div class="d-flex justify-content-end">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-paper-plane me-1"></i> Gönder
+                                </button>
+                            </div>
+                        </form>
+                        
+                        <hr>
+                        
+                        {% if comments %}
+                        <div class="comments">
+                            {% for comment in comments %}
+                            <div class="comment mb-4">
+                                <div class="d-flex">
+                                    <div class="flex-shrink-0">
+                                        {% if comment.author.profile_picture %}
+                                        <img src="{{ comment.author.profile_picture.url }}" class="rounded-circle" width="40" height="40" alt="{{ comment.author.get_full_name }}">
+                                        {% else %}
+                                        <div class="bg-secondary bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center text-secondary" style="width: 40px; height: 40px;">
+                                            <i class="fas fa-user"></i>
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="flex-grow-1 ms-3">
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <h6 class="mb-0">{{ comment.author.get_full_name|default:comment.author.username }}</h6>
+                                            <small class="text-muted">{{ comment.created_at|date:"d M Y H:i" }}</small>
+                                        </div>
+                                        <p class="mb-0 mt-1">{{ comment.content|linebreaks }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-comments fa-3x text-muted mb-3"></i>
+                            <h5>Henüz yorum bulunmuyor</h5>
+                            <p class="text-muted">Bu görev hakkında bir yorum yazarak ekibinizle iletişim kurun.</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- PRD'ler Sekmesi -->
+                    <div class="tab-pane fade" id="prds" role="tabpanel" aria-labelledby="prds-tab">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-file-alt text-primary"></i> PRD'ler (Product Requirements Documents)
+                            </h5>
+                            <div>
+                                <a href="{% url 'projects:prd_create' %}?task={{ task.id }}" class="btn btn-sm btn-primary">
+                                    <i class="fas fa-plus"></i> PRD Oluştur
+                                </a>
+                                <a href="{% url 'projects:prd_list' %}?task={{ task.id }}" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-list"></i> Tüm PRD'ler
+                                </a>
+                            </div>
+                        </div>
+                        
+                        {% if prds %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>PRD Başlığı</th>
+                                        <th>Durum</th>
+                                        <th>Oluşturan</th>
+                                        <th>Oluşturulma Tarihi</th>
+                                        <th>İşlemler</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for prd in prds %}
+                                    <tr>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <div class="me-2">
+                                                    <i class="fas fa-file-alt fa-lg text-primary"></i>
+                                                </div>
+                                                <div>
+                                                    <h6 class="mb-0">{{ prd.title }}</h6>
+                                                    {% if prd.product_summary %}
+                                                    <small class="text-muted">{{ prd.product_summary|truncatechars:50 }}</small>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-{{ prd.status }}">
+                                                {{ prd.get_status_display }}
+                                            </span>
+                                        </td>
+
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                {% if prd.created_by.profile_picture %}
+                                                <img src="{{ prd.created_by.profile_picture.url }}" class="rounded-circle me-2" width="32" height="32" alt="{{ prd.created_by.get_full_name }}">
+                                                {% else %}
+                                                <div class="bg-secondary bg-opacity-10 rounded-circle me-2 d-flex align-items-center justify-content-center text-secondary" style="width: 32px; height: 32px;">
+                                                    <i class="fas fa-user"></i>
+                                                </div>
+                                                {% endif %}
+                                                <span>{{ prd.created_by.get_full_name|default:prd.created_by.username }}</span>
+                                            </div>
+                                        </td>
+                                        <td>{{ prd.created_at|date:"d M Y H:i" }}</td>
+                                        <td>
+                                            <div class="btn-group">
+                                                <button type="button" class="btn btn-sm btn-outline-primary prd-view-btn" 
+                                                        data-prd-id="{{ prd.id }}" data-bs-toggle="tooltip" title="Görüntüle">
+                                                    <i class="fas fa-eye"></i>
+                                                </button>
+                                                {% if user.role in 'admin,project_manager' or user == prd.created_by %}
+                                                <a href="{% url 'projects:prd_edit' prd.id %}" class="btn btn-sm btn-outline-secondary" data-bs-toggle="tooltip" title="Düzenle">
+                                                    <i class="fas fa-edit"></i>
+                                                </a>
+                                                {% endif %}
+                                                {% if user.role in 'admin,project_manager' %}
+                                                <a href="{% url 'projects:prd_assign' prd.id %}" class="btn btn-sm btn-outline-info" data-bs-toggle="tooltip" title="Ata">
+                                                    <i class="fas fa-link"></i>
+                                                </a>
+                                                {% endif %}
+                                                {% if user.role in 'admin,project_manager' or user == prd.created_by %}
+                                                <a href="{% url 'projects:prd_delete' prd.id %}" class="btn btn-sm btn-outline-danger" data-bs-toggle="tooltip" title="Sil">
+                                                    <i class="fas fa-trash"></i>
+                                                </a>
+                                                {% endif %}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-file-alt fa-3x text-muted mb-3"></i>
+                            <h5>Henüz PRD bulunmuyor</h5>
+                            <p class="text-muted">Bu göreve PRD eklemek için "PRD Oluştur" butonuna tıklayın.</p>
+                            <a href="{% url 'projects:prd_create' %}?task={{ task.id }}" class="btn btn-primary">
+                                <i class="fas fa-plus"></i> PRD Oluştur
+                            </a>
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Dosya Ekleri Sekmesi -->
+                    <div class="tab-pane fade" id="attachments" role="tabpanel" aria-labelledby="attachments-tab">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="card-title mb-0">Dosya Ekleri</h5>
+                            <a href="{% url 'tasks:attachment_upload' task.id %}" class="btn btn-sm btn-primary">
+                                <i class="fas fa-upload"></i> Dosya Yükle
+                            </a>
+                        </div>
+                        
+                        {% if attachments %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Dosya Adı</th>
+                                        <th>Açıklama</th>
+                                        <th>Yükleyen</th>
+                                        <th>Yükleme Tarihi</th>
+                                        <th>İşlemler</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for attachment in attachments %}
+                                    <tr>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <div class="me-2">
+                                                    <i class="fas fa-file-alt fa-lg text-primary"></i>
+                                                </div>
+                                                <div>
+                                                    <h6 class="mb-0">{{ attachment.name }}</h6>
+                                                    <small class="text-muted">{{ attachment.file.size|filesizeformat }}</small>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>{{ attachment.description|truncatechars:50|default:"-" }}</td>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                {% if attachment.uploaded_by.profile_picture %}
+                                                <img src="{{ attachment.uploaded_by.profile_picture.url }}" class="rounded-circle me-2" width="32" height="32" alt="{{ attachment.uploaded_by.get_full_name }}">
+                                                {% else %}
+                                                <div class="bg-secondary bg-opacity-10 rounded-circle me-2 d-flex align-items-center justify-content-center text-secondary" style="width: 32px; height: 32px;">
+                                                    <i class="fas fa-user"></i>
+                                                </div>
+                                                {% endif %}
+                                                <span>{{ attachment.uploaded_by.get_full_name|default:attachment.uploaded_by.username }}</span>
+                                            </div>
+                                        </td>
+                                        <td>{{ attachment.upload_date|date:"d M Y H:i" }}</td>
+                                        <td>
+                                            <div class="btn-group">
+                                                <a href="{{ attachment.file.url }}" class="btn btn-sm btn-outline-primary" target="_blank" data-bs-toggle="tooltip" title="Görüntüle">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                                <a href="{{ attachment.file.url }}" class="btn btn-sm btn-outline-secondary" download data-bs-toggle="tooltip" title="İndir">
+                                                    <i class="fas fa-download"></i>
+                                                </a>
+                                                {% if user == attachment.uploaded_by or user.role == 'admin' or user.role == 'project_manager' %}
+                                                <a href="{% url 'projects:attachment_delete' attachment.id %}" class="btn btn-sm btn-outline-danger" data-bs-toggle="tooltip" title="Sil">
+                                                    <i class="fas fa-trash"></i>
+                                                </a>
+                                                {% endif %}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% empty %}
+                                    <tr>
+                                        <td colspan="5" class="text-center py-4">
+                                            <div class="d-flex flex-column align-items-center">
+                                                <i class="fas fa-file-upload fa-3x text-muted mb-3"></i>
+                                                <h5>Henüz dosya eki bulunmuyor</h5>
+                                                <p class="text-muted">Bu göreve dosya eklemek için "Dosya Yükle" butonuna tıklayın.</p>
+                                                <a href="{% url 'tasks:attachment_upload' task.id %}" class="btn btn-primary">
+                                                    <i class="fas fa-upload"></i> Dosya Yükle
+                                                </a>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-file-upload fa-3x text-muted mb-3"></i>
+                            <h5>Henüz dosya eki bulunmuyor</h5>
+                            <p class="text-muted">Bu göreve dosya eklemek için "Dosya Yükle" butonuna tıklayın.</p>
+                            <a href="{% url 'tasks:attachment_upload' task.id %}" class="btn btn-primary">
+                                <i class="fas fa-upload"></i> Dosya Yükle
+                            </a>
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    {% if task.github_issue %}
+                    <!-- GitHub Yorumları Sekmesi -->
+                    <div class="tab-pane fade" id="github-comments" role="tabpanel" aria-labelledby="github-comments-tab">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="card-title mb-0">
+                                <i class="fab fa-github me-2"></i> GitHub Issue Yorumları
+                            </h5>
+                            <div>
+                                {% if request.user.is_superuser or request.user == task.project.manager %}
+                                <a href="{% url 'github_integration:issue_update' task.github_issue.id %}" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-edit me-1"></i> Düzenle
+                                </a>
+                                
+                                {% if task.github_issue.status == 'open' %}
+                                <a href="{% url 'github_integration:issue_close' task.github_issue.id %}?close_task=yes" class="btn btn-sm btn-outline-danger"
+                                   onclick="return confirm('GitHub issue ve ilişkili görevi kapatmak istediğinizden emin misiniz?');">
+                                    <i class="fas fa-times-circle me-1"></i> Kapat
+                                </a>
+                                {% else %}
+                                <a href="{% url 'github_integration:issue_reopen' task.github_issue.id %}?reopen_task=yes" class="btn btn-sm btn-outline-success"
+                                   onclick="return confirm('GitHub issue ve ilişkili görevi yeniden açmak istediğinizden emin misiniz?');">
+                                    <i class="fas fa-check-circle me-1"></i> Yeniden Aç
+                                </a>
+                                {% endif %}
+                                
+                                <a href="{% url 'github_integration:issue_sync_comments' task.github_issue.id %}" class="btn btn-sm btn-outline-secondary">
+                                    <i class="fas fa-sync me-1"></i> Yorumları Senkronize Et
+                                </a>
+                                {% endif %}
+                                <a href="{% url 'github_integration:issue_comments' task.github_issue.id %}" class="btn btn-sm btn-primary">
+                                    <i class="fas fa-comments me-1"></i> Tüm Yorumları Görüntüle
+                                </a>
+                            </div>
+                        </div>
+                        
+                        <div class="card mb-4">
+                            <div class="card-header bg-light">
+                                <div class="d-flex align-items-center">
+                                    <span class="badge bg-dark text-white me-2">#{{ task.github_issue.issue_number }}</span>
+                                    <strong>{{ task.github_issue.issue_title }}</strong>
+                                    <a href="{{ task.github_issue.issue_url }}" target="_blank" class="ms-2 text-muted">
+                                        <i class="fas fa-external-link-alt"></i>
+                                    </a>
+                                </div>
+                            </div>
+                            <div class="card-body py-2 px-3">
+                                <p class="small text-muted mb-0">
+                                    <i class="fab fa-github me-1"></i>
+                                    <span class="badge {% if task.github_issue.status == 'open' %}bg-success{% else %}bg-secondary{% endif %}">
+                                        {{ task.github_issue.get_status_display }}
+                                    </span>
+                                    <span class="ms-2">
+                                        Son güncelleme: {{ task.github_issue.github_updated_at|date:"d F Y H:i" }}
+                                    </span>
+                                </p>
+                            </div>
+                        </div>
+                        
+                        {% with comments=task.github_issue.comments.all|slice:":5" %}
+                        {% if comments %}
+                        <div class="list-group mb-3">
+                            {% for comment in comments %}
+                            <div class="list-group-item">
+                                <div class="d-flex w-100 justify-content-between mb-2">
+                                    <h6 class="mb-0">
+                                        <i class="fab fa-github me-1"></i>
+                                        <strong>{{ comment.user_login }}</strong>
+                                    </h6>
+                                    <small class="text-muted">{{ comment.github_created_at|date:"d F Y H:i" }}</small>
+                                </div>
+                                <p class="mb-1">{{ comment.body|truncatechars:200|linebreaksbr }}</p>
+                                {% if comment.body|length > 200 %}
+                                <a href="{% url 'github_integration:issue_comments' task.github_issue.id %}" class="small">Devamını oku...</a>
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+                        </div>
+                        
+                        {% if task.github_issue.comments.count > 5 %}
+                        <div class="text-center">
+                            <a href="{% url 'github_integration:issue_comments' task.github_issue.id %}" class="btn btn-outline-primary">
+                                <i class="fas fa-comments me-1"></i> Tüm {{ task.github_issue.comments.count }} yorumu görüntüle
+                            </a>
+                        </div>
+                        {% endif %}
+                        
+                        {% else %}
+                        <div class="text-center py-5">
+                            <i class="fab fa-github fa-3x text-muted mb-3"></i>
+                            <h5>Henüz yorum bulunmuyor</h5>
+                            <p class="text-muted">GitHub issue yorumlarını görmek için "Yorumları Senkronize Et" butonuna tıklayın.</p>
+                            <a href="{% url 'github_integration:issue_sync_comments' task.github_issue.id %}" class="btn btn-primary">
+                                <i class="fas fa-sync me-1"></i> Yorumları Senkronize Et
+                            </a>
+                        </div>
+                        {% endif %}
+                        {% endwith %}
+                        
+                        <div class="card mt-4">
+                            <div class="card-header">
+                                <h6 class="mb-0">Hızlı Yorum Ekle</h6>
+                            </div>
+                            <div class="card-body">
+                                {% if request.user.is_superuser or request.user == task.project.manager %}
+                                <form action="{% url 'github_integration:issue_comments' task.github_issue.id %}" method="post">
+                                    {% csrf_token %}
+                                    <div class="mb-3">
+                                        <textarea name="content" class="form-control" rows="3" placeholder="GitHub issue'a yorum yazın..." required></textarea>
+                                        <small class="form-text text-muted">Bu yorum GitHub issue'a eklenecektir.</small>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-paper-plane me-1"></i> Yorum Gönder
+                                    </button>
+                                </form>
+                                {% else %}
+                                <div class="alert alert-info mb-0">
+                                    <i class="fas fa-lock me-2"></i>
+                                    GitHub issue'a yorum ekleme yetkisi yalnızca proje yöneticisine ve sistem yöneticilerine aittir.
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Attachment Modal -->
+<div class="modal fade" id="attachmentModal" tabindex="-1" aria-labelledby="attachmentModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="attachmentModalLabel">Dosya Görüntüleyici</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center p-0" id="attachmentPreview">
+                <!-- Content will be loaded dynamically -->
+                <div class="d-flex justify-content-center align-items-center p-5">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Yükleniyor...</span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <a href="#" class="btn btn-primary" id="downloadAttachment" download>
+                    <i class="fas fa-download me-1"></i> İndir
+                </a>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Kapat</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize tooltips
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl)
+        });
+        
+        // Handle attachment preview
+        const viewButtons = document.querySelectorAll('.view-attachment');
+        const previewContainer = document.getElementById('attachmentPreview');
+        const downloadLink = document.getElementById('downloadAttachment');
+        const modalTitle = document.getElementById('attachmentModalLabel');
+        
+        viewButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const fileUrl = this.getAttribute('data-attachment-url');
+                const fileName = this.getAttribute('data-attachment-name');
+                
+                // Update download link
+                downloadLink.href = fileUrl;
+                downloadLink.setAttribute('download', fileName);
+                
+                // Update modal title
+                modalTitle.textContent = fileName;
+                
+                // Clear previous content
+                previewContainer.innerHTML = '<div class="d-flex justify-content-center align-items-center p-5"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Yükleniyor...</span></div></div>';
+                
+                // Extract the file extension from the URL
+                const fileExt = fileUrl.split('.').pop().toLowerCase();
+                
+                // Handle different file types
+                setTimeout(() => {
+                    if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'svg'].includes(fileExt)) {
+                        // Image files
+                        previewContainer.innerHTML = `
+                            <div class="preview-image-container">
+                                <img src="${fileUrl}" class="img-fluid" alt="${fileName}">
+                            </div>`;
+                    } else if (['pdf'].includes(fileExt)) {
+                        // PDF files
+                        previewContainer.innerHTML = `<embed src="${fileUrl}" type="application/pdf" width="100%" height="500px">`;
+                    } else if (['mp4', 'webm', 'ogg'].includes(fileExt)) {
+                        // Video files
+                        previewContainer.innerHTML = `
+                            <div class="preview-image-container">
+                                <video controls class="img-fluid">
+                                    <source src="${fileUrl}" type="video/${fileExt}">
+                                    Tarayıcınız video oynatmayı desteklemiyor.
+                                </video>
+                            </div>
+                        `;
+                    } else if (['mp3', 'wav'].includes(fileExt)) {
+                        // Audio files
+                        previewContainer.innerHTML = `
+                            <div class="p-4">
+                                <audio controls class="w-100">
+                                    <source src="${fileUrl}" type="audio/${fileExt}">
+                                    Tarayıcınız ses oynatmayı desteklemiyor.
+                                </audio>
+                            </div>
+                        `;
+                    } else if (['txt', 'csv', 'json', 'xml', 'html', 'css', 'js', 'py', 'java', 'c', 'cpp', 'cs', 'php'].includes(fileExt)) {
+                        // Text-based files - attempt to fetch and display
+                        fetch(fileUrl)
+                            .then(response => response.text())
+                            .then(text => {
+                                previewContainer.innerHTML = `<pre class="p-4 text-start" style="max-height: 600px; overflow: auto;"><code>${text.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</code></pre>`;
+                            })
+                            .catch(() => {
+                                previewContainer.innerHTML = `<div class="p-5 text-center"><i class="fas fa-file-alt fa-4x mb-3 text-muted"></i><p>Bu dosyayı önizlemek için indiriniz.</p></div>`;
+                            });
+                    } else if (['doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx'].includes(fileExt)) {
+                        // Microsoft Office files - use Google Docs Viewer
+                        previewContainer.innerHTML = `
+                            <iframe src="https://docs.google.com/viewer?url=${encodeURIComponent(fileUrl)}&embedded=true" 
+                                width="100%" height="600px" frameborder="0">
+                                Yükleniyor...
+                            </iframe>
+                        `;
+                    } else {
+                        // Unsupported file types
+                        previewContainer.innerHTML = `
+                            <div class="p-5 text-center">
+                                <i class="fas fa-file fa-4x mb-3 text-muted"></i>
+                                <h5>${fileName}</h5>
+                                <p class="mb-4">Bu dosya türü önizleme için desteklenmiyor.</p>
+                                <a href="${fileUrl}" class="btn btn-primary" download>
+                                    <i class="fas fa-download me-2"></i> İndir
+                                </a>
+                            </div>
+                        `;
+                    }
+                }, 500);
+            });
+        });
+    });
+</script>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Task status badge colors */
+    .badge-todo {
+        background-color: #ffc107; 
+        color: #000;
+    }
+    .badge-in_progress {
+        background-color: #0d6efd;
+    }
+    .badge-review {
+        background-color: #6f42c1;
+    }
+    .badge-completed {
+        background-color: #198754;
+    }
+    .badge-cancelled {
+        background-color: #dc3545;
+    }
+    
+    /* Task priority badge colors */
+    .priority-low {
+        background-color: #6c757d;
+    }
+    .priority-medium {
+        background-color: #0dcaf0;
+    }
+    .priority-high {
+        background-color: #ffc107;
+        color: #000;
+    }
+    .priority-urgent {
+        background-color: #dc3545;
+    }
+
+    /* PRD Durum Badge Renkleri */
+    .badge-draft { background-color: #f8f9fc; color: #5a5c69; }
+    .badge-review { background-color: #fff3cd; color: #856404; }
+    .badge-approved { background-color: #d4edda; color: #155724; }
+    .badge-rejected { background-color: #f8d7da; color: #721c24; }
+    .badge-archived { background-color: #e2e3e5; color: #383d41; }
+    
+    /* Comment form */
+    .comment-form {
+        margin-top: 20px;
+    }
+    
+    /* Attachment styles */
+    .file-list-item {
+        position: relative;
+        border: 1px solid #dee2e6;
+        border-radius: 0.25rem;
+        padding: 0.5rem;
+        margin-bottom: 0.5rem;
+        transition: all 0.2s;
+    }
+    .file-list-item:hover {
+        background-color: #f8f9fa;
+    }
+    .file-list-item .file-icon {
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: #e9ecef;
+        border-radius: 4px;
+        margin-right: 10px;
+    }
+    
+    /* Time Log form */
+    .time-log-form {
+        border: 1px solid #dee2e6;
+        border-radius: 0.25rem;
+        padding: 15px;
+        background-color: #f8f9fa;
+    }
+    
+    /* Büyük görsel önizlemelerini küçültmek için ek stil */
+    .preview-image-container {
+        max-width: 100%;
+        text-align: center;
+    }
+    .preview-image-container .img-fluid {
+        max-height: 400px; /* Maksimum yükseklik */
+        width: auto; /* Oranı koru */
+        object-fit: contain; /* İçeriği koru */
+    }
+    
+    .file-preview-container {
+        max-height: 600px;
+        overflow: auto;
+        background-color: #f8f9fa;
+        border-radius: 0.25rem;
+        text-align: center;
+    }
+    
+    .task-detail-user-avatar {
+        width: 24px !important;
+        height: 24px !important;
+        border-radius: 50%;
+        object-fit: cover;
+        object-position: center;
+        vertical-align: middle;
+        margin-right: 5px;
+    }
+    
+    .preview-image-container {
+        max-height: 300px;
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 15px;
+    }
+    
+    .preview-image-container img {
+        max-height: 300px;
+        max-width: 100%;
+        object-fit: contain;
+    }
+    
+    .comment-user-avatar {
+        width: 24px !important;
+        height: 24px !important;
+        border-radius: 50%;
+        object-fit: cover;
+        display: inline-block;
+        vertical-align: middle;
+    }
+</style>
+
+<!-- PRD View Modal -->
+<div class="modal fade" id="prdModal" tabindex="-1" aria-labelledby="prdModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="prdModalLabel">PRD Detayları</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="prdModalBody">
+                <!-- PRD içeriği buraya yüklenecek -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Kapat</button>
+                <a href="#" class="btn btn-primary" id="prdEditLink">
+                    <i class="fas fa-edit"></i> Düzenle
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+$(document).ready(function() {
+    // PRD görüntüleme butonları
+    $('.prd-view-btn').click(function() {
+        const prdId = $(this).data('prd-id');
+        const modal = $('#prdModal');
+        const modalBody = $('#prdModalBody');
+        const editLink = $('#prdEditLink');
+        
+        // Loading göster
+        modalBody.html('<div class="text-center py-4"><i class="fas fa-spinner fa-spin fa-2x"></i><p class="mt-2">Yükleniyor...</p></div>');
+        modal.modal('show');
+        
+        // PRD içeriğini yükle
+        $.ajax({
+            url: `/projects/prd/${prdId}/detail/`,
+            method: 'GET',
+            success: function(data) {
+                modalBody.html(data);
+                editLink.attr('href', `/projects/prd/${prdId}/edit/`);
+            },
+            error: function() {
+                modalBody.html('<div class="text-center py-4 text-danger"><i class="fas fa-exclamation-triangle fa-2x"></i><p class="mt-2">PRD yüklenirken hata oluştu.</p></div>');
+            }
+        });
+    });
+});
+</script>
+{% endblock %} 

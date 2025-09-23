@@ -1,0 +1,622 @@
+{% load static %}
+
+<!-- Chatbot CSS -->
+<link rel="stylesheet" href="{% static 'chatbot/css/chatbot.css' %}">
+
+<!-- Chat Widget Container -->
+<div id="chat-widget-container" class="position-fixed bottom-0 end-0 mb-3 me-3" style="z-index: 1050;">
+    <!-- Chat Button -->
+    <button id="chat-widget-button" class="btn btn-primary rounded-circle shadow d-flex align-items-center justify-content-center" 
+            style="width: 60px; height: 60px;" data-bs-toggle="collapse" data-bs-target="#chat-widget" aria-expanded="false">
+        <i class="fas fa-comment fa-lg"></i>
+    </button>
+    
+    <!-- Chat Window -->
+    <div id="chat-widget" class="collapse mt-3 shadow rounded">
+        <div class="card" style="width: 320px; max-height: 500px;">
+            <!-- Chat Header -->
+            <div class="card-header bg-primary text-white py-2 d-flex justify-content-between align-items-center">
+                <h6 class="m-0">AI Yardımcı</h6>
+                <div>
+                    <button type="button" class="btn btn-sm text-white p-0 me-2" id="chat-widget-history-btn" 
+                            title="Sohbet Geçmişi" data-bs-toggle="tooltip">
+                        <i class="fas fa-history"></i>
+                    </button>
+                    <button type="button" class="btn btn-sm text-white p-0" data-bs-toggle="collapse" 
+                            data-bs-target="#chat-widget" aria-expanded="false" aria-label="Close">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Chat Messages -->
+            <div class="card-body p-0 d-flex flex-column" style="height: 350px;">
+                <div id="chat-messages" class="overflow-auto p-3" style="flex: 1;">
+                    {% if not messages %}
+                    <div class="text-center text-muted my-4">
+                        <i class="fas fa-robot fa-3x mb-3"></i>
+                        <p>Merhaba! Size nasıl yardımcı olabilirim?</p>
+                    </div>
+                    {% else %}
+                        {% for message in messages %}
+                            <div class="message-container {% if message.sender == 'user' %}text-end{% endif %} mb-3">
+                                <div class="message-bubble p-2 rounded d-inline-block {% if message.sender == 'user' %}bg-primary text-white{% else %}bg-light{% endif %}" 
+                                     style="max-width: 80%;">
+                                    {{ message.content|linebreaksbr }}
+                                </div>
+                                <div class="message-time small text-muted mt-1">
+                                    {{ message.timestamp|date:"H:i" }}
+                                </div>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+                
+                <!-- Chat Input Form -->
+                <div class="p-2 border-top">
+                    <form id="chat-form" data-session-id="{{ session.id }}">
+                        {% csrf_token %}
+                        <div class="input-group">
+                            <input type="text" id="chat-input" class="form-control" placeholder="Mesajınızı yazın..." required>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-paper-plane"></i>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Chat History Modal -->
+    <div class="modal fade" id="chat-history-modal" tabindex="-1" aria-labelledby="chatHistoryModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="chatHistoryModalLabel">Sohbet Geçmişi</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="list-group" id="chat-sessions-list">
+                        <div class="text-center p-3">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Yükleniyor...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <a href="{% url 'chatbot:new_chat_session' %}" class="btn btn-success">
+                        <i class="fas fa-plus"></i> Yeni Sohbet
+                    </a>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Kapat</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Chat Widget JavaScript -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    console.log("Chat widget DOM content loaded");
+    
+    const chatForm = document.getElementById('chat-form');
+    console.log("Chat form element:", chatForm);
+    
+    const chatInput = document.getElementById('chat-input');
+    const chatMessages = document.getElementById('chat-messages');
+    
+    // Session ID kontrolü
+    let sessionId = null;
+    if (chatForm) {
+        sessionId = chatForm.getAttribute('data-session-id');
+        console.log("Chat widget initialized with session ID:", sessionId);
+    } else {
+        console.error("Chat form element not found!");
+    }
+    
+    const chatHistoryBtn = document.getElementById('chat-widget-history-btn');
+    console.log("Chat history button:", chatHistoryBtn);
+    
+    let chatHistoryModal = null;
+    try {
+        chatHistoryModal = new bootstrap.Modal(document.getElementById('chat-history-modal'));
+    } catch (e) {
+        console.error("Failed to initialize history modal:", e);
+    }
+    
+    const chatSessionsList = document.getElementById('chat-sessions-list');
+    
+    // Debug element values
+    if (!sessionId) {
+        console.error("WARNING: Session ID is missing or empty!");
+        // Session ID yoksa, yeni bir session oluşturmak için AJAX isteği gönder
+        console.log("Attempting to create or fetch a session...");
+        
+        fetch('{% url "chatbot:get_session" %}', {
+            method: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log("Session API response:", data);
+            if (data.success && data.session_id) {
+                console.log("Successfully obtained session ID:", data.session_id);
+                sessionId = data.session_id;
+                
+                // Form element'i güncelle veya oluştur
+                if (chatForm) {
+                    chatForm.setAttribute('data-session-id', sessionId);
+                    console.log("Updated existing form with session ID");
+                } else {
+                    // Eğer form yoksa oluştur
+                    const formContainer = document.querySelector('.p-2.border-top');
+                    if (formContainer) {
+                        formContainer.innerHTML = `
+                            <form id="chat-form" data-session-id="${sessionId}">
+                                {% csrf_token %}
+                                <div class="input-group">
+                                    <input type="text" id="chat-input" class="form-control" placeholder="Mesajınızı yazın..." required>
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-paper-plane"></i>
+                                    </button>
+                                </div>
+                            </form>
+                        `;
+                        console.log("Created new form with session ID");
+                        
+                        // Sayfa reload
+                        window.location.reload();
+                    } else {
+                        console.error("Form container not found");
+                        appendErrorMessage("Mesaj formu oluşturulamadı. Lütfen sayfayı yenileyin.");
+                    }
+                }
+            } else {
+                console.error("Failed to get session ID:", data.error || "Unknown error");
+                appendErrorMessage("Oturum ID alınamadı. Lütfen sayfayı yenileyin veya sistem yöneticisine başvurun.");
+            }
+        })
+        .catch(error => {
+            console.error("Session creation error:", error);
+            appendErrorMessage("Oturum ID bulunamadı. Lütfen sayfayı yenileyin veya sistem yöneticisine başvurun.");
+        });
+    }
+    
+    // Initialize tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+    
+    // Send message function
+    if (chatForm) {
+        chatForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const message = chatInput.value.trim();
+            if (!message) return;
+            
+            console.log("Sending message:", message.substring(0, 30) + (message.length > 30 ? "..." : ""));
+            console.log("Session ID:", sessionId);
+            
+            if (!sessionId) {
+                console.error("Cannot send message: Session ID is missing");
+                appendErrorMessage("Mesaj gönderilemedi: Oturum ID bulunamadı.");
+                return;
+            }
+            
+            // Clear input
+            chatInput.value = '';
+            
+            // Show loading state
+            appendMessage(message, 'user');
+            appendLoadingIndicator();
+            
+            // Get CSRF token and prepare form data as a backup
+            const csrftoken = getCookie('csrftoken');
+            const formData = new FormData();
+            formData.append('session_id', sessionId);
+            formData.append('message', message);
+        
+            // First try with JSON
+            console.log("Sending message with JSON payload:", JSON.stringify({
+                session_id: sessionId,
+                message: message.substring(0, 30) + (message.length > 30 ? "..." : "")
+            }));
+            
+            fetch('{% url "chatbot:send_message" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrftoken
+                },
+                body: JSON.stringify({
+                    session_id: sessionId,
+                    message: message
+                })
+            })
+            .then(response => {
+                console.log("JSON Response status:", response.status);
+                console.log("JSON Response headers:", Object.fromEntries([...response.headers.entries()]));
+                if (!response.ok) {
+                    console.log("Falling back to form data");
+                    throw new Error('JSON request failed with status ' + response.status + ', trying form data');
+                }
+                return response.json();
+            })
+            .then(data => {
+                handleApiResponse(data);
+            })
+            .catch(error => {
+                console.error('JSON request error:', error);
+                
+                // Try with form data as a backup
+                console.log("Sending message with FormData");
+                fetch('{% url "chatbot:send_message" %}', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': csrftoken
+                    },
+                    body: formData
+                })
+                .then(response => {
+                    console.log("FormData Response status:", response.status);
+                    console.log("FormData Response headers:", Object.fromEntries([...response.headers.entries()]));
+                    return response.json();
+                })
+                .then(data => {
+                    handleApiResponse(data);
+                })
+                .catch(finalError => {
+                    console.error('Form data request error:', finalError);
+                    removeLoadingIndicator();
+                    appendErrorMessage('İletişim hatası oluştu. Lütfen tekrar deneyin. Hata: ' + finalError.message);
+                });
+            });
+        });
+    }
+    
+    // Handle API response
+    function handleApiResponse(data) {
+        console.log("API response received:", data);
+        removeLoadingIndicator();
+        
+        if (data.error) {
+            console.error("Error from API:", data.error);
+            
+            // Eğer yeni bir session oluşturulduysa, sessionId güncelle
+            if (data.new_session_id) {
+                console.log("New session was created. Updating session ID:", data.new_session_id);
+                sessionId = data.new_session_id;
+                
+                if (chatForm) {
+                    chatForm.setAttribute('data-session-id', sessionId);
+                    console.log("Updated form with new session ID");
+                    
+                    // Bilgilendirme mesajı göster
+                    appendMessage(
+                        "Yeni bir oturum oluşturuldu. Mesajınızı tekrar gönderebilirsiniz.", 
+                        'assistant'
+                    );
+                    return; // Hata mesajı gösterme
+                }
+            }
+            
+            // Show detailed error message
+            let errorMessage = data.error;
+            if (data.traceback) {
+                console.error("Traceback:", data.traceback);
+                errorMessage += "\n\nDetaylı hata (sistem yöneticisine bildirin):\n" + data.traceback.split("\n")[0];
+            }
+            
+            if (data.received_data) {
+                console.log("Received data:", data.received_data);
+                errorMessage += "\n\nGönderilen veriler:\nSession ID: " + data.received_data.session_id + 
+                               "\nMessage: " + (data.received_data.message || "Boş");
+            }
+            
+            if (data.info) {
+                errorMessage += "\n\n" + data.info;
+            }
+            
+            appendErrorMessage(errorMessage);
+        } else if (data.assistant_message && data.assistant_message.content) {
+            console.log("AI response received");
+            appendMessage(data.assistant_message.content, 'assistant');
+        } else {
+            console.error("Unexpected response format:", data);
+            appendErrorMessage('Beklenmeyen API yanıtı alındı.');
+        }
+        
+        // Scroll to bottom
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+    
+    // Load chat history
+    chatHistoryBtn.addEventListener('click', function() {
+        chatHistoryModal.show();
+        loadChatHistory();
+    });
+    
+    function loadChatHistory() {
+        fetch('{% url "chatbot:chat_list" %}')
+            .then(response => response.text())
+            .then(html => {
+                // Parse the HTML response to extract session list
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                const sessionsList = doc.querySelector('.list-group');
+                
+                if (sessionsList) {
+                    chatSessionsList.innerHTML = sessionsList.innerHTML;
+                } else {
+                    chatSessionsList.innerHTML = '<div class="text-center p-3">Henüz sohbet bulunamadı.</div>';
+                }
+            })
+            .catch(error => {
+                console.error('Error loading chat history:', error);
+                chatSessionsList.innerHTML = '<div class="text-center text-danger p-3">Geçmiş yüklenirken hata oluştu.</div>';
+            });
+    }
+    
+    // Helper functions
+    function appendErrorMessage(errorText) {
+        if (!chatMessages) {
+            console.error("Cannot append error message: chat messages container not found");
+            return;
+        }
+        
+        const errorContainer = document.createElement('div');
+        errorContainer.className = 'message-container mb-3';
+        
+        errorContainer.innerHTML = `
+            <div class="message-bubble p-2 rounded d-inline-block bg-danger text-white" style="max-width: 80%;">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                ${errorText.replace(/\n/g, '<br>')}
+            </div>
+        `;
+        
+        chatMessages.appendChild(errorContainer);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+    
+    function appendMessage(content, sender) {
+        if (!chatMessages) {
+            console.error("Cannot append message: chat messages container not found");
+            return;
+        }
+        
+        const messageContainer = document.createElement('div');
+        messageContainer.className = `message-container ${sender === 'user' ? 'text-end' : ''} mb-3`;
+        
+        const time = new Date();
+        const timeString = `${time.getHours().toString().padStart(2, '0')}:${time.getMinutes().toString().padStart(2, '0')}`;
+        
+        // Kod bloklarını işle
+        const processedContent = processCodeBlocks(content);
+        
+        messageContainer.innerHTML = `
+            <div class="message-bubble p-2 rounded d-inline-block ${sender === 'user' ? 'bg-primary text-white' : 'bg-light'}" 
+                 style="max-width: 80%;">
+                ${processedContent}
+            </div>
+            <div class="message-time small text-muted mt-1">
+                ${timeString}
+            </div>
+        `;
+        
+        chatMessages.appendChild(messageContainer);
+        
+        // Kod blokları için kopyalama butonlarını etkinleştir
+        if (sender === 'assistant') {
+            activateCodeCopyButtons(messageContainer);
+        }
+        
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+    
+    // Kod bloklarını algılama ve işleme fonksiyonu
+    function processCodeBlocks(content) {
+        // Markdown kod bloklarını işle (```...```)
+        let processed = content.replace(/```([\s\S]*?)```/g, function(match, codeContent) {
+            const language = codeContent.split('\n')[0].trim();
+            let code = codeContent;
+            
+            // Dil belirtilmişse ilk satırı kaldır
+            if (language && !language.includes('=') && !language.includes('(') && !language.includes(')')) {
+                code = codeContent.split('\n').slice(1).join('\n');
+            }
+            
+            return `<div class="code-block-container position-relative">
+                <div class="code-copy-btn position-absolute" style="top: 5px; right: 5px;">
+                    <button class="copy-code-btn">
+                        Kopyala
+                    </button>
+                </div>
+                <pre class="bg-dark text-light p-2 rounded"><code>${escapeHtml(code)}</code></pre>
+            </div>`;
+        });
+        
+        // İnline kodları işle (`...`)
+        processed = processed.replace(/`([^`]+)`/g, '<code class="bg-dark text-light px-1 rounded">$1</code>');
+        
+        // Normal satır geçişlerini <br> ile değiştir
+        return processed.replace(/\n/g, '<br>');
+    }
+    
+    // HTML özel karakterlerini escape et
+    function escapeHtml(text) {
+        return text
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
+    
+    // Kopyalama butonlarını etkinleştir
+    function activateCodeCopyButtons(container) {
+        const copyButtons = container.querySelectorAll('.copy-code-btn');
+        copyButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const codeBlock = this.closest('.code-block-container').querySelector('code');
+                // HTML entity'lerini decode et ve formatı koru
+                let textToCopy = codeBlock.innerHTML;
+                
+                // <br> taglarını newline'a çevir
+                textToCopy = textToCopy.replace(/<br\s*\/?>/gi, '\n');
+                
+                // HTML entity'lerini decode et
+                const textarea = document.createElement('textarea');
+                textarea.innerHTML = textToCopy;
+                textToCopy = textarea.value;
+                
+                // Kopyalama fonksiyonu
+                function copyToClipboard(text) {
+                    // Modern clipboard API'yi dene
+                    if (navigator.clipboard && window.isSecureContext) {
+                        return navigator.clipboard.writeText(text);
+                    } else {
+                        // Fallback: textarea kullan
+                        return new Promise((resolve, reject) => {
+                            const textArea = document.createElement('textarea');
+                            textArea.value = text;
+                            textArea.style.position = 'fixed';
+                            textArea.style.left = '-999999px';
+                            textArea.style.top = '-999999px';
+                            document.body.appendChild(textArea);
+                            textArea.focus();
+                            textArea.select();
+                            
+                            try {
+                                const successful = document.execCommand('copy');
+                                document.body.removeChild(textArea);
+                                if (successful) {
+                                    resolve();
+                                } else {
+                                    reject(new Error('Copy command failed'));
+                                }
+                            } catch (err) {
+                                document.body.removeChild(textArea);
+                                reject(err);
+                            }
+                        });
+                    }
+                }
+                
+                // Panoya kopyala
+                copyToClipboard(textToCopy).then(() => {
+                    // Başarılı olduğunda butonu geçici olarak değiştir
+                    const originalHTML = this.innerHTML;
+                    this.innerHTML = 'Kopyalandı!';
+                    this.classList.remove('btn-light');
+                    this.classList.add('btn-success');
+                    
+                    // 2 saniye sonra butonu eski haline getir
+                    setTimeout(() => {
+                        this.innerHTML = originalHTML;
+                        this.classList.remove('btn-success');
+                        this.classList.add('btn-light');
+                    }, 2000);
+                }).catch(err => {
+                    console.error('Kopyalama hatası:', err);
+                    alert('Kopyalama işlemi başarısız oldu. Lütfen kodu manuel olarak seçip kopyalayın.');
+                });
+            });
+        });
+    }
+    
+    function appendLoadingIndicator() {
+        if (!chatMessages) {
+            console.error("Cannot append loading indicator: chat messages container not found");
+            return;
+        }
+        
+        const loadingContainer = document.createElement('div');
+        loadingContainer.className = 'message-container mb-3';
+        loadingContainer.id = 'chat-loading-indicator';
+        
+        loadingContainer.innerHTML = `
+            <div class="message-bubble p-2 rounded d-inline-block bg-light" style="max-width: 80%;">
+                <div class="d-flex align-items-center">
+                    <div class="spinner-grow spinner-grow-sm text-primary" role="status">
+                        <span class="visually-hidden">Yükleniyor...</span>
+                    </div>
+                    <div class="ms-2">Yazıyor...</div>
+                </div>
+            </div>
+        `;
+        
+        chatMessages.appendChild(loadingContainer);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+    
+    function removeLoadingIndicator() {
+        const loadingIndicator = document.getElementById('chat-loading-indicator');
+        if (loadingIndicator) {
+            loadingIndicator.remove();
+        }
+    }
+    
+    // Helper function to get CSRF token
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        
+        // CSRF token formdaki input elementinden de alınabilir
+        if (!cookieValue) {
+            const tokenInput = document.querySelector('input[name="csrfmiddlewaretoken"]');
+            if (tokenInput) {
+                cookieValue = tokenInput.value;
+                console.log("CSRF token found in form input");
+            }
+        }
+        
+        if (!cookieValue) {
+            console.error(`${name} cookie not found!`);
+        }
+        return cookieValue;
+    }
+    
+    // Sayfa yüklendiğinde mevcut mesajları işle
+    function processPreviousMessages() {
+        const existingMessages = document.querySelectorAll('.message-container .message-bubble');
+        existingMessages.forEach(messageBubble => {
+            // Kullanıcı mesajlarını atla (sadece asistan mesajlarındaki kodları işle)
+            if (messageBubble.classList.contains('bg-primary')) return;
+            
+            const originalContent = messageBubble.innerHTML;
+            // ```...``` kalıplarını ara ve işle
+            if (originalContent.includes('```')) {
+                const processedContent = processCodeBlocks(originalContent.replace(/<br>/g, '\n'));
+                messageBubble.innerHTML = processedContent;
+                
+                // Mesaj bubble'ın bulunduğu container'ı bul
+                const messageContainer = messageBubble.closest('.message-container');
+                if (messageContainer) {
+                    activateCodeCopyButtons(messageContainer);
+                }
+            }
+        });
+    }
+    
+    // Sayfa yüklendiğinde mevcut mesajları işle
+    processPreviousMessages();
+    
+    // Scroll to bottom of chat on load
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+});
+</script> 

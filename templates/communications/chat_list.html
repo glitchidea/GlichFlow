@@ -1,0 +1,264 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block page_title %}{{ title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .chat-list-item {
+        transition: all 0.2s;
+        border-left: 3px solid transparent;
+    }
+    .chat-list-item:hover {
+        background-color: rgba(0,0,0,0.05);
+        border-left: 3px solid var(--primary);
+    }
+    .chat-list-item.unread {
+        border-left: 3px solid var(--primary);
+        background-color: rgba(var(--primary-rgb), 0.05);
+    }
+    .chat-list-item.active {
+        background-color: rgba(var(--primary-rgb), 0.1);
+        border-left: 3px solid var(--primary);
+    }
+    .chat-avatar {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        overflow: hidden;
+        background-color: #e9ecef;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .chat-avatar img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    .chat-avatar .initial {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #6c757d;
+    }
+    .last-message {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        max-width: 250px;
+    }
+    .unread-badge {
+        min-width: 22px;
+        height: 22px;
+        padding: 0 6px;
+        border-radius: 11px;
+        background-color: var(--primary);
+        color: white;
+        font-size: 0.75rem;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .group-type-badge {
+        font-size: 0.75rem;
+        padding: 2px 5px;
+        border-radius: 3px;
+    }
+    .direct {
+        background-color: #e3f2fd;
+        color: #0d6efd;
+    }
+    .group {
+        background-color: #e6f4ea;
+        color: #34a853;
+    }
+    .project {
+        background-color: #fff8e1;
+        color: #ff9800;
+    }
+    .task {
+        background-color: #f3e5f5;
+        color: #9c27b0;
+    }
+    .empty-state {
+        text-align: center;
+        padding: 40px 20px;
+    }
+    .empty-state i {
+        font-size: 4rem;
+        color: #ccc;
+        margin-bottom: 20px;
+    }
+</style>
+{% endblock %}
+
+{% block breadcrumb %}
+<div class="page-title-box">
+    <div class="page-title-right">
+        <ol class="breadcrumb m-0">
+            <li class="breadcrumb-item"><a href="{% url 'dashboard:index' %}">Ana Sayfa</a></li>
+            <li class="breadcrumb-item active">{{ title }}</li>
+        </ol>
+    </div>
+    <h4 class="page-title">{{ title }}</h4>
+</div>
+{% endblock %}
+
+{% block page_actions %}
+<div class="d-flex">
+    <a href="{% url 'communications:create_direct_message_page' %}" class="btn btn-info me-2">
+        <i class="mdi mdi-account-arrow-right"></i> Kişisel Mesaj Başlat
+    </a>
+    <a href="{% url 'communications:create_group' %}" class="btn btn-primary">
+        <i class="mdi mdi-plus"></i> Yeni Grup Oluştur
+    </a>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                {% if groups %}
+                <div class="d-flex align-items-center mb-3">
+                    <h4 class="header-title mb-0">Mesaj Grupları</h4>
+                    <div class="ms-auto">
+                        <input type="text" id="searchGroups" class="form-control form-control-sm" placeholder="Grup ara...">
+                    </div>
+                </div>
+                
+                <div class="chat-list">
+                    {% for group in groups %}
+                    <a href="{% url 'communications:chat_detail' group_id=group.id %}" class="text-body">
+                        <div class="chat-list-item d-flex p-3 rounded {% if group.unread_count > 0 %}unread{% endif %}">
+                            <div class="chat-avatar me-3">
+                                {% if group.image %}
+                                <img src="{{ group.image.url }}" alt="{{ group.name }}">
+                                {% else %}
+                                <div class="initial">{{ group.name|slice:"0:1" }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="flex-grow-1">
+                                <div class="d-flex">
+                                    <h5 class="mt-0 mb-1">
+                                        {% if group.type == 'direct' %}
+                                            <!-- Direkt mesaj ise karşı tarafın adını gösterelim -->
+                                            {% for member in group.members.all %}
+                                                {% if member.id != request.user.id %}
+                                                    {{ member.get_full_name|default:member.username }}
+                                                {% endif %}
+                                            {% endfor %}
+                                        {% else %}
+                                            {{ group.name }}
+                                        {% endif %}
+                                    </h5>
+                                    <span class="ms-1 group-type-badge {{ group.type }}">
+                                        {% if group.type == 'direct' %}
+                                        <i class="mdi mdi-account"></i>
+                                        {% elif group.type == 'group' %}
+                                        <i class="mdi mdi-account-group"></i>
+                                        {% elif group.type == 'project' %}
+                                        <i class="mdi mdi-briefcase"></i>
+                                        {% elif group.type == 'task' %}
+                                        <i class="mdi mdi-clipboard-check"></i>
+                                        {% endif %}
+                                        {{ group.get_type_display }}
+                                    </span>
+                                    <div class="ms-auto text-muted small">
+                                        {% if group.last_message_date %}
+                                        {{ group.last_message_date|date:"d M" }}
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                
+                                <div class="d-flex">
+                                    <p class="last-message text-muted mb-0">
+                                        {% if group.messages.last %}
+                                        {% with last_message=group.messages.last %}
+                                        {% if last_message.message_type == 'system' %}
+                                        <i class="mdi mdi-information-outline"></i>
+                                        {% else %}
+                                        <span class="fw-medium">{{ last_message.sender.get_full_name|default:last_message.sender.username }}:</span>
+                                        {% endif %}
+                                        {{ last_message.content|truncatechars:40 }}
+                                        {% endwith %}
+                                        {% else %}
+                                        Henüz mesaj yok
+                                        {% endif %}
+                                    </p>
+                                    {% if group.unread_count > 0 %}
+                                    <div class="ms-auto">
+                                        <span class="unread-badge">{{ group.unread_count }}</span>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </a>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="empty-state">
+                    <i class="mdi mdi-message-outline"></i>
+                    <h5>Henüz hiç mesaj grubunuz yok</h5>
+                    <p>Mesajlaşmaya başlamak için yeni bir grup oluşturun veya kişilerle doğrudan mesajlaşın.</p>
+                    <a href="{% url 'communications:create_group' %}" class="btn btn-primary mt-2">
+                        <i class="mdi mdi-plus"></i> Yeni Grup Oluştur
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        // Gruplar arasında arama yapma - iyileştirilmiş versiyon
+        $('#searchGroups').on('keyup', function() {
+            var searchText = $(this).val().toLowerCase().trim();
+            
+            // Eğer arama metni boşsa tüm grupları göster
+            if (searchText === '') {
+                $('.chat-list a').show();
+                return;
+            }
+            
+            // Her grup için kontrol et
+            $('.chat-list a').each(function() {
+                var groupText = $(this).text().toLowerCase();
+                var groupName = $(this).find('h5').text().toLowerCase().trim();
+                var lastMessage = $(this).find('.last-message').text().toLowerCase().trim();
+                
+                // Grup adında, son mesajda veya tüm içerikte arama yap
+                if (groupName.indexOf(searchText) > -1 || lastMessage.indexOf(searchText) > -1 || groupText.indexOf(searchText) > -1) {
+                    $(this).show();
+                } else {
+                    $(this).hide();
+                }
+            });
+            
+            // Hiç sonuç yoksa bilgi mesajı göster
+            if ($('.chat-list a:visible').length === 0) {
+                if ($('#no-results-message').length === 0) {
+                    $('.chat-list').append('<div id="no-results-message" class="text-center p-3 text-muted"><i class="mdi mdi-file-search-outline me-1"></i> Arama sonucu bulunamadı</div>');
+                }
+            } else {
+                $('#no-results-message').remove();
+            }
+        });
+        
+        // Input'a odaklanınca otomatik temizle
+        $('#searchGroups').on('focus', function() {
+            if ($(this).val()) {
+                $(this).val('').trigger('keyup');
+            }
+        });
+    });
+</script>
+{% endblock %} 

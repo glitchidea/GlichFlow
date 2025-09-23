@@ -1,0 +1,406 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block extra_css %}
+{% if is_markdown %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css">
+{% endif %}
+
+<style>
+/* PRD Document Viewer Styles */
+.document-header {
+    background: linear-gradient(135deg, #3b7ddd 0%, #4e73df 100%);
+    color: white;
+    border-radius: 0.35rem;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+}
+
+.document-content {
+    background-color: white;
+    border-radius: 0.35rem;
+    padding: 2rem;
+    box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+    min-height: 500px;
+}
+
+/* Markdown Content Styles */
+.markdown-content {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    line-height: 1.6;
+    color: #333;
+}
+
+.markdown-content h1,
+.markdown-content h2,
+.markdown-content h3,
+.markdown-content h4,
+.markdown-content h5,
+.markdown-content h6 {
+    margin-top: 2rem;
+    margin-bottom: 1rem;
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.markdown-content h1 {
+    font-size: 2.5rem;
+    border-bottom: 3px solid #3b7ddd;
+    padding-bottom: 0.5rem;
+}
+
+.markdown-content h2 {
+    font-size: 2rem;
+    border-bottom: 2px solid #ecf0f1;
+    padding-bottom: 0.3rem;
+}
+
+.markdown-content h3 {
+    font-size: 1.5rem;
+    color: #34495e;
+}
+
+.markdown-content h4 {
+    font-size: 1.25rem;
+    color: #7f8c8d;
+}
+
+.markdown-content p {
+    margin-bottom: 1rem;
+    text-align: justify;
+}
+
+.markdown-content ul,
+.markdown-content ol {
+    margin-bottom: 1rem;
+    padding-left: 2rem;
+}
+
+.markdown-content li {
+    margin-bottom: 0.5rem;
+}
+
+.markdown-content blockquote {
+    border-left: 4px solid #3b7ddd;
+    padding-left: 1rem;
+    margin: 1.5rem 0;
+    font-style: italic;
+    color: #7f8c8d;
+    background-color: #f8f9fa;
+    padding: 1rem;
+    border-radius: 0.25rem;
+}
+
+.markdown-content code {
+    background-color: #f8f9fa;
+    padding: 0.2rem 0.4rem;
+    border-radius: 0.25rem;
+    font-family: 'Courier New', monospace;
+    font-size: 0.9em;
+    color: #e74c3c;
+}
+
+.markdown-content pre {
+    background-color: #2c3e50;
+    color: #ecf0f1;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    overflow-x: auto;
+    margin: 1.5rem 0;
+}
+
+.markdown-content pre code {
+    background-color: transparent;
+    color: inherit;
+    padding: 0;
+}
+
+.markdown-content table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1.5rem 0;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+}
+
+.markdown-content th,
+.markdown-content td {
+    padding: 0.75rem;
+    text-align: left;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.markdown-content th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+    color: #495057;
+}
+
+.markdown-content tr:hover {
+    background-color: #f8f9fa;
+}
+
+.markdown-content img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 0.5rem;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    margin: 1rem 0;
+}
+
+.markdown-content a {
+    color: #3b7ddd;
+    text-decoration: none;
+}
+
+.markdown-content a:hover {
+    text-decoration: underline;
+    color: #4e73df;
+}
+
+/* Table of Contents */
+.table-of-contents {
+    background-color: white;
+    border: 2px solid #3b7ddd;
+    border-radius: 0.5rem;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    float: right;
+    width: 300px;
+    margin-left: 2rem;
+    margin-right: 0;
+}
+
+.table-of-contents h4 {
+    margin-bottom: 1rem;
+    color: #2c3e50;
+    font-weight: 700;
+    font-size: 1.2rem;
+    border-bottom: 2px solid #3b7ddd;
+    padding-bottom: 0.5rem;
+}
+
+.table-of-contents ul {
+    list-style: none;
+    padding-left: 0;
+    margin: 0;
+}
+
+.table-of-contents li {
+    margin-bottom: 0.5rem;
+}
+
+.table-of-contents a {
+    color: #495057;
+    text-decoration: none;
+    display: block;
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.25rem;
+    transition: all 0.2s ease;
+    font-weight: 500;
+    border-left: 3px solid transparent;
+}
+
+.table-of-contents a:hover {
+    background-color: rgba(59, 125, 221, 0.1);
+    color: #3b7ddd;
+    padding-left: 1rem;
+    border-left-color: #3b7ddd;
+}
+
+.toc-h1 { font-weight: 600; color: #2c3e50; }
+.toc-h2 { font-weight: 500; color: #34495e; margin-left: 1rem; }
+.toc-h3 { font-weight: 400; color: #7f8c8d; margin-left: 2rem; }
+.toc-h4 { font-weight: 400; color: #95a5a6; margin-left: 3rem; }
+.toc-h5 { font-weight: 400; color: #bdc3c7; margin-left: 4rem; }
+.toc-h6 { font-weight: 400; color: #ecf0f1; margin-left: 5rem; }
+
+/* Text Content Styles */
+.text-content {
+    font-family: 'Courier New', monospace;
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 0.5rem;
+    padding: 1.5rem;
+}
+
+.text-content-pre {
+    margin: 0;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    color: #495057;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .document-header {
+        padding: 1rem;
+    }
+    
+    .document-content {
+        padding: 1rem;
+    }
+    
+    .markdown-content h1 {
+        font-size: 2rem;
+    }
+    
+    .markdown-content h2 {
+        font-size: 1.5rem;
+    }
+    
+    .markdown-content h3 {
+        font-size: 1.25rem;
+    }
+    
+    .table-of-contents {
+        float: none;
+        width: 100%;
+        margin: 1rem 0;
+    }
+    
+    .toc-h2 { margin-left: 0.5rem; }
+    .toc-h3 { margin-left: 1rem; }
+    .toc-h4 { margin-left: 1.5rem; }
+    .toc-h5 { margin-left: 2rem; }
+    .toc-h6 { margin-left: 2.5rem; }
+}
+
+/* Print Styles */
+@media print {
+    .document-header {
+        background: none !important;
+        color: #000 !important;
+        box-shadow: none !important;
+    }
+    
+    .document-content {
+        box-shadow: none !important;
+    }
+    
+    .btn-group {
+        display: none !important;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Document Header -->
+    <div class="document-header">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h1 class="h3 mb-2">
+                    <i class="fas fa-file-alt text-primary"></i>
+                    {{ prd.title }}
+                </h1>
+                <div class="d-flex align-items-center gap-3">
+                    <span class="badge bg-{{ prd.status }}">
+                        {{ prd.get_status_display }}
+                    </span>
+                    {% if is_markdown %}
+                    <span class="badge bg-info">
+                        <i class="fas fa-markdown"></i> Markdown
+                    </span>
+                    {% elif is_text %}
+                    <span class="badge bg-secondary">
+                        <i class="fas fa-file-text"></i> Metin Dosyası
+                    </span>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="col-md-4 text-md-end">
+                <div class="btn-group" role="group">
+                    <a href="{{ prd.document.url }}" class="btn btn-light btn-sm" target="_blank">
+                        <i class="fas fa-download"></i> İndir
+                    </a>
+                    <a href="{% url 'projects:prd_detail' prd.id %}" class="btn btn-light btn-sm">
+                        <i class="fas fa-arrow-left"></i> Geri
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Document Content -->
+    <div class="document-content">
+        {% if is_markdown %}
+        <!-- Markdown Content -->
+        <div class="markdown-content">
+            {{ content|safe }}
+        </div>
+        {% elif is_text %}
+        <!-- Text Content -->
+        <div class="text-content">
+            <pre class="text-content-pre">{{ content }}</pre>
+        </div>
+        {% else %}
+        <!-- Other Content -->
+        <div class="other-content">
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i>
+                Bu dosya türü tarayıcıda görüntülenemiyor. 
+                <a href="{{ prd.document.url }}" class="alert-link" target="_blank">İndirmek için tıklayın</a>.
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{% if is_markdown %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+<script>
+$(document).ready(function() {
+    // Syntax highlighting for code blocks
+    hljs.highlightAll();
+    
+    // Add table of contents if there are headings
+    const headings = document.querySelectorAll('h1, h2, h3, h4, h5, h6');
+    if (headings.length > 0) {
+        const toc = document.createElement('div');
+        toc.className = 'table-of-contents';
+        toc.innerHTML = '<h4>📋 İçindekiler</h4><ul></ul>';
+        
+        const tocList = toc.querySelector('ul');
+        headings.forEach((heading, index) => {
+            // Add ID to heading if not exists
+            if (!heading.id) {
+                heading.id = `heading-${index}`;
+            }
+            
+            const li = document.createElement('li');
+            const a = document.createElement('a');
+            a.href = `#${heading.id}`;
+            a.textContent = heading.textContent;
+            a.className = `toc-${heading.tagName.toLowerCase()}`;
+            
+            li.appendChild(a);
+            tocList.appendChild(li);
+        });
+        
+        // Insert TOC at the beginning of markdown content
+        const markdownContent = document.querySelector('.markdown-content');
+        if (markdownContent) {
+            markdownContent.insertBefore(toc, markdownContent.firstChild);
+        } else {
+            // Fallback: insert to document body
+            document.body.appendChild(toc);
+        }
+        
+        // Debug: Log to console to make sure TOC is created
+        console.log('Table of Contents created with', headings.length, 'headings');
+    } else {
+        console.log('No headings found for Table of Contents');
+    }
+});
+</script>
+{% endif %}
+{% endblock %}

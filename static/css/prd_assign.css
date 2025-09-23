@@ -1,0 +1,297 @@
+/* PRD Assign Styles */
+.assign-section {
+    background-color: white;
+    border-radius: 0.35rem;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+}
+
+.assign-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 0.35rem;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.prd-info {
+    background-color: #f8f9fc;
+    border-radius: 0.35rem;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.assignment-option {
+    border: 2px solid #e3e6f0;
+    border-radius: 0.35rem;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.assignment-option:hover {
+    border-color: #4e73df;
+    background-color: #f8f9fc;
+}
+
+.assignment-option.selected {
+    border-color: #4e73df;
+    background-color: #e3f2fd;
+}
+
+.project-card, .task-card {
+    border: 1px solid #e3e6f0;
+    border-radius: 0.25rem;
+    padding: 1rem;
+    margin-bottom: 0.5rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.project-card:hover, .task-card:hover {
+    border-color: #4e73df;
+    background-color: #f8f9fc;
+}
+
+.project-card.selected, .task-card.selected {
+    border-color: #4e73df;
+    background-color: #e3f2fd;
+}
+
+/* Assignment Type Selection */
+.assignment-type-section {
+    margin-bottom: 2rem;
+}
+
+.assignment-type-option {
+    display: flex;
+    align-items: center;
+    padding: 1rem;
+    border: 2px solid #e3e6f0;
+    border-radius: 0.35rem;
+    margin-bottom: 1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.assignment-type-option:hover {
+    border-color: #4e73df;
+    background-color: #f8f9fc;
+}
+
+.assignment-type-option.selected {
+    border-color: #4e73df;
+    background-color: #e3f2fd;
+}
+
+.assignment-type-option input[type="radio"] {
+    margin-right: 1rem;
+}
+
+.assignment-type-option label {
+    margin-bottom: 0;
+    font-weight: 600;
+    color: #5a5c69;
+    cursor: pointer;
+}
+
+/* Project and Task Cards */
+.project-card, .task-card {
+    position: relative;
+}
+
+.project-card .project-name, .task-card .task-title {
+    font-weight: 600;
+    color: #5a5c69;
+    margin-bottom: 0.5rem;
+}
+
+.project-card .project-description, .task-card .task-description {
+    color: #858796;
+    font-size: 0.875rem;
+    margin-bottom: 0.5rem;
+}
+
+.project-card .project-meta, .task-card .task-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.75rem;
+    color: #858796;
+}
+
+/* Selection Indicators */
+.selection-indicator {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    width: 20px;
+    height: 20px;
+    border: 2px solid #e3e6f0;
+    border-radius: 50%;
+    background-color: white;
+    transition: all 0.2s ease;
+}
+
+.project-card.selected .selection-indicator,
+.task-card.selected .selection-indicator {
+    border-color: #4e73df;
+    background-color: #4e73df;
+}
+
+.project-card.selected .selection-indicator::after,
+.task-card.selected .selection-indicator::after {
+    content: '✓';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: white;
+    font-size: 0.75rem;
+    font-weight: bold;
+}
+
+/* Warning Messages */
+.warning-message {
+    background-color: #fff3cd;
+    border: 1px solid #ffeaa7;
+    border-radius: 0.35rem;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+    color: #856404;
+}
+
+.warning-message i {
+    margin-right: 0.5rem;
+}
+
+/* Form Actions */
+.form-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid #e3e6f0;
+}
+
+/* Button Styles */
+.btn {
+    border-radius: 0.35rem;
+    font-weight: 600;
+    padding: 0.5rem 1rem;
+    transition: all 0.3s ease;
+}
+
+.btn-primary {
+    background-color: #4e73df;
+    border-color: #4e73df;
+}
+
+.btn-primary:hover {
+    background-color: #2e59d9;
+    border-color: #2e59d9;
+    transform: translateY(-1px);
+}
+
+.btn-secondary {
+    background-color: #858796;
+    border-color: #858796;
+}
+
+.btn-secondary:hover {
+    background-color: #717384;
+    border-color: #717384;
+    transform: translateY(-1px);
+}
+
+/* Loading States */
+.loading-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(255, 255, 255, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.35rem;
+    z-index: 10;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .assign-section {
+        padding: 1rem;
+    }
+    
+    .assign-header {
+        padding: 1rem;
+    }
+    
+    .assignment-option {
+        padding: 1rem;
+    }
+    
+    .project-card, .task-card {
+        padding: 0.75rem;
+    }
+    
+    .form-actions {
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .form-actions .btn {
+        width: 100%;
+    }
+}
+
+/* Animation Effects */
+.assign-section {
+    animation: fadeInUp 0.6s ease-out;
+}
+
+.assign-header {
+    animation: fadeInDown 0.6s ease-out;
+}
+
+.project-card, .task-card {
+    animation: fadeInUp 0.4s ease-out;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeInDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Hover Effects */
+.assignment-option:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+}
+
+.project-card:hover, .task-card:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 0.1rem 0.5rem 0 rgba(58, 59, 69, 0.1);
+}

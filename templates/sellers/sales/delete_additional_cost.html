@@ -1,0 +1,62 @@
+{% extends 'sellers/base_seller.html' %}
+{% load static %}
+
+{% block title %}Ek Maliyet Sil - {{ cost.sale.project_name }}{% endblock %}
+
+{% block seller_content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-lg-6 mx-auto">
+            <div class="card shadow">
+                <div class="card-header py-3 bg-danger text-white">
+                    <h4 class="m-0 font-weight-bold">
+                        <i class="fas fa-exclamation-triangle"></i> Ek Maliyet Sil
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <strong>Dikkat!</strong> Bu işlem geri alınamaz.
+                    </div>
+
+                    <div class="mb-4">
+                        <h5 class="text-primary">{{ cost.sale.project_name }}</h5>
+                        <p class="text-muted">Proje: {{ cost.sale.customer.display_name }}</p>
+                    </div>
+
+                    <div class="card border-warning">
+                        <div class="card-body">
+                            <h6 class="card-title text-warning">Silinecek Ek Maliyet:</h6>
+                            <p class="mb-1"><strong>Ad:</strong> {{ cost.name }}</p>
+                            <p class="mb-1"><strong>Tür:</strong> {{ cost.get_cost_type_display }}</p>
+                            <p class="mb-1"><strong>Tutar:</strong> {{ cost.cost|floatformat:2 }} ₺</p>
+                            {% if cost.description %}
+                                <p class="mb-1"><strong>Açıklama:</strong> {{ cost.description }}</p>
+                            {% endif %}
+                            <p class="mb-0"><strong>Ödeme:</strong> 
+                                {% if cost.is_customer_paid %}
+                                    <span class="badge badge-warning">Müşteri Ödeyecek</span>
+                                {% else %}
+                                    <span class="badge badge-info">Biz Ödeyeceğiz</span>
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+
+                    <form method="post" class="mt-4">
+                        {% csrf_token %}
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-danger">
+                                <i class="fas fa-trash"></i> Evet, Sil
+                            </button>
+                            <a href="{% url 'sellers:sale_detail' cost.sale.pk %}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> İptal
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

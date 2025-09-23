@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Rapor Sil - {{ report.title }}{% endblock %}
+
+{% block page_title %}Rapor Sil{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'dashboard:index' %}">Ana Sayfa</a></li>
+<li class="breadcrumb-item"><a href="{% url 'reports:report_list' %}">Raporlar</a></li>
+<li class="breadcrumb-item"><a href="{% url 'reports:report_detail' report_id=report.id %}">{{ report.title }}</a></li>
+<li class="breadcrumb-item active">Sil</li>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+        <div class="card">
+            <div class="card-body text-center p-5">
+                <div class="text-danger mb-4">
+                    <i class="mdi mdi-alert-circle-outline" style="font-size: 4rem;"></i>
+                </div>
+                
+                <h4>Raporu Silmeyi Onaylıyor musunuz?</h4>
+                <p class="text-muted mt-3">
+                    "{{ report.title }}" raporunu silmek istediğinizden emin misiniz? 
+                    Bu işlem geri alınamaz ve tüm rapor verileri kalıcı olarak silinecektir.
+                </p>
+                
+                <form method="post" class="mt-4">
+                    {% csrf_token %}
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-center">
+                        <a href="{% url 'reports:report_detail' report_id=report.id %}" class="btn btn-light">
+                            <i class="mdi mdi-arrow-left me-1"></i> İptal
+                        </a>
+                        <button type="submit" class="btn btn-danger">
+                            <i class="mdi mdi-delete me-1"></i> Raporu Sil
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

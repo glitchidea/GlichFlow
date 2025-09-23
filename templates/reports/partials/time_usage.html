@@ -1,0 +1,137 @@
+<!-- Zaman Kullanım Raporu -->
+<div class="report-section">
+    <h4 class="mb-3">Zaman Kullanım Analizi</h4>
+    
+    <div class="row mb-4">
+        <div class="col-lg-4">
+            <div class="row">
+                <div class="col-12">
+                    <div class="card bg-light mb-3">
+                        <div class="card-body text-center">
+                            <h5 class="text-muted mb-0">Toplam Harcanan Süre</h5>
+                            <h2 class="mt-2 mb-0">{{ total_hours|floatformat:1 }} saat</h2>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">En Çok Zaman Harcayan Kullanıcılar</h5>
+                        </div>
+                        <div class="card-body pb-0">
+                            {% for item in user_hours|slice:":5" %}
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <div>
+                                    <h6 class="mb-0">{{ item.user__first_name }} {{ item.user__last_name }}</h6>
+                                    <small class="text-muted">{{ item.user__username }}</small>
+                                </div>
+                                <span class="fw-bold">{{ item.total_hours|floatformat:1 }} saat</span>
+                            </div>
+                            {% empty %}
+                            <p class="text-muted">Henüz veri bulunmuyor</p>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-8">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Kullanıcı Bazlı Zaman Dağılımı</h5>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="timeUsageChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Proje Bazında Harcanan Süreler</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-centered table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Proje</th>
+                                    <th>Süre (Saat)</th>
+                                    <th>Oran</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in project_hours %}
+                                <tr>
+                                    <td>{{ item.task__project__name|default:"Belirsiz" }}</td>
+                                    <td>{{ item.total_hours|floatformat:1 }}</td>
+                                    <td>
+                                        <div class="progress" style="height: 6px; width: 120px;">
+                                            <div class="progress-bar bg-primary" style="width: {{ item.percentage }}%;" role="progressbar"></div>
+                                        </div>
+                                        <small class="ms-1">{{ item.percentage }}%</small>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="3" class="text-center py-3">
+                                        <div class="text-muted">Henüz proje verisi bulunmuyor</div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Tarihe Göre Zaman Dağılımı</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-centered table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Tarih</th>
+                                    <th>Süre (Saat)</th>
+                                    <th>Oran</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in date_hours|slice:":10" %}
+                                <tr>
+                                    <td>{{ item.date|date:"d F Y" }}</td>
+                                    <td>{{ item.total_hours|floatformat:1 }}</td>
+                                    <td>
+                                        <div class="progress" style="height: 6px; width: 120px;">
+                                            <div class="progress-bar bg-primary" style="width: {{ item.percentage }}%;" role="progressbar"></div>
+                                        </div>
+                                        <small class="ms-1">{{ item.percentage }}%</small>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="3" class="text-center py-3">
+                                        <div class="text-muted">Henüz tarih verisi bulunmuyor</div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div> 

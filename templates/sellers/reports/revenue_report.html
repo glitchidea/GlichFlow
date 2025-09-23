@@ -1,0 +1,500 @@
+{% extends 'sellers/base_seller.html' %}
+{% load static %}
+
+{% block seller_css %}
+<link rel="stylesheet" href="{% static 'sellers/css/revenue_report.css' %}">
+{% endblock %}
+
+{% block page_title %}Gelir Raporu{% endblock %}
+{% block page_description %}Detaylı gelir analizi ve istatistikler{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item">
+    <a href="{% url 'sellers:index' %}">Dashboard</a>
+</li>
+<li class="breadcrumb-item active">Gelir Raporu</li>
+{% endblock %}
+
+{% block page_actions %}
+<div class="btn-group" role="group">
+    <button type="button" class="btn btn-outline-primary" onclick="exportToPDF()">
+        <i class="fas fa-file-pdf"></i> PDF İndir
+    </button>
+    <button type="button" class="btn btn-outline-success" onclick="exportToExcel()">
+        <i class="fas fa-file-excel"></i> Excel İndir
+    </button>
+</div>
+{% endblock %}
+
+{% block seller_content %}
+<!-- Filtreleme Paneli -->
+<div class="card shadow mb-4">
+    <div class="card-header py-3">
+        <h6 class="m-0 font-weight-bold text-primary">
+            <i class="fas fa-filter"></i> Filtreleme Seçenekleri
+        </h6>
+    </div>
+    <div class="card-body">
+        <form method="get" id="filterForm">
+            <div class="row">
+                <div class="col-md-3">
+                    <label for="filter_type" class="form-label">Filtre Türü</label>
+                    <select name="filter_type" id="filter_type" class="form-select" onchange="toggleFilterOptions()">
+                        <option value="all" {% if filter_type == 'all' %}selected{% endif %}>Tüm Zamanlar</option>
+                        <option value="monthly" {% if filter_type == 'monthly' %}selected{% endif %}>Aylık Seçim</option>
+                        <option value="date_range" {% if filter_type == 'date_range' %}selected{% endif %}>Tarih Aralığı</option>
+                    </select>
+                </div>
+                
+                <div class="col-md-3" id="monthly_filter" style="display: {% if filter_type == 'monthly' %}block{% else %}none{% endif %};">
+                    <label for="month" class="form-label">Ay</label>
+                    <select name="month" id="month" class="form-select">
+                        <option value="">Ay Seçin</option>
+                        {% for month_num, month_name in months %}
+                        <option value="{{ month_num }}" {% if month == month_num|stringformat:"s" %}selected{% endif %}>
+                            {{ month_name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="col-md-3" id="year_filter" style="display: {% if filter_type == 'monthly' %}block{% else %}none{% endif %};">
+                    <label for="year" class="form-label">Yıl</label>
+                    <select name="year" id="year" class="form-select">
+                        <option value="">Yıl Seçin</option>
+                        {% for year_option in years %}
+                        <option value="{{ year_option }}" {% if year == year_option|stringformat:"s" %}selected{% endif %}>
+                            {{ year_option }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="col-md-3" id="date_range_filter" style="display: {% if filter_type == 'date_range' %}block{% else %}none{% endif %};">
+                    <label for="start_date" class="form-label">Başlangıç Tarihi</label>
+                    <input type="date" name="start_date" id="start_date" class="form-control" value="{{ start_date }}">
+                </div>
+                
+                <div class="col-md-3" id="end_date_filter" style="display: {% if filter_type == 'date_range' %}block{% else %}none{% endif %};">
+                    <label for="end_date" class="form-label">Bitiş Tarihi</label>
+                    <input type="date" name="end_date" id="end_date" class="form-control" value="{{ end_date }}">
+                </div>
+                
+                <div class="col-md-3 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary me-2">
+                        <i class="fas fa-search"></i> Filtrele
+                    </button>
+                    <a href="{% url 'sellers:revenue_report' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-times"></i> Temizle
+                    </a>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- İstatistik Kartları -->
+<div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-primary shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                            Toplam Gelir
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_revenue|floatformat:2 }} ₺</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-dollar-sign fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-success shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                            Toplam Proje
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_projects }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-project-diagram fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-info shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                            Tamamlanan Projeler
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ completed_projects }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-check-circle fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-warning shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                            Ortalama Proje Değeri
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">
+                            {{ average_project_value|floatformat:2 }} ₺
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-calculator fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Aylık Gelir Grafiği -->
+    <div class="col-lg-8 mb-4">
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-chart-line"></i> Aylık Gelir Trendi (Son 12 Ay)
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="chart-area">
+                    <canvas id="revenueChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Durum Dağılımı -->
+    <div class="col-lg-4 mb-4">
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-chart-pie"></i> Proje Durum Dağılımı
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="chart-pie pt-4 pb-2">
+                    <canvas id="statusChart"></canvas>
+                </div>
+                <div class="mt-4 text-center small">
+                    {% for stat in status_stats %}
+                    <span class="mr-2">
+                        <i class="fas fa-circle text-{{ stat.status|default:'primary' }}"></i>
+                        {{ stat.status|default:'Bilinmeyen' }}: {{ stat.count }} ({{ stat.total_revenue|floatformat:2 }} ₺)
+                    </span>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Müşteri Türü Dağılımı -->
+<div class="row mb-4">
+    <div class="col-lg-6 mb-4">
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-users"></i> Müşteri Türü Dağılımı
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="chart-pie pt-4 pb-2">
+                    <canvas id="customerTypeChart"></canvas>
+                </div>
+                <div class="mt-4 text-center small">
+                    {% for stat in customer_type_stats %}
+                    <span class="mr-2">
+                        <i class="fas fa-circle text-{{ stat.customer__customer_type|default:'primary' }}"></i>
+                        {{ stat.customer__customer_type|default:'Bilinmeyen' }}: {{ stat.count }} ({{ stat.total_revenue|floatformat:2 }} ₺)
+                    </span>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Son Satışlar -->
+    <div class="col-lg-6 mb-4">
+        <div class="card shadow">
+            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-list"></i> Son Satışlar
+                </h6>
+                <a href="{% url 'sellers:sale_list' %}" class="btn btn-sm btn-primary">Tümünü Gör</a>
+            </div>
+            <div class="card-body">
+                {% if sales %}
+                    <div class="table-responsive">
+                        <table class="table table-bordered" width="100%" cellspacing="0">
+                            <thead>
+                                <tr>
+                                    <th>Proje</th>
+                                    <th>Müşteri</th>
+                                    <th>Durum</th>
+                                    <th>Fiyat</th>
+                                    <th>Tarih</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for sale in sales %}
+                                <tr>
+                                    <td>
+                                        <a href="{% url 'sellers:sale_detail' sale.pk %}">
+                                            {{ sale.project_name|truncatechars:20 }}
+                                        </a>
+                                    </td>
+                                    <td>{{ sale.customer.display_name|truncatechars:15 }}</td>
+                                    <td>
+                                        <span class="badge badge-{{ sale.status|default:'secondary' }}">
+                                            {{ sale.get_status_display }}
+                                        </span>
+                                    </td>
+                                    <td>{{ sale.final_price|floatformat:2 }} ₺</td>
+                                    <td>{{ sale.created_at|date:"d.m.Y" }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-chart-line fa-3x text-gray-300 mb-3"></i>
+                        <p class="text-muted">Seçilen filtreye göre satış bulunamadı.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block seller_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="{% static 'sellers/js/revenue_report.js' %}"></script>
+
+<script>
+// Filtreleme seçeneklerini toggle et
+function toggleFilterOptions() {
+    const filterType = document.getElementById('filter_type').value;
+    const monthlyFilter = document.getElementById('monthly_filter');
+    const yearFilter = document.getElementById('year_filter');
+    const dateRangeFilter = document.getElementById('date_range_filter');
+    const endDateFilter = document.getElementById('end_date_filter');
+    
+    // Tüm filtreleri gizle
+    monthlyFilter.style.display = 'none';
+    yearFilter.style.display = 'none';
+    dateRangeFilter.style.display = 'none';
+    endDateFilter.style.display = 'none';
+    
+    // Seçilen filtreye göre göster
+    if (filterType === 'monthly') {
+        monthlyFilter.style.display = 'block';
+        yearFilter.style.display = 'block';
+    } else if (filterType === 'date_range') {
+        dateRangeFilter.style.display = 'block';
+        endDateFilter.style.display = 'block';
+    }
+}
+
+// Aylık gelir grafiği
+const revenueCtx = document.getElementById('revenueChart').getContext('2d');
+const revenueChart = new Chart(revenueCtx, {
+    type: 'line',
+    data: {
+        labels: [
+            {% for data in monthly_data %}
+            '{{ data.month_name }}',
+            {% endfor %}
+        ],
+        datasets: [{
+            label: 'Gelir (₺)',
+            data: [
+                {% for data in monthly_data %}
+                {{ data.revenue }},
+                {% endfor %}
+            ],
+            borderColor: '#4e73df',
+            backgroundColor: 'rgba(78, 115, 223, 0.1)',
+            borderWidth: 2,
+            fill: true,
+            tension: 0.4
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: {
+                    callback: function(value) {
+                        return value.toLocaleString('tr-TR') + ' ₺';
+                    }
+                }
+            }
+        },
+        plugins: {
+            tooltip: {
+                callbacks: {
+                    label: function(context) {
+                        return 'Gelir: ' + context.parsed.y.toLocaleString('tr-TR') + ' ₺';
+                    }
+                }
+            }
+        }
+    }
+});
+
+// Durum dağılımı grafiği
+const statusCtx = document.getElementById('statusChart').getContext('2d');
+const statusChart = new Chart(statusCtx, {
+    type: 'doughnut',
+    data: {
+        labels: [
+            {% for stat in status_stats %}
+            '{{ stat.status|default:"Bilinmeyen" }}',
+            {% endfor %}
+        ],
+        datasets: [{
+            data: [
+                {% for stat in status_stats %}
+                {{ stat.count }},
+                {% endfor %}
+            ],
+            backgroundColor: [
+                '#4e73df',
+                '#1cc88a',
+                '#36b9cc',
+                '#f6c23e',
+                '#e74a3b'
+            ],
+            hoverBackgroundColor: [
+                '#2e59d9',
+                '#17a673',
+                '#2c9faf',
+                '#dda20a',
+                '#be2617'
+            ]
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'bottom'
+            }
+        }
+    }
+});
+
+// Müşteri türü dağılımı grafiği
+const customerTypeCtx = document.getElementById('customerTypeChart').getContext('2d');
+const customerTypeChart = new Chart(customerTypeCtx, {
+    type: 'doughnut',
+    data: {
+        labels: [
+            {% for stat in customer_type_stats %}
+            '{{ stat.customer__customer_type|default:"Bilinmeyen" }}',
+            {% endfor %}
+        ],
+        datasets: [{
+            data: [
+                {% for stat in customer_type_stats %}
+                {{ stat.count }},
+                {% endfor %}
+            ],
+            backgroundColor: [
+                '#4e73df',
+                '#1cc88a',
+                '#36b9cc',
+                '#f6c23e',
+                '#e74a3b'
+            ],
+            hoverBackgroundColor: [
+                '#2e59d9',
+                '#17a673',
+                '#2c9faf',
+                '#dda20a',
+                '#be2617'
+            ]
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'bottom'
+            }
+        }
+    }
+});
+
+// PDF export
+function exportToPDF() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    
+    doc.setFontSize(20);
+    doc.text('Gelir Raporu', 20, 20);
+    
+    doc.setFontSize(12);
+    doc.text(`Toplam Gelir: {{ total_revenue|floatformat:2 }} ₺`, 20, 40);
+    doc.text(`Toplam Proje: {{ total_projects }}`, 20, 50);
+    doc.text(`Tamamlanan Proje: {{ completed_projects }}`, 20, 60);
+    
+    doc.save('gelir-raporu.pdf');
+}
+
+// Excel export
+function exportToExcel() {
+    const data = [
+        ['Proje Adı', 'Müşteri', 'Durum', 'Fiyat', 'Tarih']
+    ];
+    
+    {% for sale in sales %}
+    data.push([
+        '{{ sale.project_name }}',
+        '{{ sale.customer.display_name }}',
+        '{{ sale.get_status_display }}',
+        '{{ sale.final_price|floatformat:2 }}',
+        '{{ sale.created_at|date:"d.m.Y" }}'
+    ]);
+    {% endfor %}
+    
+    const ws = XLSX.utils.aoa_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Gelir Raporu');
+    
+    XLSX.writeFile(wb, 'gelir-raporu.xlsx');
+}
+</script>
+{% endblock %}

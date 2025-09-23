@@ -1,0 +1,72 @@
+{% load static %}
+{% load account_tags %}
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}GlichFlow{% endblock %}</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="{% static 'img/favicon.svg' %}">
+    <link rel="shortcut icon" type="image/svg+xml" href="{% static 'img/favicon.svg' %}">
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Select2 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/@ttskch/select2-bootstrap4-theme@x.x.x/dist/select2-bootstrap4.min.css" rel="stylesheet" />
+    
+    <!-- GlichFlow Base Styles -->
+    <link rel="stylesheet" href="{% static 'css/base.css' %}">
+    <link rel="stylesheet" href="{% static 'css/layout.css' %}">
+    
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <div class="wrapper">
+        <!-- Include Sidebar -->
+        {% include 'includes/sidebar.html' %}
+        
+        <!-- Page Content -->
+        <div id="content">
+            <!-- Include Topbar -->
+            {% include 'includes/topbar.html' %}
+            
+            <div class="main-content">
+                <!-- Include Page Header -->
+                {% include 'includes/page_header.html' %}
+                
+                <!-- Include Messages -->
+                {% include 'includes/messages.html' %}
+                
+                <!-- Main Content -->
+                {% block content %}{% endblock %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- AI Assistant Chat Widget -->
+    {% if request.user.is_authenticated and request.user|has_tag:'ai' %}
+        {% include 'chatbot/chat_widget.html' %}
+    {% endif %}
+    
+    <!-- Bootstrap 5 JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- jQuery (for additional plugins if needed) -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    
+    <!-- Select2 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    
+    <!-- GlichFlow Base JavaScript -->
+    {% include 'includes/base_js.html' %}
+    
+    {% block extra_js %}{% endblock %}
+</body>
+</html> 

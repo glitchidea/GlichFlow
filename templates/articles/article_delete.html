@@ -1,0 +1,191 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Makale Sil - {{ article.title }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/articles.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-exclamation-triangle"></i> Makale Silme Onayı
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning">
+                        <i class="fas fa-warning"></i>
+                        <strong>Dikkat!</strong> Bu işlem geri alınamaz. Makale ve tüm yorumları kalıcı olarak silinecektir.
+                    </div>
+
+                    <!-- Silinecek Makale Bilgileri -->
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            <h6 class="card-title">
+                                <i class="fas fa-newspaper"></i> Silinecek Makale
+                            </h6>
+                            <div class="row">
+                                <div class="col-md-8">
+                                    <h5 class="mb-2">{{ article.title }}</h5>
+                                    <div class="mb-2">
+                                        <span class="badge bg-{{ article.category_color }}">{{ article.get_category_display }}</span>
+                                        <span class="badge bg-{{ article.status_color }}">{{ article.get_status_display }}</span>
+                                        {% if article.is_featured %}
+                                        <span class="badge bg-warning"><i class="fas fa-star"></i> Öne Çıkan</span>
+                                        {% endif %}
+                                    </div>
+                                    <p class="text-muted mb-2">
+                                        {{ article.get_excerpt_html|truncatewords:30|striptags }}
+                                    </p>
+                                </div>
+                                <div class="col-md-4">
+                                    {% if article.featured_image %}
+                                    <img src="{{ article.featured_image.url }}" class="img-fluid rounded" alt="{{ article.title }}">
+                                    {% else %}
+                                    <div class="bg-light rounded d-flex align-items-center justify-content-center" style="height: 120px;">
+                                        <i class="fas fa-newspaper fa-2x text-muted"></i>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Makale İstatistikleri -->
+                    <div class="row mb-4">
+                        <div class="col-md-3">
+                            <div class="text-center">
+                                <h4 class="text-primary mb-0">{{ article.view_count }}</h4>
+                                <small class="text-muted">Görüntülenme</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="text-center">
+                                <h4 class="text-success mb-0">{{ article.comments.count }}</h4>
+                                <small class="text-muted">Yorum</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="text-center">
+                                <h4 class="text-info mb-0">{{ article.reading_time }}</h4>
+                                <small class="text-muted">Dakika Okuma</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="text-center">
+                                <h4 class="text-warning mb-0">{{ article.get_tags_list|length }}</h4>
+                                <small class="text-muted">Etiket</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Makale Detayları -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h6 class="mb-0"><i class="fas fa-info-circle"></i> Makale Detayları</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-2">
+                                        <strong>Yazar:</strong> {{ article.author.get_full_name|default:article.author.username }}
+                                    </div>
+                                    <div class="mb-2">
+                                        <strong>Oluşturulma:</strong> {{ article.created_at|date:"d.m.Y H:i" }}
+                                    </div>
+                                    <div class="mb-2">
+                                        <strong>Son Güncelleme:</strong> {{ article.updated_at|date:"d.m.Y H:i" }}
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    {% if article.published_at %}
+                                    <div class="mb-2">
+                                        <strong>Yayınlanma:</strong> {{ article.published_at|date:"d.m.Y H:i" }}
+                                    </div>
+                                    {% endif %}
+                                    <div class="mb-2">
+                                        <strong>URL:</strong> 
+                                        <a href="{{ article.get_absolute_url }}" target="_blank" class="text-decoration-none">
+                                            {{ article.slug }}
+                                        </a>
+                                    </div>
+                                    {% if article.get_tags_list %}
+                                    <div class="mb-2">
+                                        <strong>Etiketler:</strong><br>
+                                        {% for tag in article.get_tags_list %}
+                                        <span class="badge bg-light text-dark me-1">#{{ tag }}</span>
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Silme Onayı -->
+                    <form method="post" id="deleteForm">
+                        {% csrf_token %}
+                        <div class="alert alert-danger">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="confirmDelete" required>
+                                <label class="form-check-label" for="confirmDelete">
+                                    <strong>Bu makaleyi kalıcı olarak silmek istediğimi onaylıyorum</strong>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'articles:article_detail' article.slug %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left"></i> Geri Dön
+                            </a>
+                            <button type="submit" class="btn btn-danger" id="deleteBtn" disabled>
+                                <i class="fas fa-trash"></i> Makaleyi Sil
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const confirmCheckbox = document.getElementById('confirmDelete');
+    const deleteBtn = document.getElementById('deleteBtn');
+    const deleteForm = document.getElementById('deleteForm');
+    
+    // Checkbox değişikliğini dinle
+    confirmCheckbox.addEventListener('change', function() {
+        deleteBtn.disabled = !this.checked;
+    });
+    
+    // Form gönderimini dinle
+    deleteForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        if (!confirmCheckbox.checked) {
+            alert('Lütfen onay kutusunu işaretleyin.');
+            return;
+        }
+        
+        // Son onay
+        if (confirm('Bu makale kalıcı olarak silinecek. Emin misiniz?')) {
+            // Loading state
+            deleteBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Siliniyor...';
+            deleteBtn.disabled = true;
+            
+            // Formu gönder
+            this.submit();
+        }
+    });
+});
+</script>
+{% endblock %}

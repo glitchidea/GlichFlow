@@ -1,0 +1,28 @@
+{% extends 'sellers/base_seller.html' %}
+{% load static %}
+
+{% block page_title %}{{ file.file_name }} Önizleme (Markdown){% endblock %}
+
+{% block seller_content %}
+<div class="card shadow mb-4">
+    <div class="card-header py-3 d-flex justify-content-between align-items-center">
+        <h6 class="m-0 font-weight-bold text-primary">Markdown Önizleme</h6>
+        <div>
+            <a class="btn btn-sm btn-outline-secondary" data-bs-toggle="collapse" href="#rawMd" role="button">
+                Kaynağı Göster
+            </a>
+            <a class="btn btn-sm btn-outline-primary" href="{{ file.file.url }}" target="_blank">
+                <i class="fas fa-download"></i> İndir
+            </a>
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="mb-4">{{ html|safe }}</div>
+        <div class="collapse" id="rawMd">
+            <pre style="white-space: pre-wrap; word-break: break-word; font-family: monospace;">{{ raw }}</pre>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+

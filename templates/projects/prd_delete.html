@@ -1,0 +1,116 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}PRD Sil - {{ prd.title }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/prd_delete.css' %}">
+{% endblock %}
+
+{% block page_title %}PRD Sil{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'projects:prd_list' %}">PRD'ler</a></li>
+<li class="breadcrumb-item active">PRD Sil</li>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-exclamation-triangle text-warning me-2"></i>
+                    PRD Silme Onayı
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-warning">
+                    <h6 class="alert-heading">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Dikkat!
+                    </h6>
+                    <p class="mb-0">
+                        Bu işlem geri alınamaz. Aşağıdaki PRD'yi silmek istediğinizden emin misiniz?
+                    </p>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>PRD Bilgileri:</h6>
+                        <table class="table table-sm">
+                            <tr>
+                                <td><strong>Başlık:</strong></td>
+                                <td>{{ prd.title }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Durum:</strong></td>
+                                <td>
+                                    <span class="badge bg-{{ prd.status }}">{{ prd.get_status_display }}</span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><strong>Oluşturan:</strong></td>
+                                <td>{{ prd.created_by.get_full_name|default:prd.created_by.username }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Oluşturma Tarihi:</strong></td>
+                                <td>{{ prd.created_at|date:"d.m.Y H:i" }}</td>
+                            </tr>
+                            {% if prd.project %}
+                            <tr>
+                                <td><strong>Atandığı Proje:</strong></td>
+                                <td>{{ prd.project.name }}</td>
+                            </tr>
+                            {% endif %}
+                            {% if prd.task %}
+                            <tr>
+                                <td><strong>Atandığı Görev:</strong></td>
+                                <td>{{ prd.task.title }}</td>
+                            </tr>
+                            {% endif %}
+                        </table>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Ürün Özeti:</h6>
+                        <div class="border rounded p-3 bg-light">
+                            {% if prd.product_summary %}
+                                {{ prd.product_summary|linebreaks|truncatewords:50 }}
+                            {% else %}
+                                <em class="text-muted">Ürün özeti girilmemiş.</em>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-4">
+                    <h6>Silme Sonrası:</h6>
+                    <ul class="text-muted">
+                        <li>PRD kalıcı olarak silinecek</li>
+                        <li>İlişkili dosyalar da silinecek</li>
+                        <li>Bu işlem geri alınamaz</li>
+                        {% if prd.project or prd.task %}
+                        <li>Proje/görev ataması kaldırılacak</li>
+                        {% endif %}
+                    </ul>
+                </div>
+            </div>
+            <div class="card-footer">
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'projects:prd_detail' prd.id %}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left me-2"></i>
+                            İptal
+                        </a>
+                        <button type="submit" class="btn btn-danger">
+                            <i class="fas fa-trash me-2"></i>
+                            PRD'yi Sil
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

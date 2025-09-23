@@ -1,0 +1,244 @@
+{% extends 'base.html' %}
+
+{% block page_title %}Paket{% endblock %}
+
+{% block extra_css %}
+<style>
+  .form-section {
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    background: #f8f9fa;
+  }
+  
+  .form-section h6 {
+    color: #495057;
+    margin-bottom: 1rem;
+    font-weight: 600;
+  }
+  
+  .optional-field {
+    border-left: 3px solid #ffc107;
+    padding-left: 1rem;
+    margin-bottom: 1rem;
+  }
+  
+  .optional-field .form-label::after {
+    content: " (Opsiyonel)";
+    color: #6c757d;
+    font-weight: normal;
+  }
+  
+  .field-help {
+    font-size: 0.875rem;
+    color: #6c757d;
+    margin-top: 0.25rem;
+  }
+  
+  .toggle-section {
+    cursor: pointer;
+    user-select: none;
+  }
+  
+  .toggle-section:hover {
+    background: #e9ecef;
+  }
+  
+  .toggle-icon {
+    transition: transform 0.2s ease;
+  }
+  
+  .toggle-section.collapsed .toggle-icon {
+    transform: rotate(-90deg);
+  }
+  
+  .collapsible-content {
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+  }
+  
+  .collapsible-content.collapsed {
+    max-height: 0;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+  <div class="col-12 col-lg-8">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="mb-0">
+          {% if object %}Paket Düzenle{% else %}Yeni Paket Oluştur{% endif %}
+        </h5>
+      </div>
+      <div class="card-body">
+        <form method="post">
+          {% csrf_token %}
+          
+          <!-- Temel Bilgiler -->
+          <div class="form-section">
+            <h6><i class="fas fa-info-circle me-2"></i>Temel Bilgiler</h6>
+            
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Kategori *</label>
+                {{ form.group }}
+                {% if form.group.errors %}
+                  <div class="text-danger small">{{ form.group.errors }}</div>
+                {% endif %}
+              </div>
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Paket Adı *</label>
+                {{ form.name }}
+                {% if form.name.errors %}
+                  <div class="text-danger small">{{ form.name.errors }}</div>
+                {% endif %}
+              </div>
+            </div>
+            
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Temel Fiyat (₺) *</label>
+                {{ form.base_price }}
+                <div class="field-help">Paketin temel fiyatı</div>
+                {% if form.base_price.errors %}
+                  <div class="text-danger small">{{ form.base_price.errors }}</div>
+                {% endif %}
+              </div>
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Durum</label>
+                <div class="form-check">
+                  {{ form.is_active }}
+                  <label class="form-check-label" for="{{ form.is_active.id_for_label }}">
+                    Aktif
+                  </label>
+                </div>
+                {% if form.is_active.errors %}
+                  <div class="text-danger small">{{ form.is_active.errors }}</div>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+          
+          <!-- Ek Sayfa Ayarları (Opsiyonel) -->
+          <div class="form-section optional-field">
+            <div class="toggle-section" onclick="toggleSection('extraPagesSection')">
+              <h6 class="mb-0">
+                <i class="fas fa-file-alt me-2"></i>
+                Ek Sayfa Ayarları
+                <i class="fas fa-chevron-down toggle-icon float-end"></i>
+              </h6>
+              <small class="text-muted">Web sitesi projeleri için sayfa sayısı hesaplama</small>
+            </div>
+            
+            <div class="collapsible-content" id="extraPagesSection">
+              <div class="row mt-3">
+                <div class="col-md-6">
+                  <label class="form-label">Ek Sayfa Katsayısı</label>
+                  {{ form.extra_pages_multiplier }}
+                  <div class="field-help">
+                    Her ek sayfa için eklenecek fiyat katsayısı<br>
+                    <strong>Örnek:</strong> 50.00 = Her ek sayfa 50₺ ekler
+                  </div>
+                  {% if form.extra_pages_multiplier.errors %}
+                    <div class="text-danger small">{{ form.extra_pages_multiplier.errors }}</div>
+                  {% endif %}
+                </div>
+                <div class="col-md-6">
+                  <div class="alert alert-info">
+                    <i class="fas fa-lightbulb me-2"></i>
+                    <strong>Ne zaman kullanılır?</strong><br>
+                    • Web sitesi projeleri<br>
+                    • Sayfa sayısı değişken olan projeler<br>
+                    • Müşteri talebine göre genişleyen projeler
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="d-flex gap-2">
+            <button class="btn btn-primary" type="submit">
+              <i class="fas fa-save me-1"></i>
+              {% if object %}Güncelle{% else %}Oluştur{% endif %}
+            </button>
+            <a class="btn btn-secondary" href="{% url 'accounting:package_manager' %}">
+              <i class="fas fa-times me-1"></i>İptal
+            </a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Yardım Paneli -->
+  <div class="col-12 col-lg-4">
+    <div class="card">
+      <div class="card-header">
+        <h6 class="mb-0"><i class="fas fa-question-circle me-2"></i>Yardım</h6>
+      </div>
+      <div class="card-body">
+        <div class="mb-3">
+          <h6 class="text-primary">Paket Oluşturma Rehberi</h6>
+          <ul class="list-unstyled small">
+            <li class="mb-2">
+              <i class="fas fa-check text-success me-2"></i>
+              <strong>Kategori:</strong> Paketin hangi hizmet grubuna ait olduğunu seçin
+            </li>
+            <li class="mb-2">
+              <i class="fas fa-check text-success me-2"></i>
+              <strong>Paket Adı:</strong> Müşterilerin göreceği paket adı (örn: Temel, Pro, Premium)
+            </li>
+            <li class="mb-2">
+              <i class="fas fa-check text-success me-2"></i>
+              <strong>Temel Fiyat:</strong> Paketin başlangıç fiyatı
+            </li>
+            <li class="mb-2">
+              <i class="fas fa-info text-info me-2"></i>
+              <strong>Ek Sayfa:</strong> Sadece web sitesi projeleri için gerekli
+            </li>
+          </ul>
+        </div>
+        
+        <div class="alert alert-warning">
+          <h6 class="alert-heading"><i class="fas fa-exclamation-triangle me-2"></i>Önemli</h6>
+          <p class="mb-0 small">
+            Ek sayfa katsayısını sadece web sitesi gibi sayfa sayısı değişken olan projeler için kullanın. 
+            Diğer projeler için boş bırakabilirsiniz.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Ek sayfa katsayısı değeri varsa bölümü aç
+  const extraPagesMultiplier = document.getElementById('{{ form.extra_pages_multiplier.id_for_label }}');
+  if (extraPagesMultiplier && extraPagesMultiplier.value && extraPagesMultiplier.value > 0) {
+    document.getElementById('extraPagesSection').classList.remove('collapsed');
+    document.querySelector('.toggle-section').classList.remove('collapsed');
+  }
+});
+
+function toggleSection(sectionId) {
+  const section = document.getElementById(sectionId);
+  const toggleSection = section.previousElementSibling;
+  
+  if (section.classList.contains('collapsed')) {
+    section.classList.remove('collapsed');
+    toggleSection.classList.remove('collapsed');
+  } else {
+    section.classList.add('collapsed');
+    toggleSection.classList.add('collapsed');
+  }
+}
+</script>
+{% endblock %}
+
+

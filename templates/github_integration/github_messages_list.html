@@ -1,0 +1,145 @@
+{% extends 'base.html' %}
+
+{% block title %}GitHub Mesajlar | GlichFlow{% endblock %}
+
+{% block page_title %}GitHub Mesajlar{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item active">GitHub Mesajlar</li>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12 mb-4">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">
+                    <i class="fab fa-github me-2"></i> GitHub Issue Yorumları
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if issue_message_groups %}
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width: 40px;"></th>
+                                <th>Issue</th>
+                                <th>Proje / Görev</th>
+                                <th>Son Mesaj</th>
+                                <th>Tarih</th>
+                                <th>İşlemler</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for issue_id, data in issue_message_groups.items %}
+                            <tr>
+                                <td class="text-center">
+                                    <span class="{% if data.unread_count > 0 %}text-primary{% else %}text-muted{% endif %}">
+                                        <i class="{% if data.unread_count > 0 %}fab fa-github-alt{% else %}fab fa-github{% endif %}"></i>
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="bg-dark bg-opacity-10 rounded-circle me-2 d-flex align-items-center justify-content-center text-dark" style="width: 32px; height: 32px;">
+                                            <i class="fab fa-github"></i>
+                                        </div>
+                                        <div>
+                                            <a href="{% url 'github_integration:issue_comments' data.issue.id %}" class="text-decoration-none fw-bold">#{{ data.issue.issue_number }}</a>
+                                            <div>
+                                                <span class="text-truncate d-inline-block" style="max-width: 220px;">{{ data.issue.issue_title }}</span>
+                                                {% if data.unread_count > 0 %}
+                                                <span class="badge bg-danger rounded-pill">{{ data.unread_count }}</span>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div>
+                                        {% if data.issue.task.project %}
+                                        <a href="{% url 'projects:project_detail' data.issue.task.project.id %}" class="text-decoration-none text-muted small">
+                                            <i class="fas fa-project-diagram me-1"></i> {{ data.issue.task.project.name }}
+                                        </a>
+                                        {% endif %}
+                                    </div>
+                                    <div>
+                                        {% if data.issue.task %}
+                                        <a href="{% url 'tasks:task_detail' data.issue.task.id %}" class="text-decoration-none small">
+                                            <i class="fas fa-tasks me-1"></i> {{ data.issue.task.title }}
+                                        </a>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="text-truncate" style="max-width: 240px;">
+                                        {% if data.last_message %}
+                                        {% if data.last_message.sender == request.user %}
+                                        <span class="text-muted small me-1">Sen:</span>
+                                        {% else %}
+                                        <span class="text-muted small me-1">{{ data.last_message.sender.get_full_name|default:data.last_message.sender.username }}:</span>
+                                        {% endif %}
+                                        {{ data.last_message.content|truncatechars:80 }}
+                                        {% endif %}
+                                    </div>
+                                </td>
+                                <td>
+                                    <small class="text-muted">
+                                        {% if data.last_message %}
+                                        {{ data.last_message.created_at|date:"d.m.Y H:i" }}
+                                        {% endif %}
+                                    </small>
+                                </td>
+                                <td>
+                                    <div class="btn-group">
+                                        <a href="{% url 'github_integration:issue_comments' data.issue.id %}" class="btn btn-sm btn-outline-primary" data-bs-toggle="tooltip" title="Yorumları Görüntüle">
+                                            <i class="fas fa-comments"></i>
+                                        </a>
+                                        {% if request.user.is_superuser or request.user == data.issue.task.project.manager %}
+                                        <a href="{% url 'github_integration:issue_update' data.issue.id %}" class="btn btn-sm btn-outline-secondary" data-bs-toggle="tooltip" title="Issue Düzenle">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <a href="{% url 'github_integration:issue_sync_comments' data.issue.id %}" class="btn btn-sm btn-outline-info" data-bs-toggle="tooltip" title="Yorumları Senkronize Et">
+                                            <i class="fas fa-sync"></i>
+                                        </a>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-5">
+                    <div class="d-inline-block bg-primary bg-opacity-10 p-4 rounded-circle mb-3">
+                        <i class="fab fa-github fa-3x text-primary"></i>
+                    </div>
+                    <h4>GitHub Mesajı Bulunamadı</h4>
+                    <p class="text-muted">
+                        Erişim izniniz olan GitHub issue'ları için henüz yorum bulunmuyor.
+                    </p>
+                    <p>
+                        <a href="{% url 'github_integration:github_profile' %}" class="btn btn-outline-primary mt-2">
+                            <i class="fab fa-github me-1"></i> GitHub Profilinize Gidin
+                        </a>
+                    </p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        // Tooltip aktifleştir
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl)
+        });
+    });
+</script>
+{% endblock %} 

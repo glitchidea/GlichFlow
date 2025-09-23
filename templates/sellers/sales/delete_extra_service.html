@@ -1,0 +1,53 @@
+{% extends 'sellers/base_seller.html' %}
+{% load static %}
+
+{% block title %}Ek Hizmet Sil - {{ service.sale.project_name }}{% endblock %}
+
+{% block seller_content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-lg-6 mx-auto">
+            <div class="card shadow">
+                <div class="card-header py-3 bg-danger text-white">
+                    <h4 class="m-0 font-weight-bold">
+                        <i class="fas fa-exclamation-triangle"></i> Ek Hizmet Sil
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <strong>Dikkat!</strong> Bu işlem geri alınamaz.
+                    </div>
+
+                    <div class="mb-4">
+                        <h5 class="text-primary">{{ service.sale.project_name }}</h5>
+                        <p class="text-muted">Proje: {{ service.sale.customer.display_name }}</p>
+                    </div>
+
+                    <div class="card border-warning">
+                        <div class="card-body">
+                            <h6 class="card-title text-warning">Silinecek Ek Hizmet:</h6>
+                            <p class="mb-1"><strong>Hizmet:</strong> {{ service.get_service_name }}</p>
+                            <p class="mb-1"><strong>Miktar:</strong> {{ service.quantity }} adet</p>
+                            <p class="mb-1"><strong>Birim Fiyat:</strong> {{ service.unit_price|floatformat:2 }} ₺</p>
+                            <p class="mb-0"><strong>Toplam:</strong> {{ service.total_price|floatformat:2 }} ₺</p>
+                        </div>
+                    </div>
+
+                    <form method="post" class="mt-4">
+                        {% csrf_token %}
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-danger">
+                                <i class="fas fa-trash"></i> Evet, Sil
+                            </button>
+                            <a href="{% url 'sellers:sale_detail' service.sale.pk %}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> İptal
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

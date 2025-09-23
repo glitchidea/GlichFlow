@@ -1,0 +1,112 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">{{ title }}</h1>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        {% if team %}Ekip Düzenle{% else %}Yeni Ekip Oluştur{% endif %}
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <form method="post" action="{% if team %}{% url 'teams:team_update' team_id=team.id %}{% else %}{% url 'teams:team_create' %}{% endif %}">
+                        {% csrf_token %}
+                        
+                        <div class="form-group">
+                            <label for="name">Ekip Adı <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="name" name="name" value="{{ team.name|default:'' }}" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="description">Açıklama</label>
+                            <textarea class="form-control" id="description" name="description" rows="3">{{ team.description|default:'' }}</textarea>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="leader">Ekip Lideri</label>
+                            <select class="form-control select2" id="leader" name="leader">
+                                <option value="">Lider Seçin</option>
+                                {% for user in users %}
+                                <option value="{{ user.id }}" {% if team.leader == user %}selected{% endif %}>
+                                    {{ user.get_full_name|default:user.username }} ({{ user.email }})
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="projects">Projeler</label>
+                            <select class="form-control select2" id="projects" name="projects" multiple>
+                                {% for project in projects %}
+                                <option value="{{ project.id }}" {% if team and project in team.projects.all %}selected{% endif %}>
+                                    {{ project.name }} ({{ project.get_status_display }})
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <small class="form-text text-muted">Birden fazla proje seçmek için Ctrl tuşuna basarak seçim yapabilirsiniz.</small>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="members">Ekip Üyeleri</label>
+                            <select class="form-control select2" id="members" name="members" multiple>
+                                {% for user in users %}
+                                <option value="{{ user.id }}" {% if team and user.id in team_members %}selected{% endif %}>
+                                    {{ user.get_full_name|default:user.username }} ({{ user.email }})
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <small class="form-text text-muted">Birden fazla üye seçmek için Ctrl tuşuna basarak seçim yapabilirsiniz.</small>
+                        </div>
+                        
+                        <div class="mt-4">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save mr-1"></i> Kaydet
+                            </button>
+                            <a href="{% if team %}{% url 'teams:team_detail' team_id=team.id %}{% else %}{% url 'teams:team_list' %}{% endif %}" class="btn btn-secondary ml-2">
+                                <i class="fas fa-times mr-1"></i> İptal
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        // Initialize Select2
+        $('.select2').select2({
+            theme: 'bootstrap4',
+            placeholder: 'Seçim yapın',
+            allowClear: true,
+            width: '100%'
+        });
+        
+        // Ekip lideri seçildiğinde otomatik olarak üyeler listesine de ekle
+        $('#leader').change(function() {
+            var leaderId = $(this).val();
+            if (leaderId) {
+                // Lider seçilmiş ise
+                var memberSelect = $('#members');
+                
+                // Üyeler listesinde bu lider yoksa ekle
+                if (!memberSelect.find("option[value='" + leaderId + "']:selected").length) {
+                    memberSelect.find("option[value='" + leaderId + "']").prop('selected', true);
+                    memberSelect.trigger('change');
+                }
+            }
+        });
+    });
+</script>
+{% endblock %} 

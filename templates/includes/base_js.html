@@ -1,0 +1,83 @@
+<!-- Base JavaScript with Django URLs -->
+<script>
+// Django URL'leri için global değişkenler
+window.djangoUrls = {
+    getUnreadCount: '{% url "communications:get_unread_count" %}',
+    notificationList: '{% url "communications:notification_list" %}'
+};
+
+// Base JavaScript for GlichFlow
+document.addEventListener('DOMContentLoaded', function() {
+    // Toggle sidebar
+    const sidebarCollapse = document.getElementById('sidebarCollapse');
+    if (sidebarCollapse) {
+        sidebarCollapse.addEventListener('click', function() {
+            const sidebar = document.getElementById('sidebar');
+            const content = document.getElementById('content');
+            
+            if (sidebar && content) {
+                sidebar.classList.toggle('collapsed');
+                content.classList.toggle('expanded');
+            }
+        });
+    }
+    
+    // Initialize tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+    
+    // Initialize dropdowns
+    var dropdownElementList = [].slice.call(document.querySelectorAll('.dropdown-toggle'));
+    var dropdownList = dropdownElementList.map(function (dropdownToggleEl) {
+        return new bootstrap.Dropdown(dropdownToggleEl);
+    });
+});
+
+// Okunmamış mesaj sayısını al
+function updateUnreadCount() {
+    $.ajax({
+        url: window.djangoUrls.getUnreadCount,
+        type: 'GET',
+        dataType: 'json',
+        success: function(data) {
+            // Mesaj sayacı güncelleme
+            if (data.unread_message_count > 0) {
+                $('#unreadMessageCount').text(data.unread_message_count).show();
+            } else {
+                $('#unreadMessageCount').hide();
+            }
+            
+            // Bildirim sayacı güncelleme
+            if (data.unread_notification_count > 0) {
+                $('#unreadNotificationCount').text(data.unread_notification_count).show();
+            } else {
+                $('#unreadNotificationCount').hide();
+            }
+        }
+    });
+}
+
+// Son bildirimleri al - DEVRE DIŞI
+function loadLatestNotifications() {
+    // Bildirimler devre dışı bırakıldı
+    var notificationItems = document.getElementById('notificationItems');
+    if (notificationItems) {
+        notificationItems.innerHTML = '<li><div class="dropdown-item text-center text-muted p-2">Bildirimler devre dışı</div></li>';
+    }
+}
+
+// Bildirim butonuna tıklandığında son bildirimleri yükle
+$(document).on('click', '#notificationsDropdown', function() {
+    loadLatestNotifications();
+});
+
+// Sayfa yüklendiğinde çalıştır
+$(document).ready(function() {
+    updateUnreadCount();
+    
+    // Her 60 saniyede bir güncelle
+    setInterval(updateUnreadCount, 60000);
+});
+</script>

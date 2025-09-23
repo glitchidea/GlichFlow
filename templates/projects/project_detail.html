@@ -1,0 +1,996 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ project.name }} - GlichFlow{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Proje Durum Badge Renkleri */
+    .badge-planning { background-color: #6c757d; }
+    .badge-in_progress { background-color: #0d6efd; }
+    .badge-on_hold { background-color: #ffc107; color: #000; }
+    .badge-completed { background-color: #198754; }
+    .badge-cancelled { background-color: #dc3545; }
+
+    /* PRD Durum Badge Renkleri */
+    .badge-draft { background-color: #f8f9fc; color: #5a5c69; }
+    .badge-review { background-color: #fff3cd; color: #856404; }
+    .badge-approved { background-color: #d4edda; color: #155724; }
+    .badge-rejected { background-color: #f8d7da; color: #721c24; }
+    .badge-archived { background-color: #e2e3e5; color: #383d41; }
+
+    /* Proje İlerleme Çubuğu Renkleri */
+    .progress-bar-success { background-color: #198754; }
+    .progress-bar-warning { background-color: #ffc107; }
+    .progress-bar-danger { background-color: #dc3545; }
+    
+    /* Etkinlik Zaman Çizelgesi */
+    .timeline {
+        position: relative;
+        margin: 0 0 30px 0;
+        padding: 0;
+        list-style: none;
+    }
+    .timeline:before {
+        content: '';
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: #e9ecef;
+        left: 31px;
+        margin: 0;
+        border-radius: 2px;
+    }
+    .timeline > li {
+        position: relative;
+        margin-right: 0;
+        margin-bottom: 15px;
+    }
+    .timeline > li:before,
+    .timeline > li:after {
+        content: " ";
+        display: table;
+    }
+    .timeline > li:after {
+        clear: both;
+    }
+    .timeline > li > .timeline-item {
+        margin-left: 60px;
+        margin-right: 15px;
+        background: #fff;
+        border-radius: 0.25rem;
+        padding: 10px;
+        position: relative;
+        border: 1px solid #e9ecef;
+    }
+    .timeline > li > .timeline-item > .time {
+        color: #999;
+        float: right;
+        font-size: 12px;
+    }
+    .timeline > li > .timeline-item > .timeline-header {
+        margin: 0;
+        font-size: 16px;
+        line-height: 1.1;
+        border-bottom: 1px solid #e9ecef;
+        padding: 10px;
+    }
+    .timeline > li > .timeline-item > .timeline-body,
+    .timeline > li > .timeline-item > .timeline-footer {
+        padding: 10px;
+    }
+    .timeline > li > .fa,
+    .timeline > li > .fas,
+    .timeline > li > .far,
+    .timeline > li > .fab {
+        width: 30px;
+        height: 30px;
+        font-size: 16px;
+        line-height: 30px;
+        position: absolute;
+        color: #fff;
+        background: #3b7ddd;
+        border-radius: 50%;
+        text-align: center;
+        left: 18px;
+        top: 0;
+    }
+    
+    /* Dosya önizleme */
+    .file-preview-container {
+        max-height: 600px;
+        overflow: auto;
+        background-color: #f8f9fa;
+        border-radius: 0.25rem;
+        text-align: center;
+    }
+    
+    /* Büyük görsel önizlemelerini küçültmek için ek stil */
+    .preview-image-container {
+        max-height: 400px;
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 15px;
+    }
+    
+    .preview-image-container img {
+        max-height: 400px;
+        max-width: 100%;
+        object-fit: contain;
+    }
+    
+    .file-uploader-avatar {
+        width: 24px !important;
+        height: 24px !important;
+        border-radius: 50%;
+        object-fit: cover;
+        display: inline-block;
+        vertical-align: middle;
+    }
+    
+    /* Profil resimleri için genel düzenleme */
+    img.rounded-circle {
+        object-position: center;
+    }
+    
+    .team-member-avatar {
+        width: 24px !important;
+        height: 24px !important;
+        border-radius: 50%;
+        object-fit: cover;
+        object-position: center;
+    }
+</style>
+{% endblock %}
+
+{% block page_title %}{{ project.name }}{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'projects:project_list' %}">Projeler</a></li>
+<li class="breadcrumb-item active">{{ project.name }}</li>
+{% endblock %}
+
+{% block page_actions %}
+<div class="btn-group">
+    <a href="{% url 'projects:project_update' project.id %}" class="btn btn-primary">
+        <i class="fas fa-edit"></i> Düzenle
+    </a>
+    <button type="button" class="btn btn-primary dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false">
+        <span class="visually-hidden">Dropdown</span>
+    </button>
+    <ul class="dropdown-menu dropdown-menu-end">
+        <li><a class="dropdown-item" href="{% url 'projects:attachment_upload' project.id %}"><i class="fas fa-paperclip me-2"></i> Dosya Ekle</a></li>
+        
+        <!-- GitHub Entegrasyonu -->
+        {% if not project.github_repository %}
+        <li><a class="dropdown-item" href="{% url 'github_integration:project_github_connect' project.id %}">
+            <i class="fab fa-github me-2"></i> GitHub'a Bağla
+        </a></li>
+        {% else %}
+        <li><a class="dropdown-item" href="{% url 'github_integration:project_github_sync' project.id %}">
+            <i class="fas fa-sync me-2"></i> GitHub ile Senkronize Et
+        </a></li>
+        <li><a class="dropdown-item" href="{% url 'github_integration:project_github_issues_import' project.id %}">
+            <i class="fas fa-file-import me-2"></i> GitHub Issue'ları İçe Aktar
+        </a></li>
+        {% endif %}
+        
+        <li><hr class="dropdown-divider"></li>
+        <li><a class="dropdown-item text-danger" href="{% url 'projects:project_delete' project.id %}"><i class="fas fa-trash me-2"></i> Sil</a></li>
+    </ul>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Proje Bilgileri -->
+    <div class="col-lg-4 mb-4">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Proje Bilgileri</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-4 text-center">
+                    <div class="d-inline-block bg-primary bg-opacity-10 p-3 rounded-circle mb-3">
+                        <i class="fas fa-project-diagram fa-3x text-primary"></i>
+                    </div>
+                    
+                    <h4 class="mb-1">{{ project.name }}</h4>
+                    
+                    <div class="mb-3">
+                        {% if project.status == 'in_progress' %}
+                        <span class="badge bg-primary">Devam Ediyor</span>
+                        {% elif project.status == 'completed' %}
+                        <span class="badge bg-success">Tamamlandı</span>
+                        {% elif project.status == 'on_hold' %}
+                        <span class="badge bg-warning text-dark">Beklemede</span>
+                        {% elif project.status == 'cancelled' %}
+                        <span class="badge bg-secondary">İptal Edildi</span>
+                        {% elif project.status == 'not_started' %}
+                        <span class="badge bg-info">Başlamadı</span>
+                        {% endif %}
+                        
+                        {% if project.priority == 'low' %}
+                        <span class="badge bg-success">Düşük Öncelik</span>
+                        {% elif project.priority == 'medium' %}
+                        <span class="badge bg-info">Orta Öncelik</span>
+                        {% elif project.priority == 'high' %}
+                        <span class="badge bg-warning text-dark">Yüksek Öncelik</span>
+                        {% elif project.priority == 'urgent' %}
+                        <span class="badge bg-danger">Acil</span>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="progress mb-2" style="height: 8px;">
+                        <div class="progress-bar {% if project.is_overdue %}bg-danger{% elif project.status == 'completed' %}bg-success{% else %}bg-primary{% endif %}" style="width: {{ project.progress }}%;" role="progressbar" aria-valuenow="{{ project.progress }}" aria-valuemin="0" aria-valuemax="100"></div>
+                    </div>
+                    <p class="text-muted mb-0">İlerleme: {{ project.progress }}%</p>
+                </div>
+                
+                <hr>
+                
+                <div class="mb-3">
+                    <h6 class="card-subtitle mb-2 text-muted">Açıklama</h6>
+                    <p>{{ project.description|linebreaks|default:"Açıklama bulunmuyor." }}</p>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <h6 class="card-subtitle mb-2 text-muted">Başlangıç Tarihi</h6>
+                        <p class="mb-0">{{ project.start_date|date:"d F Y" }}</p>
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <h6 class="card-subtitle mb-2 text-muted">Bitiş Tarihi</h6>
+                        <p class="mb-0">
+                            {% if project.end_date %}
+                                {% if project.is_overdue %}
+                                <span class="text-danger">{{ project.end_date|date:"d F Y" }}</span>
+                                {% else %}
+                                {{ project.end_date|date:"d F Y" }}
+                                {% endif %}
+                            {% else %}
+                                <span class="text-muted">Belirtilmedi</span>
+                            {% endif %}
+                        </p>
+                    </div>
+                    
+                    {% if project.budget or project.cost %}
+                    <div class="col-md-6 mb-3">
+                        <h6 class="card-subtitle mb-2 text-muted">Bütçe</h6>
+                        <p class="mb-0">
+                            {% if project.budget %}
+                            {{ project.budget }} ₺
+                            {% else %}
+                            <span class="text-muted">Belirtilmedi</span>
+                            {% endif %}
+                        </p>
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <h6 class="card-subtitle mb-2 text-muted">Maliyet</h6>
+                        <p class="mb-0">
+                            {% if project.cost %}
+                            {{ project.cost }} ₺
+                            {% else %}
+                            <span class="text-muted">Belirtilmedi</span>
+                            {% endif %}
+                        </p>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <hr>
+                
+                <div class="mb-3">
+                    <h6 class="card-subtitle mb-2 text-muted">Proje Yöneticisi</h6>
+                    {% if project.manager %}
+                    <div class="d-flex align-items-center">
+                        {% if project.manager.profile_picture %}
+                        <img src="{{ project.manager.profile_picture.url }}" class="rounded-circle me-2" width="40" height="40" alt="{{ project.manager.get_full_name }}">
+                        {% else %}
+                        <div class="bg-secondary bg-opacity-10 rounded-circle me-2 d-flex align-items-center justify-content-center text-secondary" style="width: 40px; height: 40px;">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        {% endif %}
+                        <div>
+                            <p class="mb-0">{{ project.manager.get_full_name|default:project.manager.username }}</p>
+                            <small class="text-muted">{{ project.manager.email }}</small>
+                        </div>
+                    </div>
+                    {% else %}
+                    <p class="text-muted">Atanmadı</p>
+                    {% endif %}
+                </div>
+                
+                <div class="mb-3">
+                    <h6 class="card-subtitle mb-2 text-muted">Takım Üyeleri</h6>
+                    {% if project.team_members.all %}
+                    <div class="d-flex flex-wrap">
+                        {% for member in project.team_members.all %}
+                        <div class="me-2 mb-2" data-bs-toggle="tooltip" title="{{ member.get_full_name|default:member.username }}">
+                            {% if member.profile_picture %}
+                            <img src="{{ member.profile_picture.url }}" class="rounded-circle" width="32" height="32" alt="{{ member.get_full_name }}">
+                            {% else %}
+                            <div class="bg-secondary bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center text-secondary" style="width: 32px; height: 32px;">
+                                <i class="fas fa-user"></i>
+                            </div>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p class="text-muted">Takım üyesi bulunmuyor</p>
+                    {% endif %}
+                </div>
+                
+                <!-- GitHub Entegrasyonu Bilgileri -->
+                {% if project.github_repository %}
+                <hr class="my-3">
+                <div class="card bg-light mb-3">
+                    <div class="card-header bg-dark text-white">
+                        <div class="d-flex align-items-center">
+                            <i class="fab fa-github fa-lg me-2"></i>
+                            <span>GitHub Repository</span>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="me-3">
+                                <i class="fab fa-github fa-3x text-dark"></i>
+                            </div>
+                            <div>
+                                <h5 class="mb-0">
+                                    <a href="{{ project.github_repository.repository_url }}" target="_blank" class="text-decoration-none">
+                                        {{ project.github_repository.repository_owner }}/{{ project.github_repository.repository_name }}
+                                    </a>
+                                </h5>
+                                <span class="badge {% if project.github_repository.is_private %}bg-danger{% else %}bg-success{% endif %} my-1">
+                                    {% if project.github_repository.is_private %}Özel Repository{% else %}Açık Repository{% endif %}
+                                </span>
+                                <p class="mb-0 small text-muted">
+                                    <i class="fas fa-code-branch me-1"></i> Varsayılan Branch: <strong>{{ project.github_repository.default_branch }}</strong>
+                                </p>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-body py-2">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <small class="text-muted">Son Senkronizasyon:</small>
+                                                <div>
+                                                    {% if project.github_repository.last_synced %}
+                                                        <i class="fas fa-sync-alt me-1 text-success"></i> {{ project.github_repository.last_synced|date:"d F Y H:i" }}
+                                                    {% else %}
+                                                        <span class="text-muted"><i class="fas fa-sync-alt me-1"></i> Henüz senkronize edilmedi</span>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-body py-2">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <small class="text-muted">GitHub Issue'lar:</small>
+                                                <div>
+                                                    <i class="fas fa-exclamation-circle me-1 text-warning"></i> 
+                                                    {% with issue_count=project.github_repository.issues.count %}
+                                                        {% if issue_count > 0 %}
+                                                            {{ issue_count }} Issue
+                                                        {% else %}
+                                                            <span class="text-muted">Henüz issue yok</span>
+                                                        {% endif %}
+                                                    {% endwith %}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex flex-wrap gap-2">
+                            <a href="{{ project.github_repository.repository_url }}" target="_blank" class="btn btn-dark">
+                                <i class="fab fa-github me-1"></i> GitHub'da Görüntüle
+                            </a>
+                            <a href="{% url 'github_integration:project_github_sync' project.id %}" class="btn btn-primary">
+                                <i class="fas fa-sync me-1"></i> Senkronize Et
+                            </a>
+                            <a href="{% url 'github_integration:project_github_issues_import' project.id %}" class="btn btn-success">
+                                <i class="fas fa-file-import me-1"></i> Issue'ları İçe Aktar
+                            </a>
+                            {% with issues=project.github_repository.issues.all %}
+                                {% if issues.exists %}
+                                <a href="{% url 'github_integration:github_messages_list' %}" class="btn btn-info">
+                                    <i class="fas fa-comments me-1"></i> Issue Yorumları
+                                </a>
+                                {% else %}
+                                <button class="btn btn-info" disabled>
+                                    <i class="fas fa-comments me-1"></i> Issue Yorumları
+                                </button>
+                                {% endif %}
+                            {% endwith %}
+                        </div>
+                    </div>
+                </div>
+                {% else %}
+                <hr class="my-3">
+                <div class="card bg-light mb-3">
+                    <div class="card-header bg-dark text-white">
+                        <div class="d-flex align-items-center">
+                            <i class="fab fa-github fa-lg me-2"></i>
+                            <span>GitHub Repository</span>
+                        </div>
+                    </div>
+                    <div class="card-body text-center py-4">
+                        <div class="mb-3">
+                            <i class="fab fa-github fa-4x text-muted"></i>
+                        </div>
+                        <h5>Bu Proje Henüz GitHub'a Bağlanmamış</h5>
+                        <p class="text-muted mb-4">GitHub repository bağlayarak görevlerinizi otomatik olarak senkronize edebilir ve kod entegrasyonu sağlayabilirsiniz.</p>
+                        <a href="{% url 'github_integration:project_github_connect' project.id %}" class="btn btn-primary btn-lg">
+                            <i class="fab fa-github me-2"></i> GitHub'a Bağla
+                        </a>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Görevler -->
+    <div class="col-lg-8 mb-4">
+        <div class="card h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">Görevler</h5>
+                <a href="{% url 'tasks:task_create_for_project' project.id %}" class="btn btn-sm btn-primary">
+                    <i class="fas fa-plus"></i> Görev Ekle
+                </a>
+            </div>
+            
+            <!-- Görev İstatistikleri -->
+            <div class="card-body border-bottom pb-0">
+                <div class="row">
+                    <div class="col-6 col-md mb-3">
+                        <div class="card mb-0">
+                            <div class="card-body p-3 text-center">
+                                <h5 class="mb-0">{{ task_counts.total }}</h5>
+                                <p class="text-muted mb-0">Toplam</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md mb-3">
+                        <div class="card mb-0">
+                            <div class="card-body p-3 text-center">
+                                <h5 class="mb-0">{{ task_counts.todo }}</h5>
+                                <p class="text-muted mb-0">Yapılacak</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md mb-3">
+                        <div class="card mb-0">
+                            <div class="card-body p-3 text-center">
+                                <h5 class="mb-0">{{ task_counts.in_progress }}</h5>
+                                <p class="text-muted mb-0">Devam Eden</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md mb-3">
+                        <div class="card mb-0">
+                            <div class="card-body p-3 text-center">
+                                <h5 class="mb-0">{{ task_counts.completed }}</h5>
+                                <p class="text-muted mb-0">Tamamlanan</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Görevler Tablosu -->
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead>
+                            <tr>
+                                <th>Görev Adı</th>
+                                <th>Durum</th>
+                                <th>Atanan</th>
+                                <th>Son Tarih</th>
+                                <th>İşlemler</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for task in tasks %}
+                            <tr>
+                                <td>
+                                    <div>
+                                        <h6 class="mb-0">
+                                            <a href="{% url 'tasks:task_detail' task.id %}" class="text-decoration-none">
+                                                {{ task.title }}
+                                            </a>
+                                        </h6>
+                                        <small class="text-muted">
+                                            {% if task.parent_task %}
+                                            <i class="fas fa-level-up-alt fa-rotate-90 me-1"></i> {{ task.parent_task.title }}
+                                            {% endif %}
+                                        </small>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="dropdown">
+                                        <button 
+                                            {% if task.status == 'todo' %}
+                                            class="badge bg-warning text-dark dropdown-toggle border-0"
+                                            {% elif task.status == 'in_progress' %}
+                                            class="badge bg-primary dropdown-toggle border-0"
+                                            {% elif task.status == 'review' %}
+                                            class="badge bg-info dropdown-toggle border-0"
+                                            {% elif task.status == 'completed' %}
+                                            class="badge bg-success dropdown-toggle border-0"
+                                            {% elif task.status == 'cancelled' %}
+                                            class="badge bg-secondary dropdown-toggle border-0"
+                                            {% endif %}
+                                            type="button" id="taskStatus{{ task.id }}" data-bs-toggle="dropdown" aria-expanded="false"
+                                        >
+                                            {% if task.status == 'todo' %}
+                                            <span>Yapılacak</span>
+                                            {% elif task.status == 'in_progress' %}
+                                            <span>Devam Ediyor</span>
+                                            {% elif task.status == 'review' %}
+                                            <span>İncelemede</span>
+                                            {% elif task.status == 'completed' %}
+                                            <span>Tamamlandı</span>
+                                            {% elif task.status == 'cancelled' %}
+                                            <span>İptal Edildi</span>
+                                            {% endif %}
+                                        </button>
+                                        {% if request.user.role == 'admin' or request.user == task.assignee or request.user == task.creator %}
+                                        <ul class="dropdown-menu" aria-labelledby="taskStatus{{ task.id }}">
+                                            <li><a class="dropdown-item {% if task.status == 'todo' %}active{% endif %}" href="{% url 'tasks:update_status' task.id %}?status=todo&next={{ request.path }}">Yapılacak</a></li>
+                                            <li><a class="dropdown-item {% if task.status == 'in_progress' %}active{% endif %}" href="{% url 'tasks:update_status' task.id %}?status=in_progress&next={{ request.path }}">Devam Ediyor</a></li>
+                                            <li><a class="dropdown-item {% if task.status == 'review' %}active{% endif %}" href="{% url 'tasks:update_status' task.id %}?status=review&next={{ request.path }}">İncelemede</a></li>
+                                            <li><a class="dropdown-item {% if task.status == 'completed' %}active{% endif %}" href="{% url 'tasks:update_status' task.id %}?status=completed&next={{ request.path }}">Tamamlandı</a></li>
+                                            <li><a class="dropdown-item {% if task.status == 'cancelled' %}active{% endif %}" href="{% url 'tasks:update_status' task.id %}?status=cancelled&next={{ request.path }}">İptal Edildi</a></li>
+                                        </ul>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                                <td>
+                                    {% if task.assignee %}
+                                    <div class="d-flex align-items-center">
+                                        {% if task.assignee.profile_picture %}
+                                        <img src="{{ task.assignee.profile_picture.url }}" class="rounded-circle me-2" width="32" height="32" alt="{{ task.assignee.get_full_name }}">
+                                        {% else %}
+                                        <div class="bg-secondary bg-opacity-10 rounded-circle me-2 d-flex align-items-center justify-content-center text-secondary" style="width: 32px; height: 32px;">
+                                            <i class="fas fa-user"></i>
+                                        </div>
+                                        {% endif %}
+                                        <span>{{ task.assignee.get_full_name|default:task.assignee.username }}</span>
+                                    </div>
+                                    {% else %}
+                                    <span class="text-muted">Atanmadı</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if task.due_date %}
+                                        {% if task.is_overdue %}
+                                        <span class="text-danger">{{ task.due_date|date:"d M Y" }}</span>
+                                        {% else %}
+                                        {{ task.due_date|date:"d M Y" }}
+                                        {% endif %}
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="btn-group">
+                                        <a href="{% url 'tasks:task_detail' task.id %}" class="btn btn-sm btn-outline-primary" data-bs-toggle="tooltip" title="Görüntüle">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        <a href="{% url 'tasks:task_update' task.id %}" class="btn btn-sm btn-outline-secondary" data-bs-toggle="tooltip" title="Düzenle">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="5" class="text-center py-4">
+                                    <div class="d-flex flex-column align-items-center">
+                                        <i class="fas fa-tasks fa-3x text-muted mb-3"></i>
+                                        <h5>Henüz görev bulunmuyor</h5>
+                                        <p class="text-muted">Bu projeye görev eklemek için "Görev Ekle" butonuna tıklayın.</p>
+                                        <a href="{% url 'tasks:task_create_for_project' project.id %}" class="btn btn-primary">
+                                            <i class="fas fa-plus"></i> Görev Ekle
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- PRD'ler -->
+    <div class="col-12 mb-4">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-file-alt text-primary"></i> PRD'ler (Product Requirements Documents)
+                </h5>
+                <div>
+                    <a href="{% url 'projects:prd_create' %}?project={{ project.id }}" class="btn btn-sm btn-primary">
+                        <i class="fas fa-plus"></i> PRD Oluştur
+                    </a>
+                    <a href="{% url 'projects:prd_list' %}?project={{ project.id }}" class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-list"></i> Tüm PRD'ler
+                    </a>
+                </div>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>PRD Başlığı</th>
+                                <th>Durum</th>
+                                <th>Oluşturan</th>
+                                <th>Oluşturulma Tarihi</th>
+                                <th>İşlemler</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for prd in project.prds.all %}
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="me-2">
+                                            <i class="fas fa-file-alt fa-lg text-primary"></i>
+                                        </div>
+                                        <div>
+                                            <h6 class="mb-0">{{ prd.title }}</h6>
+                                            {% if prd.product_summary %}
+                                            <small class="text-muted">{{ prd.product_summary|truncatechars:50 }}</small>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge bg-{{ prd.status }}">
+                                        {{ prd.get_status_display }}
+                                    </span>
+                                </td>
+
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        {% if prd.created_by.profile_picture %}
+                                        <img src="{{ prd.created_by.profile_picture.url }}" class="rounded-circle me-2" width="32" height="32" alt="{{ prd.created_by.get_full_name }}">
+                                        {% else %}
+                                        <div class="bg-secondary bg-opacity-10 rounded-circle me-2 d-flex align-items-center justify-content-center text-secondary" style="width: 32px; height: 32px;">
+                                            <i class="fas fa-user"></i>
+                                        </div>
+                                        {% endif %}
+                                        <span>{{ prd.created_by.get_full_name|default:prd.created_by.username }}</span>
+                                    </div>
+                                </td>
+                                <td>{{ prd.created_at|date:"d M Y H:i" }}</td>
+                                <td>
+                                    <div class="btn-group">
+                                        <button type="button" class="btn btn-sm btn-outline-primary prd-view-btn" 
+                                                data-prd-id="{{ prd.id }}" data-bs-toggle="tooltip" title="Görüntüle">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                        {% if user.role in 'admin,project_manager' or user == prd.created_by %}
+                                        <a href="{% url 'projects:prd_edit' prd.id %}" class="btn btn-sm btn-outline-secondary" data-bs-toggle="tooltip" title="Düzenle">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        {% endif %}
+                                        {% if user.role in 'admin,project_manager' %}
+                                        <a href="{% url 'projects:prd_assign' prd.id %}" class="btn btn-sm btn-outline-info" data-bs-toggle="tooltip" title="Ata">
+                                            <i class="fas fa-link"></i>
+                                        </a>
+                                        {% endif %}
+                                        {% if user.role in 'admin,project_manager' or user == prd.created_by %}
+                                        <a href="{% url 'projects:prd_delete' prd.id %}" class="btn btn-sm btn-outline-danger" data-bs-toggle="tooltip" title="Sil">
+                                            <i class="fas fa-trash"></i>
+                                        </a>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="5" class="text-center py-4">
+                                    <div class="d-flex flex-column align-items-center">
+                                        <i class="fas fa-file-alt fa-3x text-muted mb-3"></i>
+                                        <h5>Henüz PRD bulunmuyor</h5>
+                                        <p class="text-muted">Bu projeye PRD eklemek için "PRD Oluştur" butonuna tıklayın.</p>
+                                        <a href="{% url 'projects:prd_create' %}?project={{ project.id }}" class="btn btn-primary">
+                                            <i class="fas fa-plus"></i> PRD Oluştur
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Dosya Ekleri -->
+    <div class="col-12 mb-4">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">Dosya Ekleri</h5>
+                <a href="{% url 'projects:attachment_upload' project.id %}" class="btn btn-sm btn-primary">
+                    <i class="fas fa-upload"></i> Dosya Yükle
+                </a>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Dosya Adı</th>
+                                <th>Açıklama</th>
+                                <th>Yükleyen</th>
+                                <th>Yükleme Tarihi</th>
+                                <th>İşlemler</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for attachment in attachments %}
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="me-2">
+                                            <i class="fas fa-file-alt fa-lg text-primary"></i>
+                                        </div>
+                                        <div>
+                                            <h6 class="mb-0">{{ attachment.name }}</h6>
+                                            <small class="text-muted">{{ attachment.file.size|filesizeformat }}</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>{{ attachment.description|truncatechars:50|default:"-" }}</td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        {% if attachment.uploaded_by.profile_picture %}
+                                        <img src="{{ attachment.uploaded_by.profile_picture.url }}" class="rounded-circle me-2" width="32" height="32" alt="{{ attachment.uploaded_by.get_full_name }}">
+                                        {% else %}
+                                        <div class="bg-secondary bg-opacity-10 rounded-circle me-2 d-flex align-items-center justify-content-center text-secondary" style="width: 32px; height: 32px;">
+                                            <i class="fas fa-user"></i>
+                                        </div>
+                                        {% endif %}
+                                        <span>{{ attachment.uploaded_by.get_full_name|default:attachment.uploaded_by.username }}</span>
+                                    </div>
+                                </td>
+                                <td>{{ attachment.upload_date|date:"d M Y H:i" }}</td>
+                                <td>
+                                    <div class="btn-group">
+                                        <a href="{{ attachment.file.url }}" class="btn btn-sm btn-outline-primary" target="_blank" data-bs-toggle="tooltip" title="Görüntüle">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        <a href="{{ attachment.file.url }}" class="btn btn-sm btn-outline-secondary" download data-bs-toggle="tooltip" title="İndir">
+                                            <i class="fas fa-download"></i>
+                                        </a>
+                                        {% if user == attachment.uploaded_by or user.role == 'admin' or user.role == 'project_manager' %}
+                                        <a href="{% url 'projects:attachment_delete' attachment.id %}" class="btn btn-sm btn-outline-danger" data-bs-toggle="tooltip" title="Sil">
+                                            <i class="fas fa-trash"></i>
+                                        </a>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="5" class="text-center py-4">
+                                    <div class="d-flex flex-column align-items-center">
+                                        <i class="fas fa-file-upload fa-3x text-muted mb-3"></i>
+                                        <h5>Henüz dosya eki bulunmuyor</h5>
+                                        <p class="text-muted">Bu projeye dosya eklemek için "Dosya Yükle" butonuna tıklayın.</p>
+                                        <a href="{% url 'projects:attachment_upload' project.id %}" class="btn btn-primary">
+                                            <i class="fas fa-upload"></i> Dosya Yükle
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- PRD View Modal -->
+<div class="modal fade" id="prdModal" tabindex="-1" aria-labelledby="prdModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="prdModalLabel">PRD Detayları</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="prdModalBody">
+                <!-- PRD içeriği buraya yüklenecek -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Kapat</button>
+                <a href="#" class="btn btn-primary" id="prdEditLink">
+                    <i class="fas fa-edit"></i> Düzenle
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+
+
+<!-- Attachment Modal -->
+<div class="modal fade" id="attachmentModal" tabindex="-1" aria-labelledby="attachmentModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="attachmentModalLabel">Dosya Görüntüleyici</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center p-0" id="attachmentPreview">
+                <!-- Content will be loaded dynamically -->
+                <div class="d-flex justify-content-center align-items-center p-5">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Yükleniyor...</span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <a href="#" class="btn btn-primary" id="downloadAttachment" download>
+                    <i class="fas fa-download me-1"></i> İndir
+                </a>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Kapat</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // PRD görüntüleme butonları
+    $('.prd-view-btn').click(function() {
+        const prdId = $(this).data('prd-id');
+        const modal = $('#prdModal');
+        const modalBody = $('#prdModalBody');
+        const editLink = $('#prdEditLink');
+        
+        // Loading göster
+        modalBody.html('<div class="text-center py-4"><i class="fas fa-spinner fa-spin fa-2x"></i><p class="mt-2">Yükleniyor...</p></div>');
+        modal.modal('show');
+        
+        // PRD içeriğini yükle
+        $.ajax({
+            url: `/projects/prd/${prdId}/detail/`,
+            method: 'GET',
+            success: function(data) {
+                modalBody.html(data);
+                editLink.attr('href', `/projects/prd/${prdId}/edit/`);
+            },
+            error: function() {
+                modalBody.html('<div class="text-center py-4 text-danger"><i class="fas fa-exclamation-triangle fa-2x"></i><p class="mt-2">PRD yüklenirken hata oluştu.</p></div>');
+            }
+        });
+    });
+});
+</script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize tooltips
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl)
+        });
+        
+        // Handle attachment preview
+        const viewButtons = document.querySelectorAll('.view-attachment');
+        const previewContainer = document.getElementById('attachmentPreview');
+        const downloadLink = document.getElementById('downloadAttachment');
+        const modalTitle = document.getElementById('attachmentModalLabel');
+        
+        viewButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const fileUrl = this.getAttribute('data-attachment-url');
+                const fileName = this.getAttribute('data-attachment-name');
+                
+                // Extract the file extension from the URL
+                const fileType = fileUrl.split('.').pop().toLowerCase();
+                
+                // Update download link
+                downloadLink.href = fileUrl;
+                downloadLink.setAttribute('download', fileName);
+                
+                // Update modal title
+                modalTitle.textContent = fileName;
+                
+                // Clear previous content
+                previewContainer.innerHTML = '<div class="d-flex justify-content-center align-items-center p-5"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Yükleniyor...</span></div></div>';
+                
+                // Handle different file types
+                if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg'].includes(fileType)) {
+                    // Images
+                    const img = new Image();
+                    img.onload = function() {
+                        previewContainer.innerHTML = '';
+                        img.classList.add('img-fluid', 'preview-image');
+                        const imageContainer = document.createElement('div');
+                        imageContainer.className = 'preview-image-container';
+                        imageContainer.appendChild(img);
+                        previewContainer.appendChild(imageContainer);
+                    };
+                    img.onerror = function() {
+                        previewContainer.innerHTML = '<div class="alert alert-danger m-3">Görsel yüklenemedi</div>';
+                    };
+                    img.src = fileUrl;
+                } else if (['pdf'].includes(fileType)) {
+                    // PDF
+                    previewContainer.innerHTML = `<iframe src="${fileUrl}" width="100%" height="500" frameborder="0"></iframe>`;
+                } else if (['mp4', 'webm', 'ogg'].includes(fileType)) {
+                    // Video
+                    previewContainer.innerHTML = `<video src="${fileUrl}" controls class="img-fluid" style="max-height: 400px;"></video>`;
+                } else if (['mp3', 'wav'].includes(fileType)) {
+                    // Audio
+                    previewContainer.innerHTML = `<audio src="${fileUrl}" controls class="w-100 my-3"></audio>`;
+                } else if (['txt', 'csv', 'md', 'json', 'xml', 'html', 'htm', 'js', 'css', 'py', 'java', 'c', 'cpp', 'php'].includes(fileType)) {
+                    // Text files
+                    fetch(fileUrl)
+                        .then(response => response.text())
+                        .then(text => {
+                            previewContainer.innerHTML = `<pre class="text-start p-3" style="max-height: 500px; overflow: auto;">${text}</pre>`;
+                        })
+                        .catch(error => {
+                            previewContainer.innerHTML = '<div class="alert alert-danger m-3">Dosya içeriği yüklenemedi</div>';
+                        });
+                } else if (['doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx'].includes(fileType)) {
+                    // Office documents - use Google Docs Viewer if available
+                    previewContainer.innerHTML = `
+                        <div class="p-3">
+                            <p class="mb-3">Office dosyası görüntüleniyor...</p>
+                            <iframe src="https://docs.google.com/viewer?url=${encodeURIComponent(fileUrl)}&embedded=true" 
+                                width="100%" height="500px" frameborder="0">
+                            </iframe>
+                        </div>
+                    `;
+                } else {
+                    // Unsupported file type
+                    previewContainer.innerHTML = `
+                        <div class="p-5 text-center">
+                            <i class="fas fa-file fa-4x text-muted mb-3"></i>
+                            <h5>Bu dosya türü önizleme için desteklenmiyor</h5>
+                            <p class="text-muted mb-4">Dosyayı görüntülemek için indirmelisiniz.</p>
+                            <a href="${fileUrl}" class="btn btn-primary" download="${fileName}">
+                                <i class="fas fa-download me-2"></i> İndir
+                            </a>
+                        </div>
+                    `;
+                }
+            });
+        });
+    });
+</script>
+{% endblock %} 

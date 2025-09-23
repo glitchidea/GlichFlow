@@ -1,0 +1,166 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Yeni Rapor Oluştur{% endblock %}
+
+{% block page_title %}Yeni Rapor Oluştur{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'dashboard:index' %}">Ana Sayfa</a></li>
+<li class="breadcrumb-item"><a href="{% url 'reports:report_list' %}">Raporlar</a></li>
+<li class="breadcrumb-item active">Yeni Rapor</li>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <form method="post" id="reportForm">
+                    {% csrf_token %}
+                    
+                    {% if messages %}
+                    <div class="alert alert-danger">
+                        {% for message in messages %}
+                        <p {% if message.tags %}class="{{ message.tags }}"{% endif %}>{{ message }}</p>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="title" class="form-label">Rapor Başlığı <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="title" name="title" value="{{ form.title.value|default:'' }}" required>
+                            {% if form.title.errors %}
+                            <div class="text-danger mt-1">{{ form.title.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label for="report_type" class="form-label">Rapor Tipi <span class="text-danger">*</span></label>
+                            <select class="form-control" id="report_type" name="report_type" required>
+                                <option value="">Seçiniz</option>
+                                {% for key, value in report_types %}
+                                <option value="{{ key }}" {% if form.report_type.value == key %}selected{% endif %}>{{ value }}</option>
+                                {% endfor %}
+                            </select>
+                            {% if form.report_type.errors %}
+                            <div class="text-danger mt-1">{{ form.report_type.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-12">
+                            <label for="description" class="form-label">Açıklama</label>
+                            <p class="small text-muted">Çoklu satırlar için Enter tuşunu kullanabilirsiniz. Markdown formatı desteklenmektedir.</p>
+                            <textarea class="form-control" id="description" name="description" rows="5" style="white-space: pre-wrap;">{{ form.description.value|default:'' }}</textarea>
+                            {% if form.description.errors %}
+                            <div class="text-danger mt-1">{{ form.description.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="project" class="form-label">Proje</label>
+                            <select class="form-control" id="project" name="project">
+                                <option value="">Tüm Projeler</option>
+                                {% for project in projects %}
+                                <option value="{{ project.id }}" {% if form.project.value == project.id %}selected{% endif %}>{{ project.name }}</option>
+                                {% endfor %}
+                            </select>
+                            {% if form.project.errors %}
+                            <div class="text-danger mt-1">{{ form.project.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-6 d-flex align-items-center mt-md-0 mt-3">
+                            <div class="form-check me-4">
+                                <input class="form-check-input" type="checkbox" value="True" id="is_scheduled" name="is_scheduled" {% if form.is_scheduled.value %}checked{% endif %}>
+                                <label class="form-check-label" for="is_scheduled">
+                                    Zamanlanmış Rapor
+                                </label>
+                            </div>
+                            {% if form.is_scheduled.errors %}
+                            <div class="text-danger mt-1">{{ form.is_scheduled.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div id="scheduleOptions" class="row mb-3" style="display: {% if form.is_scheduled.value %}block{% else %}none{% endif %};">
+                        <div class="col-md-6">
+                            <label for="schedule_interval" class="form-label">Zamanlama Aralığı</label>
+                            <select class="form-control" id="schedule_interval" name="schedule_interval">
+                                <option value="daily" {% if form.schedule_interval.value == 'daily' %}selected{% endif %}>Günlük</option>
+                                <option value="weekly" {% if form.schedule_interval.value == 'weekly' %}selected{% endif %}>Haftalık</option>
+                                <option value="monthly" {% if form.schedule_interval.value == 'monthly' %}selected{% endif %}>Aylık</option>
+                            </select>
+                            {% if form.schedule_interval.errors %}
+                            <div class="text-danger mt-1">{{ form.schedule_interval.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="date_from" class="form-label">Başlangıç Tarihi</label>
+                            <input type="date" class="form-control" id="date_from" name="date_from" value="{{ form.date_from.value|date:'Y-m-d'|default:'' }}">
+                            {% if form.date_from.errors %}
+                            <div class="text-danger mt-1">{{ form.date_from.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label for="date_to" class="form-label">Bitiş Tarihi</label>
+                            <input type="date" class="form-control" id="date_to" name="date_to" value="{{ form.date_to.value|date:'Y-m-d'|default:'' }}">
+                            {% if form.date_to.errors %}
+                            <div class="text-danger mt-1">{{ form.date_to.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <button type="submit" class="btn btn-primary">Rapor Oluştur</button>
+                            <a href="{% url 'reports:report_list' %}" class="btn btn-light ms-2">İptal</a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    $('#is_scheduled').change(function() {
+        if($(this).is(':checked')) {
+            $('#scheduleOptions').slideDown();
+        } else {
+            $('#scheduleOptions').slideUp();
+        }
+    });
+    
+    $('#report_type').change(function() {
+        // Rapor tipine göre ek alanları göster/gizle
+        let reportType = $(this).val();
+        
+        if(reportType == 'project_progress') {
+            $('#project').closest('.row').show();
+        } else if(reportType == 'time_usage') {
+            $('#project').closest('.row').show();
+        } else if(reportType == 'user_performance') {
+            $('#project').closest('.row').show();
+        } else if(reportType == 'workload') {
+            $('#project').closest('.row').show();
+        }
+    });
+    
+    // Sayfa yüklendiğinde mevcut rapor tipine göre ek alanları ayarla
+    $('#report_type').trigger('change');
+});
+</script>
+{% endblock %} 

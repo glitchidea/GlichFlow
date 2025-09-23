@@ -1,0 +1,87 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Yeni Mesaj | {{ request.site_settings.site_name }}{% endblock %}
+
+{% block page_title %}Yeni Mesaj{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'dashboard:index' %}">Anasayfa</a></li>
+<li class="breadcrumb-item"><a href="{% url 'communications:direct_messages_list' %}">Direkt Mesajlar</a></li>
+<li class="breadcrumb-item active">Yeni Mesaj</li>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Yeni Mesaj Başlat</h5>
+            </div>
+            <div class="card-body">
+                <form method="post" action="{% url 'communications:new_direct_message' %}">
+                    {% csrf_token %}
+                    
+                    {% if form.non_field_errors %}
+                    <div class="alert alert-danger">
+                        {% for error in form.non_field_errors %}
+                        {{ error }}
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    
+                    <div class="mb-3">
+                        <label for="{{ form.recipient.id_for_label }}" class="form-label">Alıcı</label>
+                        <select name="{{ form.recipient.name }}" id="{{ form.recipient.id_for_label }}" class="form-select select2" data-search="true" required>
+                            <option value="">Alıcı seçin...</option>
+                            {% for user in users %}
+                            <option value="{{ user.id }}" {% if form.recipient.value|stringformat:'s' == user.id|stringformat:'s' %}selected{% endif %}>
+                                {{ user.get_full_name|default:user.username }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                        {% if form.recipient.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.recipient.errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="{{ form.content.id_for_label }}" class="form-label">Mesaj</label>
+                        <textarea name="{{ form.content.name }}" id="{{ form.content.id_for_label }}" rows="5" class="form-control" placeholder="Mesajınızı yazın..." required>{{ form.content.value|default:'' }}</textarea>
+                        {% if form.content.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.content.errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'communications:direct_messages_list' %}" class="btn btn-secondary">İptal</a>
+                        <button type="submit" class="btn btn-primary">Gönder</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        // Select2 alıcı seçimi için
+        $('.select2').select2({
+            theme: 'bootstrap-5',
+            width: '100%',
+            placeholder: "Alıcı seçin...",
+            allowClear: true
+        });
+    });
+</script>
+{% endblock %} 

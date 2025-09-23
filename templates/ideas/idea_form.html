@@ -1,0 +1,170 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ title }}{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'ideas:idea_list' %}">Fikir Not Defteri</a></li>
+{% if idea %}
+<li class="breadcrumb-item"><a href="{% url 'ideas:idea_detail' idea.pk %}">{{ idea.title }}</a></li>
+<li class="breadcrumb-item active">Düzenle</li>
+{% else %}
+<li class="breadcrumb-item active">Yeni Fikir</li>
+{% endif %}
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/ideas.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-lightbulb"></i> {{ title }}
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="mb-3">
+                                {{ form.title.label_tag }}
+                                {{ form.title }}
+                                {% if form.title.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.title.errors %}
+                                    <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="mb-3">
+                                {{ form.priority.label_tag }}
+                                {{ form.priority }}
+                                {% if form.priority.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.priority.errors %}
+                                    <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="mb-3">
+                                {{ form.status.label_tag }}
+                                {{ form.status }}
+                                {% if form.status.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.status.errors %}
+                                    <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        {{ form.description.label_tag }}
+                        {{ form.description }}
+                        {% if form.description.errors %}
+                        <div class="text-danger">
+                            {% for error in form.description.errors %}
+                            <small>{{ error }}</small>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        <div class="form-text">Fikrinizi detaylı olarak açıklayın. Ne yapmak istiyorsunuz?</div>
+                    </div>
+
+                    <div class="mb-3">
+                        {{ form.requirements.label_tag }}
+                        {{ form.requirements }}
+                        {% if form.requirements.errors %}
+                        <div class="text-danger">
+                            {% for error in form.requirements.errors %}
+                            <small>{{ error }}</small>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        <div class="form-text">Bu proje için gerekli olan şeyleri listeleyin (kaynaklar, ekip, zaman vb.)</div>
+                    </div>
+
+                    <div class="mb-3">
+                        {{ form.working_principle.label_tag }}
+                        {{ form.working_principle }}
+                        {% if form.working_principle.errors %}
+                        <div class="text-danger">
+                            {% for error in form.working_principle.errors %}
+                            <small>{{ error }}</small>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        <div class="form-text">Projenin nasıl çalışacağını, hangi adımları takip edeceğini açıklayın</div>
+                    </div>
+
+                    <div class="mb-3">
+                        {{ form.technologies.label_tag }}
+                        {{ form.technologies }}
+                        {% if form.technologies.errors %}
+                        <div class="text-danger">
+                            {% for error in form.technologies.errors %}
+                            <small>{{ error }}</small>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        <div class="form-text">Kullanmayı planladığınız teknolojileri yazın (örn: Python, Django, React, PostgreSQL)</div>
+                    </div>
+
+                    <div class="d-flex justify-content-between">
+                        <a href="{% if idea %}{% url 'ideas:idea_detail' idea.pk %}{% else %}{% url 'ideas:idea_list' %}{% endif %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left"></i> İptal
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> {{ submit_text }}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Yardım Kartı -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="fas fa-question-circle"></i> Yardım</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6><i class="fas fa-lightbulb"></i> İyi Bir Fikir İçin:</h6>
+                        <ul class="list-unstyled">
+                            <li><i class="fas fa-check text-success"></i> Açık ve net bir başlık</li>
+                            <li><i class="fas fa-check text-success"></i> Detaylı açıklama</li>
+                            <li><i class="fas fa-check text-success"></i> Gerçekçi gereksinimler</li>
+                            <li><i class="fas fa-check text-success"></i> Uygun teknoloji seçimi</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6><i class="fas fa-tags"></i> Öncelik Seviyeleri:</h6>
+                        <ul class="list-unstyled">
+                            <li><span class="badge bg-success me-1">Düşük</span> Gelecekte yapılabilir</li>
+                            <li><span class="badge bg-info me-1">Orta</span> Normal öncelik</li>
+                            <li><span class="badge bg-warning me-1">Yüksek</span> Önemli proje</li>
+                            <li><span class="badge bg-danger me-1">Acil</span> Hemen başlanmalı</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

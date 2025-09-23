@@ -1,0 +1,28 @@
+{% extends 'calendar/base_calendar.html' %}
+{% load static %}
+{% load calendar_tags %}
+
+{% block title %}Takvim - {{ current_date|date:"F Y" }}{% endblock %}
+
+{% block content %}
+{{ block.super }}
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Takvim başlatma
+    initializeCalendar({
+        currentDate: '{{ current_date|date:"Y-m-d" }}',
+        viewType: '{% if view_type == "month" %}dayGridMonth{% elif view_type == "week" %}timeGridWeek{% elif view_type == "day" %}timeGridDay{% else %}dayGridMonth{% endif %}',
+        eventsUrl: '{% url "calendar:events_api" %}',
+        toggleEventUrl: '{% url "calendar:toggle_event" 0 %}'.replace('0', ''),
+        settings: {
+            taskColor: '{{ settings.task_color }}',
+            projectColor: '{{ settings.project_color }}',
+            paymentColor: '{{ settings.payment_color }}',
+            deadlineColor: '{{ settings.deadline_color }}',
+            meetingColor: '{{ settings.meeting_color }}'
+        }
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,30 @@
+{% extends 'sellers/base_seller.html' %}
+{% load static %}
+
+{% block title %}Dosya Önizleme - {{ file.file_name|default:file.file.name }}{% endblock %}
+
+{% block content %}
+<div class="card">
+	<div class="card-header d-flex justify-content-between align-items-center">
+		<h5 class="mb-0">Önizleme: {{ file.file_name|default:file.file.name }}</h5>
+		<a href="{{ file.file.url }}" class="btn btn-sm btn-outline-primary" download>İndir</a>
+	</div>
+	<div class="card-body text-center">
+		{% if media_type == 'image' %}
+			<img src="{{ file.file.url }}" alt="{{ file.file_name|default:file.file.name }}" class="img-fluid" style="max-height:70vh;" />
+		{% elif media_type == 'video' %}
+			<video controls style="max-width:100%; max-height:70vh;">
+				<source src="{{ file.file.url }}" />
+				Tarayıcınız video oynatmayı desteklemiyor.
+			</video>
+		{% elif media_type == 'audio' %}
+			<audio controls style="width:100%;">
+				<source src="{{ file.file.url }}" />
+				Tarayıcınız ses oynatmayı desteklemiyor.
+			</audio>
+		{% else %}
+			<p>Bu medya türü desteklenmiyor.</p>
+		{% endif %}
+	</div>
+</div>
+{% endblock %}

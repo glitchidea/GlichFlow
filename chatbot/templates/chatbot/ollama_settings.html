@@ -1,0 +1,303 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Ollama API Ayarları{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-cog me-2"></i>Ollama API Ayarları</h2>
+                <a href="{% url 'chatbot:chat_list' %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-1"></i> Geri Dön
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-server me-2"></i>API Bağlantı Ayarları
+                    </h5>
+                    <small class="text-muted">Ollama API endpoint'lerini yönetin</small>
+                </div>
+                <div class="card-body">
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.api_url.id_for_label }}" class="form-label">
+                                <i class="fas fa-link me-1"></i>{{ form.api_url.label }}
+                            </label>
+                            {{ form.api_url }}
+                            {% if form.api_url.help_text %}
+                                <div class="form-text">{{ form.api_url.help_text }}</div>
+                            {% endif %}
+                            
+                            <!-- API Endpoint Örnekleri -->
+                            <div class="mt-2">
+                                <small class="text-muted">
+                                    <strong>Örnek Endpoint'ler:</strong><br>
+                                    <code>http://localhost:11434</code> (Yerel)<br>
+                                    <code>http://192.168.1.100:11434</code> (Ağ)<br>
+                                    <code>http://ollama-server:11434</code> (Docker)
+                                </small>
+                            </div>
+                            
+                            {% if form.api_url.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.api_url.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.default_model.id_for_label }}" class="form-label">
+                                <i class="fas fa-robot me-1"></i>{{ form.default_model.label }}
+                            </label>
+                            {{ form.default_model }}
+                            {% if form.default_model.help_text %}
+                                <div class="form-text">{{ form.default_model.help_text }}</div>
+                            {% endif %}
+                            
+                            <!-- Mevcut Modeller -->
+                            {% if available_models %}
+                                <div class="mt-2">
+                                    <small class="text-muted">
+                                        <strong>Mevcut Modeller:</strong><br>
+                                        {% for model in available_models %}
+                                            <span class="badge bg-secondary me-1">{{ model }}</span>
+                                        {% endfor %}
+                                    </small>
+                                </div>
+                            {% endif %}
+                            
+                            {% if form.default_model.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.default_model.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.default_language.id_for_label }}" class="form-label">
+                                <i class="fas fa-globe me-1"></i>{{ form.default_language.label }}
+                            </label>
+                            {{ form.default_language }}
+                            {% if form.default_language.help_text %}
+                                <div class="form-text">{{ form.default_language.help_text }}</div>
+                            {% endif %}
+                            
+                            {% if form.default_language.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.default_language.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3 form-check">
+                            {{ form.is_active }}
+                            <label class="form-check-label" for="{{ form.is_active.id_for_label }}">
+                                {{ form.is_active.label }}
+                            </label>
+                            {% if form.is_active.help_text %}
+                                <div class="form-text">{{ form.is_active.help_text }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-1"></i> Ayarları Kaydet
+                            </button>
+                            <a href="{% url 'chatbot:ollama_settings' %}?test=1" class="btn btn-outline-info">
+                                <i class="fas fa-plug me-1"></i> Bağlantıyı Test Et
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-info-circle me-2"></i>Bilgi
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <h6>API URL Formatı:</h6>
+                    <p class="text-muted">
+                        <code>http://IP_ADRESI:PORT</code><br>
+                        Örnek: <code>http://192.168.1.100:11434</code>
+                    </p>
+
+                    <h6>Ollama Kurulumu:</h6>
+                    <ol class="small">
+                        <li>Ollama'yı bilgisayarınıza kurun</li>
+                        <li>Modelleri indirin:
+                            <ul>
+                                <li><code>ollama pull gemma3:4b</code></li>
+                                <li><code>ollama pull deepseek-r1:8b</code></li>
+                            </ul>
+                        </li>
+                        <li>Ollama server'ı başlatın:
+                            <ul>
+                                <li><code>ollama serve</code></li>
+                            </ul>
+                        </li>
+                    </ol>
+
+                    <h6>Mevcut Ayarlar:</h6>
+                    <div class="alert alert-light">
+                        <strong>API URL:</strong> {{ ollama_settings.api_url }}<br>
+                        <strong>Varsayılan Model:</strong> 
+                        {% if ollama_settings.default_model %}
+                            <span class="badge bg-primary">{{ ollama_settings.default_model }}</span>
+                        {% else %}
+                            <span class="text-muted">Otomatik seçim</span>
+                        {% endif %}<br>
+                        <strong>Varsayılan Dil:</strong> 
+                        <span class="badge bg-info">{{ ollama_settings.get_default_language_display }}</span><br>
+                        <strong>Durum:</strong> 
+                        {% if ollama_settings.is_active %}
+                            <span class="text-success">Aktif</span>
+                        {% else %}
+                            <span class="text-danger">Pasif</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- API Endpoints Bilgisi -->
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-code me-2"></i>API Endpoints
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% for api_name, api_data in api_info.items %}
+                        <h6>{{ api_data.name }}</h6>
+                        <p class="text-muted small">{{ api_data.description }}</p>
+                        
+                        <div class="mb-3">
+                            <strong>Mevcut Modeller:</strong>
+                            <div class="mt-1">
+                                {% if available_models %}
+                                    {% for model in available_models %}
+                                        <span class="badge bg-primary me-1">{{ model }}</span>
+                                    {% endfor %}
+                                {% else %}
+                                    <span class="text-muted">Modeller yükleniyor...</span>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <strong>Varsayılan Port:</strong>
+                            <code>{{ api_data.default_port }}</code>
+                        </div>
+
+                        <h6>Endpoint'ler:</h6>
+                        {% for endpoint in api_data.endpoints %}
+                            <div class="mb-2 p-2 bg-light rounded">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <strong>{{ endpoint.name }}</strong>
+                                    <span class="badge bg-{% if endpoint.method == 'GET' %}success{% else %}info{% endif %}">
+                                        {{ endpoint.method }}
+                                    </span>
+                                </div>
+                                <code class="small">{{ endpoint.url }}</code>
+                                <div class="small text-muted">{{ endpoint.description }}</div>
+                            </div>
+                        {% endfor %}
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Varsayılan Endpoint'ler -->
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-server me-2"></i>Varsayılan Endpoint'ler
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted small">Ayarlar yapılmadığında kullanılacak endpoint'ler:</p>
+                    {% for endpoint in ollama_endpoints %}
+                        <div class="mb-2 p-2 bg-light rounded">
+                            <code>{{ endpoint }}</code>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            {% if api_test_result %}
+                <div class="card mt-3">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-check-circle me-2"></i>Test Sonucu
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        {% if api_test_result.success %}
+                            <div class="alert alert-success">
+                                <i class="fas fa-check me-1"></i>
+                                {{ api_test_result.message }}
+                            </div>
+                            {% if api_test_result.models %}
+                                <h6>Mevcut Modeller:</h6>
+                                <div class="row">
+                                    {% for model in api_test_result.models %}
+                                        <div class="col-md-6 mb-1">
+                                            <span class="badge bg-primary">
+                                                <i class="fas fa-robot me-1"></i>{{ model }}
+                                            </span>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                                
+                                <!-- Model Durumu -->
+                                <div class="mt-3">
+                                    <h6>Model Durumu:</h6>
+                                    {% for model in api_test_result.models %}
+                                        <div class="alert alert-info py-2 mb-1">
+                                            <i class="fas fa-robot me-1"></i>
+                                            <strong>{{ model }}</strong> - Mevcut
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        {% else %}
+                            <div class="alert alert-danger">
+                                <i class="fas fa-times me-1"></i>
+                                {{ api_test_result.message }}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

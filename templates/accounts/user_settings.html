@@ -1,0 +1,338 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block title %}Kullanıcı Bilgileri{% endblock %}
+
+{% block page_title %}
+Kullanıcı Bilgileri
+{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item active">Kullanıcı Bilgileri</li>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .profile-pic-container {
+        width: 200px;
+        height: 200px;
+        overflow: hidden;
+        border-radius: 50%;
+        margin: 0 auto; /* Merkezi hizalama */
+        position: relative;
+    }
+    
+    /* Avatar placeholder styling */
+    .profile-avatar-placeholder {
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+    }
+    
+    .profile-image {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        max-width: 100%; /* Maksimum genişliği sınırla */
+    }
+    
+    /* Ana sayfa düzenini bozan büyük görselleri sınırla */
+    img.rounded-circle {
+        max-width: 200px !important;
+        max-height: 200px !important;
+        width: auto;
+        height: auto;
+        object-fit: cover;
+    }
+    
+    /* Mobil cihazlar için responsive düzen */
+    @media (max-width: 768px) {
+        .profile-pic-container {
+            width: 150px;
+            height: 150px;
+        }
+        
+        img.rounded-circle {
+            max-width: 150px !important;
+            max-height: 150px !important;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-3">
+        <div class="card">
+            <div class="card-body">
+                <div class="d-flex flex-column align-items-center text-center mb-4">
+                    <div class="profile-pic-container mx-auto mb-3">
+                        {% if user.profile_picture %}
+                        <img src="{{ user.profile_picture.url }}" class="img-fluid rounded-circle profile-image" alt="{{ user.get_full_name }}">
+                        {% else %}
+                        <div class="profile-avatar-placeholder d-flex align-items-center justify-content-center bg-primary bg-opacity-25 text-primary rounded-circle mx-auto">
+                            <span class="h2">{{ user.get_full_name|default:user.username|slice:"0:1"|upper }}</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                    <h5 class="mb-0">{{ user.get_full_name|default:user.username }}</h5>
+                    <p class="text-muted mb-1">{{ user.email }}</p>
+                    <p class="badge bg-info">{{ user.get_role_display }}</p>
+                </div>
+                
+                <div class="nav flex-column nav-pills" id="settings-tab" role="tablist" aria-orientation="vertical">
+                    <a class="nav-link {% if active_tab == 'profile' %}active{% endif %} mb-2" 
+                       id="profile-tab" 
+                       href="{% url 'accounts:user_settings' %}?tab=profile" 
+                       role="tab"
+                       aria-selected="{% if active_tab == 'profile' %}true{% else %}false{% endif %}">
+                        <i class="fas fa-user me-2"></i>Kişisel Bilgiler
+                    </a>
+                    <a class="nav-link {% if active_tab == 'security' %}active{% endif %}" 
+                       id="security-tab" 
+                       href="{% url 'accounts:user_settings' %}?tab=security"
+                       role="tab"
+                       aria-selected="{% if active_tab == 'security' %}true{% else %}false{% endif %}">
+                        <i class="fas fa-shield-alt me-2"></i>İletişim ve Güvenlik
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-9">
+        <div class="tab-content">
+            <!-- Profile Settings Tab -->
+            <div class="tab-pane fade {% if active_tab == 'profile' %}show active{% endif %}" id="profile-settings" role="tabpanel" aria-labelledby="profile-tab">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0">Kişisel Bilgileriniz</h5>
+                        {% if can_edit %}
+                        <span class="badge bg-primary">Düzenleme İzniniz Var</span>
+                        {% endif %}
+                    </div>
+                    <div class="card-body">
+                        <form method="post" enctype="multipart/form-data">
+                            {% csrf_token %}
+                            <input type="hidden" name="profile-form" value="1">
+                            {% if not can_edit %}
+                            <input type="hidden" name="only-profile-picture" value="1">
+                            {% endif %}
+                            
+                            <div class="row mb-4">
+                                <div class="col-md-3 text-center mb-3 mb-md-0">
+                                    <div class="profile-pic-container mx-auto">
+                                        {% if user.profile_picture %}
+                                        <img src="{{ user.profile_picture.url }}" class="img-fluid rounded-circle profile-image" alt="{{ user.get_full_name }}">
+                                        {% else %}
+                                        <div class="profile-avatar-placeholder d-flex align-items-center justify-content-center bg-primary bg-opacity-25 text-primary rounded-circle mx-auto">
+                                            <span class="h2">{{ user.get_full_name|default:user.username|slice:"0:1"|upper }}</span>
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="mt-3">
+                                        <label for="{{ profile_form.profile_picture.id_for_label }}" class="btn btn-sm btn-outline-primary">
+                                            Resim Değiştir
+                                        </label>
+                                        <div class="d-none">
+                                            {{ profile_form.profile_picture }}
+                                        </div>
+                                        <div id="profile-picture-filename" class="small text-muted mt-1"></div>
+                                    </div>
+                                </div>
+                                <div class="col-md-9">
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label fw-bold">Ad</label>
+                                            {% if can_edit %}
+                                            {{ profile_form.first_name }}
+                                            {% else %}
+                                            <input type="text" class="form-control" value="{{ user.first_name }}" readonly>
+                                            {% endif %}
+                                            {% if profile_form.first_name.errors %}
+                                            <div class="text-danger small">{{ profile_form.first_name.errors }}</div>
+                                            {% endif %}
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label fw-bold">Soyad</label>
+                                            {% if can_edit %}
+                                            {{ profile_form.last_name }}
+                                            {% else %}
+                                            <input type="text" class="form-control" value="{{ user.last_name }}" readonly>
+                                            {% endif %}
+                                            {% if profile_form.last_name.errors %}
+                                            <div class="text-danger small">{{ profile_form.last_name.errors }}</div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label fw-bold">Departman</label>
+                                        {% if can_edit %}
+                                        {{ profile_form.department }}
+                                        {% else %}
+                                        <input type="text" class="form-control" value="{{ user.department }}" readonly>
+                                        {% endif %}
+                                        {% if profile_form.department.errors %}
+                                        <div class="text-danger small">{{ profile_form.department.errors }}</div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label fw-bold">Rol</label>
+                                        {% if can_edit %}
+                                        {{ profile_form.role }}
+                                        {% else %}
+                                        <input type="text" class="form-control" value="{{ user.get_role_display }}" readonly>
+                                        {% endif %}
+                                        {% if profile_form.role.errors %}
+                                        <div class="text-danger small">{{ profile_form.role.errors }}</div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Hakkınızda</label>
+                                {% if can_edit %}
+                                {{ profile_form.bio }}
+                                {% else %}
+                                <textarea class="form-control" rows="4" readonly>{{ user.bio }}</textarea>
+                                {% endif %}
+                                {% if profile_form.bio.errors %}
+                                <div class="text-danger small">{{ profile_form.bio.errors }}</div>
+                                {% endif %}
+                                <div class="form-text">Kendiniz hakkında kısa bir bilgi.</div>
+                            </div>
+                            
+                            <div class="text-end">
+                                <button type="submit" class="btn btn-primary">Kaydet</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Security Settings Tab -->
+            <div class="tab-pane fade {% if active_tab == 'security' %}show active{% endif %}" id="security-settings" role="tabpanel" aria-labelledby="security-tab">
+                <div class="card mb-4">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0">İletişim Bilgileriniz</h5>
+                        {% if can_edit %}
+                        <span class="badge bg-primary">Düzenleme İzniniz Var</span>
+                        {% endif %}
+                    </div>
+                    <div class="card-body">
+                        <form method="post">
+                            {% csrf_token %}
+                            <input type="hidden" name="security-form" value="1">
+                            
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">E-posta Adresi</label>
+                                {{ security_form.email }}
+                                {% if security_form.email.errors %}
+                                <div class="text-danger small">{{ security_form.email.errors }}</div>
+                                {% endif %}
+                                <div class="form-text">Bu e-posta sisteme giriş ve bildirimler için kullanılacaktır.</div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Telefon</label>
+                                {{ security_form.phone }}
+                                {% if security_form.phone.errors %}
+                                <div class="text-danger small">{{ security_form.phone.errors }}</div>
+                                {% endif %}
+                                <div class="form-text">Acil durumlarda size ulaşılabilecek telefon numarası.</div>
+                            </div>
+                            
+                            {% if can_edit %}
+                            <div class="text-end">
+                                <button type="submit" class="btn btn-primary">Güncelle</button>
+                            </div>
+                            {% endif %}
+                        </form>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">Şifre Değiştir</h5>
+                    </div>
+                    <div class="card-body">
+                        <form method="post">
+                            {% csrf_token %}
+                            <input type="hidden" name="password-form" value="1">
+                            
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Mevcut Şifre</label>
+                                {{ password_form.old_password }}
+                                {% if password_form.old_password.errors %}
+                                <div class="text-danger small">{{ password_form.old_password.errors }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Yeni Şifre</label>
+                                {{ password_form.new_password1 }}
+                                {% if password_form.new_password1.errors %}
+                                <div class="text-danger small">{{ password_form.new_password1.errors }}</div>
+                                {% endif %}
+                                <div class="form-text">
+                                    <ul class="small ps-3 mb-0">
+                                        <li>Şifreniz en az 8 karakter olmalıdır.</li>
+                                        <li>Şifreniz tamamen sayısal olmamalıdır.</li>
+                                        <li>Şifreniz yaygın olarak kullanılan şifrelerden olmamalıdır.</li>
+                                        <li>Şifreniz kişisel bilgilerinizle benzer olmamalıdır.</li>
+                                    </ul>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Yeni Şifre (Tekrar)</label>
+                                {{ password_form.new_password2 }}
+                                {% if password_form.new_password2.errors %}
+                                <div class="text-danger small">{{ password_form.new_password2.errors }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="text-end">
+                                <button type="submit" class="btn btn-primary">Şifreyi Değiştir</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Display file name when a new profile picture is selected
+    var profilePictureInput = document.getElementById('{{ profile_form.profile_picture.id_for_label }}');
+    if (profilePictureInput) {
+        profilePictureInput.addEventListener('change', function(e) {
+            if (e.target.files.length > 0) {
+                var fileName = e.target.files[0].name;
+                document.getElementById('profile-picture-filename').textContent = fileName;
+            }
+        });
+    }
+
+    // Add Bootstrap styling to password change form fields
+    // They don't automatically get styled because they come from Django's built-in forms
+    const passwordFields = [
+        document.getElementById('id_old_password'),
+        document.getElementById('id_new_password1'),
+        document.getElementById('id_new_password2')
+    ];
+    
+    passwordFields.forEach(function(field) {
+        if (field) {
+            field.classList.add('form-control');
+        }
+    });
+});
+</script>
+{% endblock %} 

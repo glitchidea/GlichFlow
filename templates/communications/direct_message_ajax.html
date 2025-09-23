@@ -1,0 +1,61 @@
+{% for message in messages %}
+<div class="chat-message-wrapper mb-4 {% if message.sender == request.user %}text-end{% endif %}">
+    {% if message.message_type == 'system' %}
+        <div class="system-message py-2 px-3 bg-light text-center rounded mb-3">
+            <small class="text-muted">{{ message.content }}</small>
+        </div>
+    {% else %}
+        {% if message.sender != request.user %}
+        <div class="message-sender-info d-flex align-items-center mb-1">
+            <div class="avatar-container me-2">
+                {% if message.sender.profile_picture %}
+                <img src="{{ message.sender.profile_picture.url }}" alt="{{ message.sender.get_full_name }}" class="rounded-circle" width="24" height="24">
+                {% else %}
+                <div class="avatar-placeholder rounded-circle bg-primary text-white d-flex align-items-center justify-content-center" style="width: 24px; height: 24px; font-size: 10px;">
+                    {{ message.sender.get_initials }}
+                </div>
+                {% endif %}
+            </div>
+            <div>
+                <h6 class="mb-0 fs-6">{{ message.sender.get_full_name|default:message.sender.username }}</h6>
+            </div>
+        </div>
+        {% endif %}
+        
+        <div class="chat-bubble {% if message.sender == request.user %}chat-bubble-right{% else %}chat-bubble-left{% endif %} p-3 mb-1">
+            {% if message.message_type == 'text' %}
+                {{ message.content|linebreaks }}
+            {% elif message.message_type == 'image' %}
+                <div class="chat-image mb-1">
+                    <a href="{{ message.file.url }}" target="_blank">
+                        <img src="{{ message.file.url }}" alt="Image" class="img-fluid rounded" style="max-height: 200px;">
+                    </a>
+                </div>
+                {% if message.content %}
+                    <div>{{ message.content|linebreaks }}</div>
+                {% endif %}
+            {% elif message.message_type == 'file' %}
+                <div class="chat-file mb-2">
+                    <a href="{{ message.file.url }}" target="_blank" class="btn btn-sm btn-light">
+                        <i class="fas fa-file me-2"></i> {{ message.file.name|slice:'16:' }}
+                    </a>
+                </div>
+                {% if message.content %}
+                    <div>{{ message.content|linebreaks }}</div>
+                {% endif %}
+            {% endif %}
+        </div>
+        
+        <div class="message-meta small text-muted">
+            <span>{{ message.sent_at|date:"H:i" }}</span>
+            {% if message.sender == request.user %}
+                {% if message.is_read %}
+                    <i class="fas fa-check-double text-primary ms-1" title="Okundu"></i>
+                {% else %}
+                    <i class="fas fa-check ms-1" title="İletildi"></i>
+                {% endif %}
+            {% endif %}
+        </div>
+    {% endif %}
+</div>
+{% endfor %} 

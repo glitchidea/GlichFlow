@@ -1,0 +1,606 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Muhasebe{% endblock %}
+{% block page_title %}Muhasebe{% endblock %}
+{% block breadcrumb %}
+<li class="breadcrumb-item active">Muhasebe</li>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+  .category-card {
+    border: 1px solid #e9ecef;
+    border-radius: 12px;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    background: white;
+  }
+  
+  .category-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    border-color: #007bff;
+  }
+  
+  .category-card.selected {
+    border-color: #007bff;
+    background: #f8f9ff;
+  }
+  
+  .package-card {
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+  }
+  
+  .package-card:hover {
+    border-color: #007bff;
+  }
+  
+  .package-card.selected {
+    border-color: #007bff;
+    background: #f8f9ff;
+  }
+  
+  .price-badge {
+    background: #28a745;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    font-weight: 500;
+  }
+  
+  .feature-list {
+    list-style: none;
+    padding-left: 0;
+    margin-bottom: 0;
+  }
+  
+  .feature-list li {
+    padding: 2px 0;
+    font-size: 0.9rem;
+    color: #6c757d;
+  }
+  
+  .feature-list li:before {
+    content: "✓";
+    color: #28a745;
+    font-weight: bold;
+    margin-right: 8px;
+  }
+  
+  .calculator-panel {
+    background: #f8f9fa;
+    border-radius: 12px;
+    padding: 20px;
+    border: 1px solid #e9ecef;
+  }
+  
+  .total-price {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #28a745;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+  <!-- Kategori Seçimi -->
+  <div class="col-12 mb-4">
+    <div class="card">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Hizmet Kategorisi Seçin</h5>
+        {% if is_admin %}
+        <a href="{% url 'accounting:package_manager' %}" class="btn btn-sm btn-outline-primary">
+          <i class="fas fa-cog me-1"></i>Yönetim
+        </a>
+        {% endif %}
+      </div>
+      <div class="card-body">
+        <div class="row g-3" id="categoryContainer">
+                {% for group in groups %}
+          <div class="col-12 col-md-6 col-lg-4">
+            <div class="category-card p-3" data-group-id="{{ group.id }}">
+              <div class="d-flex justify-content-between align-items-start mb-2">
+                <h6 class="mb-0 fw-bold">{{ group.name }}</h6>
+                <span class="badge bg-primary">{{ group.packages.count }} paket</span>
+              </div>
+              {% if group.description %}
+              <p class="text-muted small mb-2">{{ group.description }}</p>
+              {% endif %}
+              <div class="small text-muted">
+                {% for p in group.packages.all|slice:":2" %}
+                  <span class="badge bg-light text-dark me-1">{{ p.name }}</span>
+                {% endfor %}
+                {% if group.packages.count > 2 %}
+                  <span class="text-muted">+{{ group.packages.count|add:"-2" }} daha</span>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+          {% empty %}
+          <div class="col-12 text-center py-4">
+            <div class="text-muted">
+              <i class="fas fa-boxes fa-3x mb-3"></i>
+              <h5>Henüz kategori yok</h5>
+              <p>Hizmet kategorileri oluşturulduğunda burada görünecek.</p>
+            </div>
+          </div>
+              {% endfor %}
+        </div>
+      </div>
+    </div>
+            </div>
+
+  <!-- Paket Seçimi ve Hesaplayıcı -->
+  <div class="col-12" id="packageSection" style="display: none;">
+    <div class="row">
+      <!-- Paketler -->
+      <div class="col-12 col-lg-8">
+        <div class="card">
+          <div class="card-header">
+            <h5 class="mb-0" id="selectedCategoryName">Paket Seçimi</h5>
+          </div>
+          <div class="card-body">
+            <div class="row g-3" id="packageContainer">
+              <!-- Paketler buraya dinamik olarak yüklenecek -->
+            </div>
+          </div>
+            </div>
+
+        <!-- Ek Sayfa Seçimi -->
+        <div class="card mt-3" id="extraPagesCard" style="display: none;">
+          <div class="card-header">
+            <h6 class="mb-0">
+              <i class="fas fa-file-alt me-2"></i>Ek Sayfa Sayısı
+            </h6>
+          </div>
+          <div class="card-body">
+            <div class="row">
+              <div class="col-md-6">
+                <label class="form-label">Ek sayfa sayısı</label>
+                <input type="number" class="form-control" id="extraPagesInput" min="0" value="0">
+                <div class="form-text">
+                  <i class="fas fa-info-circle me-1"></i>
+                  Her ek sayfa <span id="pageMultiplier">0</span>₺ ekler
+                    </div>
+                  </div>
+              <div class="col-md-6">
+                <div class="alert alert-info">
+                  <i class="fas fa-lightbulb me-2"></i>
+                  <strong>Web Sitesi Projeleri</strong><br>
+                  <small>Sayfa sayısına göre fiyat hesaplanır</small>
+                </div>
+              </div>
+            </div>
+          </div>
+              </div>
+        
+        <!-- Ek Hizmetler -->
+        <div class="card mt-3" id="extraServicesCard" style="display: none;">
+          <div class="card-header">
+            <h6 class="mb-0">Ek Hizmetler</h6>
+              </div>
+          <div class="card-body">
+            <div class="row g-2" id="extraServicesContainer">
+              <!-- Ek hizmetler buraya dinamik olarak yüklenecek -->
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Hesaplayıcı -->
+      <div class="col-12 col-lg-4">
+        <div class="calculator-panel">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <h6 class="mb-0 fw-bold">Fiyat Hesaplayıcı</h6>
+            <button type="button" class="btn btn-sm btn-outline-secondary" id="resetBtn">
+              <i class="fas fa-undo me-1"></i>Sıfırla
+            </button>
+    </div>
+          
+          <div class="mb-3">
+            <div class="small text-muted mb-1">Seçilen Paket</div>
+            <div id="selectedPackageName" class="fw-bold">Henüz paket seçilmedi</div>
+  </div>
+          
+          <hr>
+          
+          <div class="mb-3">
+            <div class="d-flex justify-content-between small mb-1">
+              <span>Ana Paket</span>
+              <span id="basePrice">0 ₺</span>
+            </div>
+            <div class="d-flex justify-content-between small mb-1" id="extraPagesRow" style="display: none;">
+              <span>Ek Sayfalar</span>
+              <span id="extraPagesPrice">0 ₺</span>
+            </div>
+            <div id="extraServicesRows">
+              <!-- Ek hizmet satırları buraya dinamik olarak eklenecek -->
+            </div>
+          </div>
+          
+          <hr>
+          
+          <div class="d-flex justify-content-between align-items-center">
+            <span class="fw-bold">Toplam</span>
+            <span class="total-price" id="totalPrice">0 ₺</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Paket detayları için modal -->
+<div class="modal fade" id="packageModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="packageModalTitle">Paket Detayları</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body" id="packageModalBody">
+        <!-- Paket detayları buraya yüklenecek -->
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Kapat</button>
+        <button type="button" class="btn btn-primary" id="selectPackageBtn">Bu Paketi Seç</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Kategori ve paket verileri
+const groupsData = JSON.parse('{{ groups_json|escapejs }}');
+const extraServicesData = JSON.parse('{{ extra_services_json|escapejs }}');
+
+let selectedGroup = null;
+let selectedPackage = null;
+let selectedExtras = {};
+
+// Kategori seçimi
+document.querySelectorAll('.category-card').forEach(card => {
+  card.addEventListener('click', function() {
+    const groupId = this.dataset.groupId;
+    const group = groupsData.find(g => g.id == groupId);
+    
+    if (group) {
+      // Kategori seçimini güncelle
+      document.querySelectorAll('.category-card').forEach(c => c.classList.remove('selected'));
+      this.classList.add('selected');
+      
+      selectedGroup = group;
+      loadPackages(group);
+      document.getElementById('packageSection').style.display = 'block';
+      document.getElementById('selectedCategoryName').textContent = group.name;
+      
+      // Sayfayı paket bölümüne kaydır
+      document.getElementById('packageSection').scrollIntoView({ behavior: 'smooth' });
+    }
+  });
+});
+
+// Paketleri yükle
+function loadPackages(group) {
+  const container = document.getElementById('packageContainer');
+  container.innerHTML = '';
+  
+  group.packages.forEach(package => {
+    const packageCard = document.createElement('div');
+    packageCard.className = 'col-12 col-md-6';
+    packageCard.innerHTML = `
+      <div class="package-card p-3 h-100" data-package-id="${package.id}">
+        <div class="d-flex justify-content-between align-items-start mb-2">
+          <h6 class="mb-0 fw-bold">${package.name}</h6>
+          <span class="price-badge">${package.base_price} ₺</span>
+        </div>
+        <div class="mb-2">
+          <ul class="feature-list">
+            ${package.features.map(f => `<li>${f.text}</li>`).join('')}
+          </ul>
+        </div>
+        <div class="d-flex justify-content-between align-items-center">
+          <button class="btn btn-sm btn-outline-primary" onclick="showPackageDetails(${package.id})">
+            <i class="fas fa-info-circle me-1"></i>Detaylar
+          </button>
+          <button class="btn btn-sm btn-primary" onclick="selectPackage(${package.id})">
+            <i class="fas fa-check me-1"></i>Seç
+          </button>
+        </div>
+      </div>
+    `;
+    container.appendChild(packageCard);
+  });
+}
+
+// Paket seçimi
+function selectPackage(packageId) {
+  const package = selectedGroup.packages.find(p => p.id == packageId);
+  if (package) {
+    selectedPackage = package;
+    
+    // Paket seçimini görsel olarak güncelle
+    document.querySelectorAll('.package-card').forEach(card => {
+      card.classList.remove('selected');
+    });
+    document.querySelector(`[data-package-id="${packageId}"]`).classList.add('selected');
+    
+    // Hesaplayıcıyı güncelle
+    updateCalculator();
+    
+    // Ek sayfa input'unu göster
+    if (package.extra_pages_multiplier > 0) {
+      document.getElementById('extraPagesCard').style.display = 'block';
+      document.getElementById('pageMultiplier').textContent = package.extra_pages_multiplier;
+      document.getElementById('extraPagesInput').addEventListener('input', updateCalculator);
+    } else {
+      document.getElementById('extraPagesCard').style.display = 'none';
+    }
+    
+    // Ek hizmetleri göster
+    loadExtraServices();
+  }
+}
+
+// Paket detaylarını göster
+function showPackageDetails(packageId) {
+  const package = selectedGroup.packages.find(p => p.id == packageId);
+  if (package) {
+    document.getElementById('packageModalTitle').textContent = package.name;
+    document.getElementById('packageModalBody').innerHTML = `
+      <div class="row">
+        <div class="col-md-6">
+          <h6>Paket Bilgileri</h6>
+          <p><strong>Fiyat:</strong> ${package.base_price} ₺</p>
+          ${package.extra_pages_multiplier > 0 ? `<p><strong>Ek Sayfa Çarpanı:</strong> x${package.extra_pages_multiplier}</p>` : ''}
+        </div>
+        <div class="col-md-6">
+          <h6>Özellikler</h6>
+          <ul class="feature-list">
+            ${package.features.map(f => `<li>${f.text}</li>`).join('')}
+          </ul>
+        </div>
+      </div>
+    `;
+    
+    // Modal'ı aç
+    const modal = new bootstrap.Modal(document.getElementById('packageModal'));
+    modal.show();
+    
+    // Seç butonuna tıklandığında paketi seç
+    document.getElementById('selectPackageBtn').onclick = () => {
+      selectPackage(packageId);
+      modal.hide();
+    };
+  }
+}
+
+// Ek hizmetleri yükle
+function loadExtraServices() {
+  const container = document.getElementById('extraServicesContainer');
+  const card = document.getElementById('extraServicesCard');
+  
+  const groupExtras = extraServicesData.filter(extra => extra.group_id == selectedGroup.id);
+  
+  if (groupExtras.length > 0) {
+    container.innerHTML = '';
+    groupExtras.forEach(extra => {
+      const extraDiv = document.createElement('div');
+      extraDiv.className = 'col-12 col-md-6';
+      
+      let inputHtml = '';
+      let labelHtml = '';
+      
+      // Giriş türüne göre HTML oluştur
+      if (extra.input_type === 'checkbox') {
+        inputHtml = `<input class="form-check-input" type="checkbox" 
+                           id="extra_${extra.id}" 
+                           data-extra-id="${extra.id}"
+                           data-pricing-type="${extra.pricing_type}"
+                           data-price="${extra.price}"
+                           data-percentage="${extra.percentage}"
+                           data-unit-label="${extra.unit_label}">`;
+      } else if (extra.input_type === 'radio') {
+        inputHtml = `<input class="form-check-input" type="radio" 
+                           name="extra_${extra.pricing_type}" 
+                           id="extra_${extra.id}" 
+                           data-extra-id="${extra.id}"
+                           data-pricing-type="${extra.pricing_type}"
+                           data-price="${extra.price}"
+                           data-percentage="${extra.percentage}"
+                           data-unit-label="${extra.unit_label}">`;
+      } else if (extra.input_type === 'number') {
+        inputHtml = `<div class="d-flex align-items-center">
+                       <input type="number" class="form-control form-control-sm me-2" 
+                              id="extra_${extra.id}" 
+                              data-extra-id="${extra.id}"
+                              data-pricing-type="${extra.pricing_type}"
+                              data-price="${extra.price}"
+                              data-percentage="${extra.percentage}"
+                              data-unit-label="${extra.unit_label}"
+                              min="${extra.min_quantity}" 
+                              max="${extra.max_quantity}" 
+                              value="${extra.default_quantity}"
+                              style="width: 80px;">
+                       <span class="small text-muted">${extra.unit_label || 'adet'}</span>
+                     </div>`;
+      } else if (extra.input_type === 'select') {
+        const options = extra.options || [];
+        const optionsHtml = options.map(opt => 
+          `<option value="${opt.value}" data-price="${opt.price || 0}">${opt.label}</option>`
+        ).join('');
+        
+        inputHtml = `<select class="form-select form-select-sm" 
+                             id="extra_${extra.id}" 
+                             data-extra-id="${extra.id}"
+                             data-pricing-type="${extra.pricing_type}"
+                             data-price="${extra.price}"
+                             data-percentage="${extra.percentage}"
+                             data-unit-label="${extra.unit_label}">
+                       <option value="">Seçiniz</option>
+                       ${optionsHtml}
+                     </select>`;
+      }
+      
+      // Fiyat gösterimi
+      let priceDisplay = '';
+      if (extra.pricing_type === 'fixed') {
+        priceDisplay = `${extra.price} ₺`;
+      } else if (extra.pricing_type === 'percentage') {
+        priceDisplay = `%${extra.percentage}`;
+      } else if (extra.pricing_type === 'per_unit') {
+        priceDisplay = `${extra.price} ₺/${extra.unit_label || 'birim'}`;
+      } else if (extra.pricing_type === 'per_page') {
+        priceDisplay = `${extra.price} ₺/sayfa`;
+      } else if (extra.pricing_type === 'per_hour') {
+        priceDisplay = `${extra.price} ₺/saat`;
+      } else if (extra.pricing_type === 'per_day') {
+        priceDisplay = `${extra.price} ₺/gün`;
+      } else if (extra.pricing_type === 'per_month') {
+        priceDisplay = `${extra.price} ₺/ay`;
+      } else if (extra.pricing_type === 'per_year') {
+        priceDisplay = `${extra.price} ₺/yıl`;
+      }
+      
+      labelHtml = `<div class="fw-bold">${extra.name}</div>
+                   <div class="small text-muted">${priceDisplay}</div>
+                   ${extra.description ? `<div class="small text-muted">${extra.description}</div>` : ''}`;
+      
+      extraDiv.innerHTML = `
+        <div class="form-check border rounded p-2">
+          ${inputHtml}
+          <label class="form-check-label" for="extra_${extra.id}">
+            ${labelHtml}
+          </label>
+        </div>
+      `;
+      container.appendChild(extraDiv);
+      
+      // Event listener ekle
+      const input = extraDiv.querySelector('input, select');
+      if (input) {
+        input.addEventListener('change', updateCalculator);
+        input.addEventListener('input', updateCalculator);
+      }
+    });
+    
+    card.style.display = 'block';
+  } else {
+    card.style.display = 'none';
+  }
+}
+
+// Hesaplayıcıyı güncelle
+function updateCalculator() {
+  if (!selectedPackage) return;
+  
+  let total = selectedPackage.base_price;
+  let extraPagesPrice = 0;
+  
+  // Ek sayfa hesaplama (basit örnek)
+  const extraPagesInput = document.getElementById('extraPagesInput');
+  if (extraPagesInput && selectedPackage.extra_pages_multiplier > 0) {
+    const extraPages = parseInt(extraPagesInput.value) || 0;
+    extraPagesPrice = extraPages * selectedPackage.extra_pages_multiplier;
+    total += extraPagesPrice;
+  }
+  
+  // Ek hizmetleri hesapla
+  const extraServicesRows = document.getElementById('extraServicesRows');
+  extraServicesRows.innerHTML = '';
+  
+  document.querySelectorAll('#extraServicesContainer input:checked, #extraServicesContainer input[type="number"], #extraServicesContainer select').forEach(input => {
+    const extraId = input.dataset.extraId;
+    const pricingType = input.dataset.pricingType;
+    const price = parseFloat(input.dataset.price) || 0;
+    const percentage = parseFloat(input.dataset.percentage) || 0;
+    const unitLabel = input.dataset.unitLabel || '';
+    
+    let extraPrice = 0;
+    let quantity = 1;
+    
+    // Miktar belirleme
+    if (input.type === 'number') {
+      quantity = parseInt(input.value) || 0;
+    } else if (input.type === 'select-one' && input.value) {
+      const selectedOption = input.options[input.selectedIndex];
+      const optionPrice = parseFloat(selectedOption.dataset.price) || 0;
+      extraPrice = optionPrice;
+    } else if (input.checked || input.value) {
+      quantity = 1;
+    } else {
+      return; // Seçilmemişse hesaplamaya katma
+    }
+    
+    // Fiyat hesaplama
+    if (pricingType === 'fixed') {
+      extraPrice = price;
+    } else if (pricingType === 'percentage') {
+      extraPrice = (total * percentage / 100) * quantity;
+    } else if (pricingType in ['per_unit', 'per_page', 'per_hour', 'per_day', 'per_month', 'per_year']) {
+      extraPrice = price * quantity;
+    }
+    
+    total += extraPrice;
+    
+    // Satır ekle
+    const row = document.createElement('div');
+    row.className = 'd-flex justify-content-between small mb-1';
+    const serviceName = input.closest('.form-check').querySelector('.fw-bold').textContent;
+    const quantityText = quantity > 1 ? ` (${quantity}${unitLabel ? ' ' + unitLabel : ''})` : '';
+    row.innerHTML = `<span>${serviceName}${quantityText}</span><span>${extraPrice.toFixed(2)} ₺</span>`;
+    extraServicesRows.appendChild(row);
+  });
+  
+  // Görsel güncellemeler
+  document.getElementById('selectedPackageName').textContent = selectedPackage.name;
+  document.getElementById('basePrice').textContent = `${selectedPackage.base_price} ₺`;
+  document.getElementById('totalPrice').textContent = `${total.toFixed(2)} ₺`;
+  
+  if (extraPagesPrice > 0) {
+    document.getElementById('extraPagesRow').style.display = 'flex';
+    document.getElementById('extraPagesPrice').textContent = `${extraPagesPrice} ₺`;
+  } else {
+    document.getElementById('extraPagesRow').style.display = 'none';
+  }
+}
+
+// Sıfırla butonu
+document.getElementById('resetBtn').addEventListener('click', function() {
+  selectedPackage = null;
+  selectedExtras = {};
+  
+  document.querySelectorAll('.package-card').forEach(card => {
+    card.classList.remove('selected');
+  });
+  
+  document.querySelectorAll('#extraServicesContainer input').forEach(input => {
+    input.checked = false;
+  });
+  
+  // Ek sayfa input'unu sıfırla
+  document.getElementById('extraPagesInput').value = 0;
+  document.getElementById('extraPagesCard').style.display = 'none';
+  document.getElementById('extraServicesCard').style.display = 'none';
+  
+  updateCalculator();
+});
+
+// Sayfa yüklendiğinde
+document.addEventListener('DOMContentLoaded', function() {
+  // Bootstrap modal'ı için gerekli
+  if (typeof bootstrap === 'undefined') {
+    console.warn('Bootstrap not loaded');
+  }
+});
+</script>
+{% endblock %}
+
+

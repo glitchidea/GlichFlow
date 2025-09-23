@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block page_title %}{{ title }}{% endblock %}
+
+{% block breadcrumb %}
+<div class="page-title-box">
+    <div class="page-title-right">
+        <ol class="breadcrumb m-0">
+            <li class="breadcrumb-item"><a href="{% url 'dashboard:index' %}">Ana Sayfa</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'communications:chat_list' %}">Mesajlar</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'communications:chat_detail' group_id=group.id %}">{{ group.name }}</a></li>
+            <li class="breadcrumb-item active">{{ title }}</li>
+        </ol>
+    </div>
+    <h4 class="page-title">{{ title }}</h4>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-6 mx-auto">
+        <div class="card">
+            <div class="card-body text-center">
+                <div class="text-danger mb-3">
+                    <i class="mdi mdi-delete-alert" style="font-size: 4rem;"></i>
+                </div>
+                <h4>Bu grubu silmek istediğinize emin misiniz?</h4>
+                <p class="text-muted">
+                    <strong>"{{ group.name }}"</strong> grubu ve içindeki tüm mesajlar kalıcı olarak silinecektir. Bu işlem geri alınamaz.
+                </p>
+                
+                <div class="alert alert-warning">
+                    <strong>Dikkat!</strong> Bu grup {{ group_members.count }} üye içeriyor ve bu işlem sonucunda tüm üyeler gruptan çıkarılacak.
+                </div>
+                
+                <div class="d-flex justify-content-center mt-4">
+                    <a href="{% url 'communications:chat_detail' group_id=group.id %}" class="btn btn-secondary me-2">
+                        <i class="mdi mdi-arrow-left"></i> Vazgeç
+                    </a>
+                    <form action="{% url 'communications:delete_group' group_id=group.id %}" method="post">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger">
+                            <i class="mdi mdi-delete"></i> Grubu Sil
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

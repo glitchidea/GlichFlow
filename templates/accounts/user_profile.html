@@ -1,0 +1,270 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block title %}{{ profile_user.get_full_name|default:profile_user.username }} Profili{% endblock %}
+
+{% block page_title %}
+Kullanıcı Profili: {{ profile_user.get_full_name|default:profile_user.username }}
+{% endblock %}
+
+{% block breadcrumb %}
+<div class="page-title-box">
+    <div class="page-title-right">
+        <ol class="breadcrumb m-0">
+            <li class="breadcrumb-item"><a href="{% url 'dashboard:index' %}">Ana Sayfa</a></li>
+            <li class="breadcrumb-item active">Kullanıcı Profili</li>
+        </ol>
+    </div>
+    <h4 class="page-title">{{ profile_user.get_full_name|default:profile_user.username }}</h4>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-body text-center">
+                <div class="mb-4">
+                    {% if profile_user.profile_picture %}
+                    <div class="profile-pic-container mx-auto mb-2">
+                        <img src="{{ profile_user.profile_picture.url }}" class="img-fluid rounded-circle profile-image" alt="{{ profile_user.get_full_name }}">
+                    </div>
+                    {% else %}
+                    <div class="profile-avatar-placeholder d-flex align-items-center justify-content-center bg-primary bg-opacity-25 text-primary rounded-circle mx-auto mb-2">
+                        <span class="h2">{{ profile_user.get_full_name|default:profile_user.username|slice:"0:1"|upper }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+                <h4 class="mb-1">{{ profile_user.get_full_name|default:profile_user.username }}</h4>
+                <p class="text-muted mb-2">{{ profile_user.department }}</p>
+                <p>
+                    <span class="badge bg-info">{{ profile_user.get_role_display }}</span>
+                </p>
+                
+                {% if can_edit %}
+                <div class="mt-4">
+                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#editProfileModal">
+                        <i class="fas fa-edit me-1"></i> Profili Düzenle
+                    </button>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">İletişim Bilgileri</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <h6 class="fw-bold text-muted mb-1">
+                        <i class="fas fa-envelope me-1"></i> E-posta
+                    </h6>
+                    <p>{{ profile_user.email }}</p>
+                </div>
+                
+                <div>
+                    <h6 class="fw-bold text-muted mb-1">
+                        <i class="fas fa-phone me-1"></i> Telefon
+                    </h6>
+                    <p class="mb-0">{{ profile_user.phone|default:"Belirtilmemiş" }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Hakkında</h5>
+            </div>
+            <div class="card-body">
+                <p>{{ profile_user.bio|default:"Henüz bir bilgi girilmemiş."|linebreaks }}</p>
+            </div>
+        </div>
+        
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Projeler</h5>
+            </div>
+            <div class="card-body">
+                {% if projects %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Proje</th>
+                                <th>Rolü</th>
+                                <th>Durum</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for project in projects %}
+                            <tr>
+                                <td>
+                                    <a href="{% url 'projects:detail' pk=project.id %}">{{ project.title }}</a>
+                                </td>
+                                <td>{{ project.get_user_role_display }}</td>
+                                <td><span class="badge {% if project.status == 'active' %}bg-success{% elif project.status == 'pending' %}bg-warning{% else %}bg-secondary{% endif %}">{{ project.get_status_display }}</span></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted mb-0">Henüz bir projeye atanmamış.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Profile Modal -->
+{% if can_edit %}
+<div class="modal fade" id="editProfileModal" tabindex="-1" aria-labelledby="editProfileModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editProfileModalLabel">Profili Düzenle</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row mb-4">
+                        <div class="col-md-3 text-center mb-3 mb-md-0">
+                            <div class="profile-pic-container mx-auto">
+                                {% if profile_user.profile_picture %}
+                                <img src="{{ profile_user.profile_picture.url }}" class="img-fluid rounded-circle profile-image" alt="{{ profile_user.get_full_name }}">
+                                {% else %}
+                                <div class="profile-avatar-placeholder d-flex align-items-center justify-content-center bg-primary bg-opacity-25 text-primary rounded-circle mx-auto">
+                                    <span class="h2">{{ profile_user.get_full_name|default:profile_user.username|slice:"0:1"|upper }}</span>
+                                </div>
+                                {% endif %}
+                            </div>
+                            <div class="mt-3">
+                                <label for="{{ form.profile_picture.id_for_label }}" class="btn btn-sm btn-outline-primary">
+                                    Resim Değiştir
+                                </label>
+                                <div class="d-none">
+                                    {{ form.profile_picture }}
+                                </div>
+                                <div id="profile-picture-filename" class="small text-muted mt-1"></div>
+                            </div>
+                        </div>
+                        <div class="col-md-9">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-bold">Ad</label>
+                                    {{ form.first_name }}
+                                    {% if form.first_name.errors %}
+                                    <div class="text-danger small">{{ form.first_name.errors }}</div>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-bold">Soyad</label>
+                                    {{ form.last_name }}
+                                    {% if form.last_name.errors %}
+                                    <div class="text-danger small">{{ form.last_name.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Departman</label>
+                                {{ form.department }}
+                                {% if form.department.errors %}
+                                <div class="text-danger small">{{ form.department.errors }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Rol</label>
+                                {{ form.role }}
+                                {% if form.role.errors %}
+                                <div class="text-danger small">{{ form.role.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Hakkınızda</label>
+                        {{ form.bio }}
+                        {% if form.bio.errors %}
+                        <div class="text-danger small">{{ form.bio.errors }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                    <button type="submit" class="btn btn-primary">Kaydet</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .profile-pic-container {
+        width: 200px;
+        height: 200px;
+        overflow: hidden;
+        border-radius: 50%;
+        margin: 0 auto; /* Merkezi hizalama */
+        position: relative;
+    }
+    
+    /* Avatar placeholder styling */
+    .profile-avatar-placeholder {
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+    }
+    
+    .profile-image {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        max-width: 100%; /* Maksimum genişliği sınırla */
+    }
+    
+    /* Ana sayfa düzenini bozan büyük görselleri sınırla */
+    img.rounded-circle {
+        max-width: 200px !important;
+        max-height: 200px !important;
+        width: auto;
+        height: auto;
+        object-fit: cover;
+    }
+    
+    /* Mobil cihazlar için responsive düzen */
+    @media (max-width: 768px) {
+        .profile-pic-container {
+            width: 150px;
+            height: 150px;
+        }
+        
+        img.rounded-circle {
+            max-width: 150px !important;
+            max-height: 150px !important;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+{% if can_edit %}
+<script>
+    // Display file name when a new profile picture is selected
+    document.getElementById('{{ form.profile_picture.id_for_label }}').addEventListener('change', function(e) {
+        if (e.target.files.length > 0) {
+            var fileName = e.target.files[0].name;
+            document.getElementById('profile-picture-filename').textContent = fileName;
+        }
+    });
+</script>
+{% endif %}
+{% endblock %} 

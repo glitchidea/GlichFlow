@@ -1,0 +1,69 @@
+image.png{% extends 'base.html' %}
+
+{% block title %}Sohbet Silme İsteği | {{ request.site_settings.site_name }}{% endblock %}
+
+{% block page_title %}Sohbet Silme İsteği{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'dashboard:index' %}">Anasayfa</a></li>
+<li class="breadcrumb-item"><a href="{% url 'communications:notification_list' %}">Bildirimler</a></li>
+<li class="breadcrumb-item active">Sohbet Silme İsteği</li>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+        <div class="card">
+            <div class="card-header bg-warning">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-exclamation-triangle me-2"></i> Sohbet Silme İsteği
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <p><strong>Bilgi:</strong> {{ notification.sender.get_full_name|default:notification.sender.username }} sizinle olan sohbeti silmek istiyor.</p>
+                    <p class="mb-0">Onay verirseniz, sohbet ve tüm mesajlar tamamen silinecektir. Bu işlem geri alınamaz.</p>
+                </div>
+                
+                <div class="mb-4">
+                    <h5>Dikkat edilmesi gerekenler:</h5>
+                    <ul class="list-group list-group-flush mb-3">
+                        <li class="list-group-item">
+                            <i class="fas fa-exclamation-circle text-warning me-2"></i>
+                            Onay verdiğinizde, tüm mesajlaşma geçmişi silinecektir
+                        </li>
+                        <li class="list-group-item">
+                            <i class="fas fa-exclamation-circle text-warning me-2"></i>
+                            Silinen mesajlar geri getirilemez
+                        </li>
+                        <li class="list-group-item">
+                            <i class="fas fa-exclamation-circle text-warning me-2"></i>
+                            Reddettiğinizde, mesajlaşma devam edebilir
+                        </li>
+                    </ul>
+                </div>
+                
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="row">
+                        <div class="col-md-6 mb-3 mb-md-0">
+                            <div class="d-grid">
+                                <button type="submit" name="action" value="approve" class="btn btn-danger">
+                                    <i class="fas fa-check me-2"></i> Silmeyi Onayla
+                                </button>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="d-grid">
+                                <button type="submit" name="action" value="reject" class="btn btn-success">
+                                    <i class="fas fa-times me-2"></i> Silmeyi Reddet
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

@@ -1,0 +1,320 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/prd_form.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="page-header mb-4">
+        <div class="row align-items-center">
+            <div class="col">
+                <h1 class="h3 mb-0">{{ title }}</h1>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb mb-0">
+                        <li class="breadcrumb-item"><a href="{% url 'dashboard:index' %}">Ana Sayfa</a></li>
+                        <li class="breadcrumb-item"><a href="{% url 'projects:prd_list' %}">PRD'ler</a></li>
+                        <li class="breadcrumb-item active">{{ title }}</li>
+                    </ol>
+                </nav>
+            </div>
+        </div>
+    </div>
+
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        
+        <!-- Temel Bilgiler -->
+        <div class="form-section">
+            <h4 class="mb-3">
+                <i class="fas fa-info-circle text-primary"></i> Temel Bilgiler
+            </h4>
+            
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="mb-3">
+                        <label for="title" class="form-label">PRD Başlığı <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="title" name="title" 
+                               value="{{ prd.title|default:'' }}" required>
+                    </div>
+                </div>
+                
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <label for="status" class="form-label">Durum</label>
+                        <select class="form-select" id="status" name="status">
+                            {% for value, label in status_choices %}
+                            <option value="{{ value }}" {% if prd.status == value %}selected{% endif %}>
+                                {{ label }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Ürün Bilgileri -->
+        <div class="form-section">
+            <h4 class="mb-3">
+                <i class="fas fa-cube text-primary"></i> Ürün Bilgileri
+            </h4>
+            
+            <div class="mb-3">
+                <label for="product_summary" class="form-label">Ürün Özeti</label>
+                <textarea class="form-control" id="product_summary" name="product_summary" rows="4" 
+                          placeholder="Ürünün genel açıklaması ve amacını yazın...">{{ prd.product_summary|default:'' }}</textarea>
+                <div class="form-text">
+                    Ürünün ne olduğunu, ne yaptığını ve neden var olduğunu açıklayın.
+                </div>
+            </div>
+            
+            <div class="mb-3">
+                <label for="target_audience" class="form-label">Hedef Kitle</label>
+                <textarea class="form-control" id="target_audience" name="target_audience" rows="4" 
+                          placeholder="Ürünün hedef kullanıcılarını ve kullanım senaryolarını yazın...">{{ prd.target_audience|default:'' }}</textarea>
+                <div class="form-text">
+                    Kimler bu ürünü kullanacak? Hangi senaryolarda kullanılacak?
+                </div>
+            </div>
+        </div>
+
+        <!-- Gereksinimler -->
+        <div class="form-section">
+            <h4 class="mb-3">
+                <i class="fas fa-list-check text-primary"></i> Gereksinimler
+            </h4>
+            
+            <div class="mb-3">
+                <label for="functional_requirements" class="form-label">Fonksiyonel Gereksinimler</label>
+                <textarea class="form-control" id="functional_requirements" name="functional_requirements" rows="6" 
+                          placeholder="Ürünün ne yapacağını açıklayan gereksinimleri yazın...">{{ prd.functional_requirements|default:'' }}</textarea>
+                <div class="form-text">
+                    Ürünün hangi özelliklere sahip olması gerektiğini detaylandırın.
+                </div>
+            </div>
+            
+            <div class="mb-3">
+                <label for="non_functional_requirements" class="form-label">Fonksiyonel Olmayan Gereksinimler</label>
+                <textarea class="form-control" id="non_functional_requirements" name="non_functional_requirements" rows="4" 
+                          placeholder="Performans, güvenlik, ölçeklenebilirlik gereksinimlerini yazın...">{{ prd.non_functional_requirements|default:'' }}</textarea>
+                <div class="form-text">
+                    Performans, güvenlik, kullanılabilirlik, ölçeklenebilirlik gibi gereksinimler.
+                </div>
+            </div>
+        </div>
+
+        <!-- Kullanıcı Deneyimi -->
+        <div class="form-section">
+            <h4 class="mb-3">
+                <i class="fas fa-users text-primary"></i> Kullanıcı Deneyimi
+            </h4>
+            
+            <div class="mb-3">
+                <label for="user_stories" class="form-label">Kullanıcı Hikayeleri</label>
+                <textarea class="form-control" id="user_stories" name="user_stories" rows="6" 
+                          placeholder="User story formatında kullanıcı senaryolarını yazın...">{{ prd.user_stories|default:'' }}</textarea>
+                <div class="form-text">
+                    "Bir [kullanıcı türü] olarak, [özellik] istiyorum çünkü [fayda]" formatında yazın.
+                </div>
+            </div>
+            
+            <div class="mb-3">
+                <label for="acceptance_criteria" class="form-label">Kabul Kriterleri</label>
+                <textarea class="form-control" id="acceptance_criteria" name="acceptance_criteria" rows="4" 
+                          placeholder="Her özellik için kabul kriterlerini yazın...">{{ prd.acceptance_criteria|default:'' }}</textarea>
+                <div class="form-text">
+                    Bir özelliğin tamamlanmış sayılması için hangi kriterlerin sağlanması gerektiğini belirtin.
+                </div>
+            </div>
+        </div>
+
+        <!-- Teknik Gereksinimler -->
+        <div class="form-section">
+            <h4 class="mb-3">
+                <i class="fas fa-cogs text-primary"></i> Teknik Gereksinimler
+            </h4>
+            
+            <div class="mb-3">
+                <label for="technical_requirements" class="form-label">Teknik Gereksinimler</label>
+                <textarea class="form-control" id="technical_requirements" name="technical_requirements" rows="4" 
+                          placeholder="Teknik altyapı ve teknoloji gereksinimlerini yazın...">{{ prd.technical_requirements|default:'' }}</textarea>
+                <div class="form-text">
+                    Teknoloji stack'i, altyapı gereksinimleri, entegrasyon ihtiyaçları.
+                </div>
+            </div>
+            
+            <div class="mb-3">
+                <label for="design_constraints" class="form-label">Tasarım Kısıtlamaları</label>
+                <textarea class="form-control" id="design_constraints" name="design_constraints" rows="4" 
+                          placeholder="UI/UX tasarım gereksinimleri ve kısıtlamalarını yazın...">{{ prd.design_constraints|default:'' }}</textarea>
+                <div class="form-text">
+                    Tasarım prensipleri, marka kılavuzları, erişilebilirlik gereksinimleri.
+                </div>
+            </div>
+        </div>
+
+        <!-- PRD Dosyası -->
+        <div class="form-section">
+            <h4 class="mb-3">
+                <i class="fas fa-paperclip text-primary"></i> PRD Dosyası (Opsiyonel)
+            </h4>
+            
+            <div class="mb-3">
+                <label for="document" class="form-label">Dosya Yükle</label>
+                <input type="file" class="form-control" id="document" name="document" 
+                       accept=".pdf,.doc,.docx,.txt,.md,.markdown">
+                <div class="form-text">
+                    PDF, Word, metin veya Markdown dosyası yükleyebilirsiniz. Maksimum dosya boyutu: 10MB
+                </div>
+            </div>
+            
+            {% if prd.document %}
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i>
+                Mevcut dosya: <strong>{{ prd.document.name|slice:"-50:" }}</strong>
+                <br>
+                <small>Yeni dosya yüklerseniz mevcut dosya değiştirilecektir.</small>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Atama Seçenekleri -->
+        <div class="form-section">
+            <h4 class="mb-3">
+                <i class="fas fa-link text-primary"></i> Atama Seçenekleri
+            </h4>
+            
+            <div class="assignment-section" id="assignment-section">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="radio" name="assignment_type" 
+                                   id="assignment_project" value="project" 
+                                   {% if prd.project %}checked{% endif %}>
+                            <label class="form-check-label" for="assignment_project">
+                                <strong>Projeye Ata</strong>
+                            </label>
+                        </div>
+                        
+                        <div class="mb-3" id="project-selection" 
+                             {% if not prd.project and not selected_project %}style="display: none;"{% endif %}>
+                            <label for="project" class="form-label">Proje Seçin</label>
+                            <select class="form-select" id="project" name="project">
+                                <option value="">Proje seçin...</option>
+                                {% for project in projects %}
+                                <option value="{{ project.id }}" 
+                                        {% if prd.project.id == project.id or selected_project.id == project.id %}selected{% endif %}>
+                                    {{ project.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="radio" name="assignment_type" 
+                                   id="assignment_task" value="task" 
+                                   {% if prd.task %}checked{% endif %}>
+                            <label class="form-check-label" for="assignment_task">
+                                <strong>Göreve Ata</strong>
+                            </label>
+                        </div>
+                        
+                        <div class="mb-3" id="task-selection" 
+                             {% if not prd.task and not selected_task %}style="display: none;"{% endif %}>
+                            <label for="task" class="form-label">Görev Seçin</label>
+                            <select class="form-select" id="task" name="task">
+                                <option value="">Görev seçin...</option>
+                                {% for task in tasks %}
+                                <option value="{{ task.id }}" 
+                                        {% if prd.task.id == task.id or selected_task.id == task.id %}selected{% endif %}>
+                                    {{ task.title }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-check mb-3">
+                    <input class="form-check-input" type="radio" name="assignment_type" 
+                           id="assignment_none" value="none" 
+                           {% if not prd.project and not prd.task and not selected_project and not selected_task %}checked{% endif %}>
+                    <label class="form-check-label" for="assignment_none">
+                        <strong>Şimdilik Atama Yapma</strong>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <!-- Form Buttons -->
+        <div class="form-section">
+            <div class="d-flex justify-content-between">
+                <a href="{% url 'projects:prd_list' %}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> İptal
+                </a>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> 
+                    {% if prd %}Güncelle{% else %}Oluştur{% endif %}
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Seçili proje varsa otomatik olarak proje seçeneğini seç
+    {% if selected_project %}
+    $('#assignment_project').prop('checked', true);
+    $('#project-selection').show();
+    {% endif %}
+    
+    // Seçili görev varsa otomatik olarak görev seçeneğini seç
+    {% if selected_task %}
+    $('#assignment_task').prop('checked', true);
+    $('#task-selection').show();
+    {% endif %}
+    
+    // Atama türü değişikliği
+    $('input[name="assignment_type"]').change(function() {
+        const assignmentType = $(this).val();
+        
+        if (assignmentType === 'project') {
+            $('#project-selection').show();
+            $('#task-selection').hide();
+            $('#task').val('');
+        } else if (assignmentType === 'task') {
+            $('#project-selection').hide();
+            $('#task-selection').show();
+            $('#project').val('');
+        } else {
+            $('#project-selection').hide();
+            $('#task-selection').hide();
+            $('#project').val('');
+            $('#task').val('');
+        }
+    });
+    
+    // Dosya boyutu kontrolü
+    $('#document').change(function() {
+        const file = this.files[0];
+        if (file) {
+            const maxSize = 10 * 1024 * 1024; // 10MB
+            if (file.size > maxSize) {
+                alert('Dosya boyutu 10MB\'dan büyük olamaz.');
+                this.value = '';
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

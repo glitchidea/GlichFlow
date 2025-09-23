@@ -1,0 +1,119 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+{% load static %}
+
+{% block title %}GitHub Repository Bağla{% endblock %}
+
+{% block page_title %}GitHub Repository Bağla - {{ project.name }}{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'projects:project_list' %}">Projeler</a></li>
+<li class="breadcrumb-item"><a href="{% url 'projects:project_detail' project.id %}">{{ project.name }}</a></li>
+<li class="breadcrumb-item active">GitHub Repository Bağla</li>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">GitHub Repository Bağla</h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info mb-4">
+                    <div class="d-flex">
+                        <div class="me-3">
+                            <i class="fab fa-github fa-2x text-primary"></i>
+                        </div>
+                        <div>
+                            <h5 class="alert-heading">GitHub Entegrasyonu</h5>
+                            <p class="mb-0">
+                                <strong>{{ project.name }}</strong> projesini bir GitHub repository'si ile bağlayarak görevlerinizi issue'lar ile otomatik olarak senkronize edebilirsiniz.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="btn-group w-100 mb-4" role="group">
+                        <input type="radio" class="btn-check" name="repository_choice" id="existing_repo" value="existing" {% if form.repository_choice.value == 'existing' %}checked{% endif %} autocomplete="off">
+                        <label class="btn btn-outline-primary" for="existing_repo">
+                            <i class="fas fa-link me-2"></i> Mevcut Repository Bağla
+                        </label>
+                        
+                        <input type="radio" class="btn-check" name="repository_choice" id="new_repo" value="new" {% if form.repository_choice.value == 'new' %}checked{% endif %} autocomplete="off">
+                        <label class="btn btn-outline-primary" for="new_repo">
+                            <i class="fas fa-plus me-2"></i> Yeni Repository Oluştur
+                        </label>
+                    </div>
+                    
+                    <div id="existingRepoSection" class="mb-4 {% if form.repository_choice.value == 'new' %}d-none{% endif %}">
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <h5 class="card-title">
+                                    <i class="fas fa-link me-2"></i> Mevcut Repository Bağla
+                                </h5>
+                                <p class="text-muted">
+                                    GitHub hesabınızda mevcut bir repository'yi bu projeye bağlayın.
+                                </p>
+                                
+                                {{ form.existing_repository|as_crispy_field }}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="newRepoSection" class="mb-4 {% if form.repository_choice.value != 'new' %}d-none{% endif %}">
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <h5 class="card-title">
+                                    <i class="fas fa-plus me-2"></i> Yeni Repository Oluştur
+                                </h5>
+                                <p class="text-muted">
+                                    GitHub hesabınızda bu proje için yeni bir repository oluşturun.
+                                </p>
+                                
+                                {{ form.repository_name|as_crispy_field }}
+                                
+                                <div class="form-check mb-3">
+                                    {{ form.is_private }}
+                                    <label class="form-check-label" for="{{ form.is_private.id_for_label }}">
+                                        Özel Repository (Sadece siz ve davet ettiğiniz kişiler görebilir)
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fab fa-github me-2"></i> Repository Bağla
+                        </button>
+                        <a href="{% url 'projects:project_detail' project.id %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left me-2"></i> Projeye Dön
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Repository seçimine göre ilgili bölümü göster/gizle
+    $('input[name="repository_choice"]').change(function() {
+        if ($(this).val() === 'existing') {
+            $('#existingRepoSection').removeClass('d-none');
+            $('#newRepoSection').addClass('d-none');
+        } else {
+            $('#existingRepoSection').addClass('d-none');
+            $('#newRepoSection').removeClass('d-none');
+        }
+    });
+});
+</script>
+{% endblock %} 

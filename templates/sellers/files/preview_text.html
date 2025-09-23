@@ -1,0 +1,19 @@
+{% extends 'sellers/base_seller.html' %}
+{% load static %}
+
+{% block page_title %}{{ file.file_name }} Önizleme{% endblock %}
+
+{% block seller_content %}
+<div class="card shadow mb-4">
+    <div class="card-header py-3 d-flex justify-content-between align-items-center">
+        <h6 class="m-0 font-weight-bold text-primary">Metin Önizleme</h6>
+        <a class="btn btn-sm btn-outline-primary" href="{{ file.file.url }}" target="_blank">
+            <i class="fas fa-download"></i> İndir
+        </a>
+    </div>
+    <div class="card-body">
+        <pre style="white-space: pre-wrap; word-break: break-word; font-family: monospace;">{{ content }}</pre>
+    </div>
+{% endblock %}
+
+

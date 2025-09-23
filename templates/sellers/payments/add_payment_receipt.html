@@ -1,0 +1,97 @@
+{% extends 'sellers/base_seller.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block title %}Ödeme Makbuzu Ekle - {{ sale.project_name }}{% endblock %}
+
+{% block page_header %}
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">Ödeme Makbuzu Ekle</h1>
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'sellers:index' %}">Ana Sayfa</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'sellers:sale_list' %}">Projeler</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'sellers:sale_detail' sale.pk %}">{{ sale.project_name }}</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Makbuz Ekle</li>
+        </ol>
+    </nav>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Ödeme Makbuzu Bilgileri</h6>
+            </div>
+            <div class="card-body">
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    {{ form|crispy }}
+                    <div class="form-group mt-4">
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-save"></i> Makbuzu Kaydet
+                        </button>
+                        <a href="{% url 'sellers:sale_detail' sale.pk %}" class="btn btn-secondary">
+                            <i class="fas fa-times"></i> İptal
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <!-- Proje Bilgileri -->
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Proje Bilgileri</h6>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <strong>Proje Adı:</strong><br>
+                    {{ sale.project_name }}
+                </div>
+                <div class="mb-3">
+                    <strong>Müşteri:</strong><br>
+                    {{ sale.customer.display_name }}
+                </div>
+                <div class="mb-3">
+                    <strong>Final Fiyat:</strong><br>
+                    <h5 class="text-success">{{ sale.final_price|floatformat:2 }} ₺</h5>
+                </div>
+                <div class="mb-3">
+                    <strong>Durum:</strong><br>
+                    <span class="badge badge-{{ sale.status|default:'secondary' }}">
+                        {{ sale.get_status_display }}
+                    </span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Ödeme Bilgileri -->
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Ödeme Bilgileri</h6>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <strong>Toplam Ödenen:</strong><br>
+                    <h6 class="text-success">{{ sale.payment_receipts.all|length }} makbuz</h6>
+                </div>
+                <div class="mb-3">
+                    <strong>Son Ödeme:</strong><br>
+                    {% with sale.payment_receipts.all|first as last_payment %}
+                        {% if last_payment %}
+                            {{ last_payment.payment_date|date:"d.m.Y" }} - {{ last_payment.amount|floatformat:2 }} ₺
+                        {% else %}
+                            Henüz ödeme yok
+                        {% endif %}
+                    {% endwith %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,164 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block title %}GitHub OAuth Ayarları{% endblock %}
+
+{% block page_title %}GitHub OAuth Ayarları{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'dashboard:index' %}">Dashboard</a></li>
+<li class="breadcrumb-item"><a href="{% url 'github_integration:github_profile' %}">GitHub Profili</a></li>
+<li class="breadcrumb-item active">OAuth Ayarları</li>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    {% if not system_oauth_ready and show_oauth_instructions %}
+    <div class="col-12 mb-4">
+        <div class="alert alert-warning">
+            <h5><i class="fas fa-exclamation-triangle me-2"></i> GitHub Entegrasyonu için Kişisel OAuth Ayarları Gerekli</h5>
+            <p>
+                Sistem genelinde GitHub OAuth bilgileri yapılandırılmamış olduğundan, her kullanıcının 
+                <strong>kendi GitHub OAuth uygulamasını oluşturup</strong> kişisel OAuth bilgilerini girmesi gerekiyor.
+            </p>
+            <p>Aşağıdaki adımları izleyerek GitHub hesabınızı bağlayabilirsiniz:</p>
+            <ol>
+                <li>
+                    <a href="https://github.com/settings/developers" target="_blank" class="text-decoration-underline">
+                        GitHub Developer Settings</a> sayfasına gidin (GitHub hesabınıza giriş yapmanız gerekir)
+                </li>
+                <li>"OAuth Apps" sekmesine tıklayın</li>
+                <li>"New OAuth App" butonuna tıklayın</li>
+                <li>Aşağıdaki bilgileri girin:
+                    <ul>
+                        <li><strong>Application name:</strong> Kendi seçtiğiniz bir isim (örn. "GlichFlow Uygulamam")</li>
+                        <li><strong>Homepage URL:</strong> <code>{{ site_url }}</code></li>
+                        <li><strong>Application description:</strong> İsteğe bağlı açıklama</li>
+                        <li><strong>Authorization callback URL:</strong> <code>{{ callback_url }}</code> (Bu URL'yi aynen yazın!)</li>
+                    </ul>
+                </li>
+                <li>"Register application" butonuna tıklayın</li>
+                <li>Oluşturulduktan sonra size verilen <strong>Client ID</strong> değerini bu sayfadaki ilgili alana girin</li>
+                <li>"Generate a new client secret" butonuna tıklayın ve size verilen <strong>Client Secret</strong> değerini bu sayfadaki ilgili alana girin</li>
+                <li>Bu sayfada "Kişisel OAuth Kullan" seçeneğini aktifleştirin</li>
+                <li>Ayarları kaydedin ve sonrasında GitHub hesabınızı bağlayabilirsiniz</li>
+            </ol>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="col-md-7 mb-4">
+        <!-- GitHub OAuth Ayarları -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">GitHub OAuth Ayarları</h5>
+            </div>
+            <div class="card-body">
+                <p class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Bu ayarları kullanarak kendi GitHub OAuth uygulamanızı bağlayabilirsiniz.
+                    Bu seçenek, sistem genelindeki OAuth bilgileri yerine kendi kişisel OAuth kimlik bilgilerinizi kullanmanızı sağlar.
+                </p>
+                
+                <form method="post" novalidate>
+                    {% csrf_token %}
+                    
+                    <div class="form-check form-switch mb-4">
+                        {{ form.use_personal_oauth|as_crispy_field }}
+                    </div>
+                    
+                    <div id="oauthSettingsFields" {% if not form.use_personal_oauth.value %}style="display: none;"{% endif %}>
+                        {{ form.client_id|as_crispy_field }}
+                        {{ form.client_secret|as_crispy_field }}
+                        {{ form.redirect_uri|as_crispy_field }}
+                        
+                        <div class="alert alert-warning mt-3">
+                            <h6><i class="fas fa-exclamation-triangle me-2"></i> Önemli Notlar:</h6>
+                            <ol class="mb-0">
+                                <li>GitHub OAuth uygulamanızı <a href="https://github.com/settings/developers" target="_blank">GitHub Developer Settings</a> üzerinden oluşturabilirsiniz.</li>
+                                <li>OAuth uygulama oluştururken, callback URL olarak <code>{{ callback_url }}</code> adresini kullanmanız gerekiyor.</li>
+                                <li>Kişisel OAuth kullanmaya geçişte, GitHub'a yeniden bağlanmanız gerekecektir.</li>
+                                <li>Bu bilgileri güvende tutun! Client Secret bilgisi asla paylaşılmamalıdır.</li>
+                            </ol>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between mt-4">
+                        <a href="{% url 'github_integration:github_profile' %}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left me-2"></i> GitHub Profiline Dön
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-2"></i> Ayarları Kaydet
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-5 mb-4">
+        <!-- GitHub OAuth Ayarları Yardım -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Kişisel GitHub OAuth Nedir?</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-4">
+                    <h6 class="fw-bold"><i class="fas fa-question-circle me-2"></i> Neden kişisel OAuth kullanmalıyım?</h6>
+                    <p>Kişisel GitHub OAuth uygulaması kullanarak:</p>
+                    <ul>
+                        <li>GitHub API'sine kendi kimliğinizle erişirsiniz.</li>
+                        <li>Özel repository'lere tam erişim sağlayabilirsiniz.</li>
+                        <li>API sınırlamalarınız diğer kullanıcılardan etkilenmez.</li>
+                        <li>Daha fazla kontrol ve gizlilik elde edersiniz.</li>
+                    </ul>
+                </div>
+                
+                <div class="mb-4">
+                    <h6 class="fw-bold"><i class="fas fa-cogs me-2"></i> Nasıl ayarlarım?</h6>
+                    <ol>
+                        <li><a href="https://github.com/settings/developers" target="_blank">GitHub Developer Settings</a> sayfasına gidin.</li>
+                        <li>"New OAuth App" butonuna tıklayın.</li>
+                        <li>Uygulama adını ve açıklamasını girin (örn. "Proje Yönetim Aracım").</li>
+                        <li>Homepage URL'yi <code>{{ site_url }}</code> olarak ayarlayın.</li>
+                        <li>Callback URL olarak <code>{{ callback_url }}</code> adresini yazın.</li>
+                        <li>Uygulamayı kaydedin ve oluşturulan Client ID ve Client Secret değerlerini bu sayfaya girin.</li>
+                    </ol>
+                </div>
+                
+                <div class="alert alert-light border mb-0">
+                    <h6 class="fw-bold"><i class="fas fa-lightbulb me-2"></i> İpucu</h6>
+                    <p class="mb-0">
+                        {% if system_oauth_ready %}
+                        Kişisel OAuth kullanmak tamamen isteğe bağlıdır. Eğer tercih ederseniz, sistem genelindeki OAuth ayarlarını da kullanabilirsiniz.
+                        {% else %}
+                        Bu sistemde, GitHub entegrasyonu için her kullanıcının kendi OAuth uygulamasını oluşturması gerekmektedir.
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // OAuth ayarları alanlarının görünürlüğünü kontrol et
+        const usePersonalOauthCheck = document.getElementById('id_use_personal_oauth');
+        const oauthSettingsFields = document.getElementById('oauthSettingsFields');
+        
+        if (usePersonalOauthCheck) {
+            usePersonalOauthCheck.addEventListener('change', function() {
+                if (this.checked) {
+                    oauthSettingsFields.style.display = 'block';
+                } else {
+                    oauthSettingsFields.style.display = 'none';
+                }
+            });
+        }
+    });
+</script>
+{% endblock %} 

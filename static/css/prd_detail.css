@@ -1,0 +1,202 @@
+/* PRD Detail Styles */
+.prd-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 0.35rem;
+    padding: 2rem;
+    margin-bottom: 2rem;
+}
+
+.prd-status {
+    font-size: 0.875rem;
+    font-weight: 600;
+    padding: 0.5rem 1rem;
+    border-radius: 0.25rem;
+    display: inline-block;
+}
+
+.status-draft { background-color: #f8f9fc; color: #5a5c69; }
+.status-review { background-color: #fff3cd; color: #856404; }
+.status-approved { background-color: #d4edda; color: #155724; }
+.status-rejected { background-color: #f8d7da; color: #721c24; }
+.status-archived { background-color: #e2e3e5; color: #383d41; }
+
+/* Bootstrap badge overrides for PRD status */
+.badge.bg-draft { background-color: #f8f9fc !important; color: #5a5c69 !important; }
+.badge.bg-review { background-color: #fff3cd !important; color: #856404 !important; }
+.badge.bg-approved { background-color: #d4edda !important; color: #155724 !important; }
+.badge.bg-rejected { background-color: #f8d7da !important; color: #721c24 !important; }
+.badge.bg-archived { background-color: #e2e3e5 !important; color: #383d41 !important; }
+
+/* Additional specificity for PRD status badges */
+span.badge.bg-draft { background-color: #f8f9fc !important; color: #5a5c69 !important; }
+span.badge.bg-review { background-color: #fff3cd !important; color: #856404 !important; }
+span.badge.bg-approved { background-color: #d4edda !important; color: #155724 !important; }
+span.badge.bg-rejected { background-color: #f8d7da !important; color: #721c24 !important; }
+span.badge.bg-archived { background-color: #e2e3e5 !important; color: #383d41 !important; }
+
+/* Force override for any Bootstrap text-white classes */
+.badge.bg-draft.text-white { color: #5a5c69 !important; }
+.badge.bg-review.text-white { color: #856404 !important; }
+.badge.bg-approved.text-white { color: #155724 !important; }
+.badge.bg-rejected.text-white { color: #721c24 !important; }
+.badge.bg-archived.text-white { color: #383d41 !important; }
+
+.priority-badge {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    display: inline-block;
+}
+
+.priority-low { background-color: #d4edda; color: #155724; }
+.priority-medium { background-color: #fff3cd; color: #856404; }
+.priority-high { background-color: #f8d7da; color: #721c24; }
+.priority-urgent { background-color: #f5c6cb; color: #721c24; }
+
+.info-card {
+    border-left: 4px solid #4e73df;
+    background-color: #f8f9fc;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    border-radius: 0.25rem;
+}
+
+.content-section {
+    background-color: white;
+    border-radius: 0.35rem;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+}
+
+.document-preview {
+    border: 2px dashed #e3e6f0;
+    border-radius: 0.35rem;
+    padding: 2rem;
+    text-align: center;
+    background-color: #f8f9fc;
+}
+
+/* PRD Content Styles */
+.prd-content {
+    line-height: 1.6;
+    color: #5a5c69;
+}
+
+.prd-content h1, .prd-content h2, .prd-content h3 {
+    color: #4e73df;
+    margin-top: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.prd-content p {
+    margin-bottom: 1rem;
+}
+
+.prd-content ul, .prd-content ol {
+    margin-bottom: 1rem;
+    padding-left: 1.5rem;
+}
+
+/* Action Buttons */
+.action-buttons {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+/* Status Management */
+.status-management {
+    background-color: #f8f9fc;
+    border-radius: 0.35rem;
+    padding: 1.5rem;
+    margin-top: 1.5rem;
+}
+
+.status-form {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+/* Assignment Info */
+.assignment-info {
+    background-color: #e3f2fd;
+    border-left: 4px solid #2196f3;
+    padding: 1rem;
+    border-radius: 0.25rem;
+    margin-bottom: 1rem;
+}
+
+.assignment-type {
+    font-weight: 600;
+    color: #1976d2;
+}
+
+/* Document Preview */
+.document-preview-icon {
+    font-size: 3rem;
+    color: #858796;
+    margin-bottom: 1rem;
+}
+
+.document-info {
+    margin-top: 1rem;
+}
+
+.document-size {
+    color: #858796;
+    font-size: 0.875rem;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .prd-header {
+        padding: 1.5rem;
+    }
+    
+    .action-buttons {
+        flex-direction: column;
+    }
+    
+    .status-form {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .content-section {
+        padding: 1rem;
+    }
+}
+
+/* Animation Effects */
+.prd-header {
+    animation: fadeInDown 0.6s ease-out;
+}
+
+.content-section {
+    animation: fadeInUp 0.6s ease-out;
+}
+
+@keyframes fadeInDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}

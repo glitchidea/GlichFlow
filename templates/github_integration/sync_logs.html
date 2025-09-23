@@ -1,0 +1,158 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}GitHub Senkronizasyon Kayıtları{% endblock %}
+
+{% block page_title %}GitHub Senkronizasyon Kayıtları{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'dashboard:index' %}">Dashboard</a></li>
+<li class="breadcrumb-item active">GitHub Senkronizasyon Kayıtları</li>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12 mb-4">
+        <!-- Filtreler -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Filtreler</h5>
+            </div>
+            <div class="card-body">
+                <form method="get" class="row g-3">
+                    <div class="col-md-5">
+                        <label for="actionFilter" class="form-label">İşlem</label>
+                        <select name="action" id="actionFilter" class="form-select">
+                            <option value="">Tümü</option>
+                            {% for action_code, action_name in action_choices %}
+                            <option value="{{ action_code }}" {% if action_filter == action_code %}selected{% endif %}>{{ action_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-5">
+                        <label for="statusFilter" class="form-label">Durum</label>
+                        <select name="status" id="statusFilter" class="form-select">
+                            <option value="">Tümü</option>
+                            {% for status_code, status_name in status_choices %}
+                            <option value="{{ status_code }}" {% if status_filter == status_code %}selected{% endif %}>{{ status_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-2 d-flex align-items-end">
+                        <div class="d-grid gap-2 w-100">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-filter me-2"></i> Filtrele
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Kayıtlar -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Senkronizasyon Kayıtları</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Tarih</th>
+                                <th>Kullanıcı</th>
+                                <th>Repository</th>
+                                <th>İşlem</th>
+                                <th>Durum</th>
+                                <th>Mesaj</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for log in logs %}
+                            <tr>
+                                <td>{{ log.id }}</td>
+                                <td>{{ log.created_at|date:"d.m.Y H:i:s" }}</td>
+                                <td>
+                                    {% if log.user %}
+                                    <span class="d-inline-flex align-items-center">
+                                        {% if log.user.profile_picture %}
+                                        <img src="{{ log.user.profile_picture.url }}" class="rounded-circle me-2" width="24" height="24">
+                                        {% endif %}
+                                        {{ log.user.get_full_name|default:log.user.username }}
+                                    </span>
+                                    {% else %}
+                                    <span class="text-muted">Sistem</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if log.repository %}
+                                    <a href="{{ log.repository.repository_url }}" target="_blank" class="text-decoration-none">
+                                        <i class="fab fa-github"></i> {{ log.repository.repository_owner }}/{{ log.repository.repository_name }}
+                                    </a>
+                                    {% else %}
+                                    <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if log.action == 'create_issue' %}
+                                    <span class="badge bg-success">Issue Oluşturma</span>
+                                    {% elif log.action == 'update_issue' %}
+                                    <span class="badge bg-info">Issue Güncelleme</span>
+                                    {% elif log.action == 'close_issue' %}
+                                    <span class="badge bg-secondary">Issue Kapatma</span>
+                                    {% elif log.action == 'reopen_issue' %}
+                                    <span class="badge bg-warning text-dark">Issue Yeniden Açma</span>
+                                    {% elif log.action == 'create_repo' %}
+                                    <span class="badge bg-primary">Repository Oluşturma</span>
+                                    {% elif log.action == 'import_issues' %}
+                                    <span class="badge bg-info">Issues İçe Aktarma</span>
+                                    {% elif log.action == 'sync_task' %}
+                                    <span class="badge bg-primary">Görev Senkronizasyonu</span>
+                                    {% elif log.action == 'sync_project' %}
+                                    <span class="badge bg-primary">Proje Senkronizasyonu</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">{{ log.get_action_display }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if log.status == 'success' %}
+                                    <span class="badge bg-success">Başarılı</span>
+                                    {% elif log.status == 'error' %}
+                                    <span class="badge bg-danger">Hata</span>
+                                    {% elif log.status == 'warning' %}
+                                    <span class="badge bg-warning text-dark">Uyarı</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">{{ log.get_status_display }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <button class="btn btn-sm btn-link text-decoration-none" type="button" data-bs-toggle="collapse" data-bs-target="#logMessage{{ log.id }}" aria-expanded="false" aria-controls="logMessage{{ log.id }}">
+                                        {{ log.message|truncatechars:50 }}
+                                    </button>
+                                    <div class="collapse" id="logMessage{{ log.id }}">
+                                        <div class="card card-body mt-2">
+                                            {{ log.message }}
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="7" class="text-center py-4">
+                                    <div class="d-flex flex-column align-items-center">
+                                        <i class="fas fa-history fa-3x text-muted mb-3"></i>
+                                        <h5>Senkronizasyon kaydı bulunamadı</h5>
+                                        <p class="text-muted">Henüz herhangi bir GitHub senkronizasyon işlemi gerçekleştirilmemiş.</p>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

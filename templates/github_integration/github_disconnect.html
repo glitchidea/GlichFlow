@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+
+{% block title %}GitHub Hesap Bağlantısını Kaldır{% endblock %}
+
+{% block page_title %}GitHub Hesap Bağlantısını Kaldır{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'dashboard:index' %}">Dashboard</a></li>
+<li class="breadcrumb-item"><a href="{% url 'github_integration:github_profile' %}">GitHub Profili</a></li>
+<li class="breadcrumb-item active">Bağlantıyı Kaldır</li>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+        <div class="card">
+            <div class="card-header bg-danger text-white">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-exclamation-triangle me-2"></i> GitHub Hesap Bağlantısını Kaldır
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-warning">
+                    <p><strong>Dikkat!</strong> GitHub hesap bağlantınızı kaldırmak üzeresiniz.</p>
+                    <p class="mb-0">Bu işlem, GitHub ile senkronize edilmiş projeleri ve görevleri doğrudan etkilemeyecektir. Ancak bundan sonra GitHub ve uygulama arasında senkronizasyon işlemleri yapılamayacaktır.</p>
+                </div>
+                
+                <div class="mb-4">
+                    <h5>Lütfen şu konularda dikkat edin:</h5>
+                    <ul class="list-group list-group-flush mb-3">
+                        <li class="list-group-item">
+                            <i class="fas fa-exclamation-circle text-warning me-2"></i>
+                            Bağlı projelere ait GitHub repository referansları korunacaktır
+                        </li>
+                        <li class="list-group-item">
+                            <i class="fas fa-exclamation-circle text-warning me-2"></i>
+                            Görevlerin GitHub issue bağlantıları korunacaktır
+                        </li>
+                        <li class="list-group-item">
+                            <i class="fas fa-exclamation-circle text-warning me-2"></i>
+                            Ancak artık projeler ve görevler GitHub ile senkronize edilemeyecektir
+                        </li>
+                        <li class="list-group-item">
+                            <i class="fas fa-exclamation-circle text-warning me-2"></i>
+                            İstediğiniz zaman GitHub hesabınızı yeniden bağlayabilirsiniz
+                        </li>
+                    </ul>
+                </div>
+                
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-danger">
+                            <i class="fas fa-unlink me-2"></i> GitHub Hesap Bağlantısını Kaldır
+                        </button>
+                        <a href="{% url 'github_integration:github_profile' %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-times me-2"></i> İptal
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

@@ -1,0 +1,333 @@
+{% extends 'sellers/base_seller.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block page_title %}
+    {% if sale %}Proje Düzenle{% else %}Yeni Proje Satışı{% endif %}
+{% endblock %}
+
+{% block page_description %}
+    {% if sale %}Proje bilgilerini güncelleyin{% else %}Yeni proje satışı oluşturun{% endif %}
+{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item">
+    <a href="{% url 'sellers:sale_list' %}">Proje Satışları</a>
+</li>
+{% if sale %}
+<li class="breadcrumb-item">
+    <a href="{% url 'sellers:sale_detail' sale.pk %}">{{ sale.project_name }}</a>
+</li>
+<li class="breadcrumb-item active">Düzenle</li>
+{% else %}
+<li class="breadcrumb-item active">Yeni Proje</li>
+{% endif %}
+{% endblock %}
+
+{% block page_actions %}
+{% if sale %}
+<div class="btn-group">
+    <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal">
+        <i class="fas fa-trash"></i> Projeyi Sil
+    </button>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block seller_content %}
+<div class="row justify-content-center">
+    <div class="col-lg-10">
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    {% if sale %}Proje Düzenle{% else %}Yeni Proje Satışı{% endif %}
+                </h6>
+            </div>
+            <div class="card-body">
+                <form method="post" id="saleForm" data-validate>
+                    {% csrf_token %}
+                    
+                    <!-- Proje Bilgileri -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h5 class="text-primary mb-3">Proje Bilgileri</h5>
+                        </div>
+                        <div class="col-md-8">
+                            <label for="{{ form.project_name.id_for_label }}" class="form-label">
+                                {{ form.project_name.label }} <span class="text-danger">*</span>
+                            </label>
+                            {{ form.project_name }}
+                            {% if form.project_name.errors %}
+                                <div class="text-danger">{{ form.project_name.errors }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-4">
+                            <label for="{{ form.project_type.id_for_label }}" class="form-label">
+                                {{ form.project_type.label }} <span class="text-danger">*</span>
+                            </label>
+                            {{ form.project_type }}
+                            {% if form.project_type.errors %}
+                                <div class="text-danger">{{ form.project_type.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <label for="{{ form.project_description.id_for_label }}" class="form-label">
+                                {{ form.project_description.label }}
+                            </label>
+                            {{ form.project_description }}
+                            {% if form.project_description.errors %}
+                                <div class="text-danger">{{ form.project_description.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Müşteri ve Bağlantılar -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h5 class="text-primary mb-3">Müşteri ve Bağlantılar</h5>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="{{ form.customer.id_for_label }}" class="form-label">
+                                {{ form.customer.label }} <span class="text-danger">*</span>
+                            </label>
+                            {{ form.customer }}
+                            {% if form.customer.errors %}
+                                <div class="text-danger">{{ form.customer.errors }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <label for="{{ form.linked_project.id_for_label }}" class="form-label">
+                                {{ form.linked_project.label }}
+                            </label>
+                            {{ form.linked_project }}
+                            {% if form.linked_project.errors %}
+                                <div class="text-danger">{{ form.linked_project.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Proje Bilgi Kutusu (Otomatik Doldurma) -->
+                    <div id="project-info-container" class="mb-4">
+                        <!-- Proje seçildiğinde buraya bilgi kutusu gelecek -->
+                    </div>
+
+                    <!-- Fiyatlandırma -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h5 class="text-primary mb-3">Fiyatlandırma</h5>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="{{ form.base_package.id_for_label }}" class="form-label">
+                                {{ form.base_package.label }}
+                            </label>
+                            {{ form.base_package }}
+                            {% if form.base_package.errors %}
+                                <div class="text-danger">{{ form.base_package.errors }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <label for="{{ form.base_price.id_for_label }}" class="form-label">
+                                {{ form.base_price.label }} <span class="text-danger">*</span>
+                            </label>
+                            {{ form.base_price }}
+                            {% if form.base_price.errors %}
+                                <div class="text-danger">{{ form.base_price.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Süre ve Tarihler -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h5 class="text-primary mb-3">Süre ve Tarihler</h5>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="{{ form.estimated_duration_days.id_for_label }}" class="form-label">
+                                {{ form.estimated_duration_days.label }}
+                            </label>
+                            {{ form.estimated_duration_days }}
+                            {% if form.estimated_duration_days.errors %}
+                                <div class="text-danger">{{ form.estimated_duration_days.errors }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-3">
+                            <label for="{{ form.quote_date.id_for_label }}" class="form-label">
+                                {{ form.quote_date.label }}
+                            </label>
+                            {{ form.quote_date }}
+                            {% if form.quote_date.errors %}
+                                <div class="text-danger">{{ form.quote_date.errors }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-3">
+                            <label for="{{ form.start_date.id_for_label }}" class="form-label">
+                                {{ form.start_date.label }}
+                            </label>
+                            {{ form.start_date }}
+                            {% if form.start_date.errors %}
+                                <div class="text-danger">{{ form.start_date.errors }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-3">
+                            <label for="{{ form.end_date.id_for_label }}" class="form-label">
+                                {{ form.end_date.label }}
+                            </label>
+                            {{ form.end_date }}
+                            {% if form.end_date.errors %}
+                                <div class="text-danger">{{ form.end_date.errors }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-3">
+                            <label for="{{ form.delivery_date.id_for_label }}" class="form-label">
+                                {{ form.delivery_date.label }}
+                            </label>
+                            {{ form.delivery_date }}
+                            {% if form.delivery_date.errors %}
+                                <div class="text-danger">{{ form.delivery_date.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Durum -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h5 class="text-primary mb-3">Durum</h5>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="{{ form.status.id_for_label }}" class="form-label">
+                                {{ form.status.label }}
+                            </label>
+                            {{ form.status }}
+                            {% if form.status.errors %}
+                                <div class="text-danger">{{ form.status.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Form Hataları -->
+                    {% if form.non_field_errors %}
+                        <div class="alert alert-danger">
+                            {{ form.non_field_errors }}
+                        </div>
+                    {% endif %}
+
+                    <!-- Butonlar -->
+                    <div class="d-flex justify-content-end">
+                        <a href="{% if sale %}{% url 'sellers:sale_detail' sale.pk %}{% else %}{% url 'sellers:sale_list' %}{% endif %}" 
+                           class="btn btn-secondary me-2">
+                            <i class="fas fa-times"></i> İptal
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> 
+                            {% if sale %}Güncelle{% else %}Kaydet{% endif %}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block seller_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Tarih alanlarını formatla (düzenleme modunda)
+    {% if sale %}
+    const dateFields = ['{{ form.quote_date.id_for_label }}', '{{ form.start_date.id_for_label }}', '{{ form.end_date.id_for_label }}', '{{ form.delivery_date.id_for_label }}'];
+    const dateValues = {
+        '{{ form.quote_date.id_for_label }}': '{{ sale.quote_date|date:"Y-m-d" }}',
+        '{{ form.start_date.id_for_label }}': '{{ sale.start_date|date:"Y-m-d" }}',
+        '{{ form.end_date.id_for_label }}': '{{ sale.end_date|date:"Y-m-d" }}',
+        '{{ form.delivery_date.id_for_label }}': '{{ sale.delivery_date|date:"Y-m-d" }}'
+    };
+    
+    dateFields.forEach(fieldId => {
+        const field = document.getElementById(fieldId);
+        if (field && dateValues[fieldId] && dateValues[fieldId] !== 'None') {
+            field.value = dateValues[fieldId];
+        }
+    });
+    {% endif %}
+    
+    // Package price update
+    const basePackageSelect = document.getElementById('{{ form.base_package.id_for_label }}');
+    const basePriceInput = document.getElementById('{{ form.base_price.id_for_label }}');
+    
+    if (basePackageSelect && basePriceInput) {
+        basePackageSelect.addEventListener('change', function() {
+            const selectedOption = this.options[this.selectedIndex];
+            if (selectedOption.value) {
+                // Fetch package price via AJAX
+                fetchPackagePrice(selectedOption.value)
+                    .then(data => {
+                        if (data.success) {
+                            basePriceInput.value = data.price;
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error fetching package price:', error);
+                    });
+            }
+        });
+    }
+    
+    // Date validation
+    const startDateInput = document.getElementById('{{ form.start_date.id_for_label }}');
+    const endDateInput = document.getElementById('{{ form.end_date.id_for_label }}');
+    
+    if (startDateInput && endDateInput) {
+        startDateInput.addEventListener('change', function() {
+            if (this.value && endDateInput.value) {
+                if (new Date(this.value) > new Date(endDateInput.value)) {
+                    showAlert('Başlangıç tarihi bitiş tarihinden sonra olamaz.', 'danger');
+                    this.value = '';
+                }
+            }
+        });
+        
+        endDateInput.addEventListener('change', function() {
+            if (this.value && startDateInput.value) {
+                if (new Date(this.value) < new Date(startDateInput.value)) {
+                    showAlert('Bitiş tarihi başlangıç tarihinden önce olamaz.', 'danger');
+                    this.value = '';
+                }
+            }
+        });
+    }
+});
+</script>
+
+<!-- Proje Silme Modal -->
+{% if sale %}
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteModalLabel">Proje Sil</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p><strong>{{ sale.project_name }}</strong> projesini silmek istediğinizden emin misiniz?</p>
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <strong>Dikkat:</strong> Bu işlem geri alınamaz. Projeye bağlı tüm veriler silinecektir.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                <form method="post" action="{% url 'sellers:delete_sale' sale.pk %}" style="display: inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash"></i> Sil
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

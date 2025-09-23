@@ -1,0 +1,516 @@
+{% extends 'sellers/base_seller.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block page_title %}{{ sale.project_name }}{% endblock %}
+{% block page_description %}Proje detayları, dosyalar ve fiyatlandırma{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item">
+    <a href="{% url 'sellers:sale_list' %}">Proje Satışları</a>
+</li>
+<li class="breadcrumb-item active">{{ sale.project_name }}</li>
+{% endblock %}
+
+{% block page_actions %}
+<div class="btn-group">
+    <a href="{% url 'sellers:sale_update' sale.pk %}" class="btn btn-warning">
+        <i class="fas fa-edit"></i> Düzenle
+    </a>
+</div>
+{% endblock %}
+
+{% block seller_content %}
+<div class="row">
+    <!-- Proje Bilgileri -->
+    <div class="col-lg-8 mb-4">
+        <!-- Temel Bilgiler -->
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Proje Bilgileri</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h5>{{ sale.project_name }}</h5>
+                        <p class="text-muted">{{ sale.project_description }}</p>
+                        
+                        <div class="mb-3">
+                            <strong>Proje Türü:</strong> {{ sale.project_type }}<br>
+                            <strong>Durum:</strong> 
+                            <span class="badge badge-{{ sale.status|default:'secondary' }}">
+                                {{ sale.get_status_display }}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <strong>Müşteri:</strong><br>
+                            <div class="d-flex align-items-center mt-1">
+                                <div class="avatar-sm bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-2">
+                                    {% if sale.customer.customer_type == 'company' %}
+                                        <i class="fas fa-building"></i>
+                                    {% else %}
+                                        <i class="fas fa-user"></i>
+                                    {% endif %}
+                                </div>
+                                <div>
+                                    <h6 class="mb-0">{{ sale.customer.display_name }}</h6>
+                                    <small class="text-muted">{{ sale.customer.email }}</small>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        {% if sale.linked_project %}
+                        <div class="mb-3">
+                            <strong>Bağlı Proje:</strong><br>
+                            <a href="{% url 'projects:project_detail' sale.linked_project.pk %}">
+                                {{ sale.linked_project.name }}
+                            </a>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Fiyatlandırma -->
+        <div class="card shadow mb-4">
+            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                <h6 class="m-0 font-weight-bold text-primary">Fiyatlandırma</h6>
+                <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#pricingModal">
+                    <i class="fas fa-calculator"></i> Fiyat Hesapla
+                </button>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <h6 class="text-primary">Temel Fiyat</h6>
+                            <h4 class="text-success">{{ sale.base_price|floatformat:2 }} ₺</h4>
+                            {% if sale.base_package %}
+                                <small class="text-muted">{{ sale.base_package }}</small>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <h6 class="text-primary">Ek Hizmetler</h6>
+                            <h4 class="text-info">{{ sale.extra_services_total|floatformat:2 }} ₺</h4>
+                            <small class="text-muted">{{ sale.extra_services.count }} hizmet</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <h6 class="text-primary">Ek Maliyetler</h6>
+                            <h4 class="text-warning">{{ sale.additional_costs_total|floatformat:2 }} ₺</h4>
+                            <small class="text-muted">{{ sale.additional_costs.count }} maliyet</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <h6 class="text-primary">Final Fiyat</h6>
+                            <h3 class="text-success">{{ sale.final_price|floatformat:2 }} ₺</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dosyalar -->
+        <div class="card shadow mb-4">
+            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                <h6 class="m-0 font-weight-bold text-primary">Proje Dosyaları</h6>
+                <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#fileUploadModal">
+                    <i class="fas fa-plus"></i> Dosya Ekle
+                </button>
+            </div>
+            <div class="card-body">
+                {% if project_files %}
+                    <div class="table-responsive">
+                        <table class="table table-bordered" width="100%" cellspacing="0">
+                            <thead>
+                                <tr>
+                                    <th>Dosya Adı</th>
+                                    <th>Tür</th>
+                                    <th>Versiyon</th>
+                                    <th>Açıklama</th>
+                                    <th>Boyut</th>
+                                    <th>Yükleyen</th>
+                                    <th>Tarih</th>
+                                    <th>İşlemler</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for file in project_files %}
+                                <tr>
+                                    <td>
+                                        <i class="fas fa-file-archive text-primary me-2"></i>
+                                        {{ file.file_name|default:"Dosya Adı Yok" }}
+                                    </td>
+                                    <td>
+                                        <span class="badge badge-info">{{ file.get_file_type_display }}</span>
+                                    </td>
+                                    <td>
+                                        <span class="badge badge-secondary">{{ file.version_number }}</span>
+                                    </td>
+                                    <td>
+                                        {% if file.description %}
+                                            <span class="text-muted" title="{{ file.description }}">
+                                                {{ file.description|truncatechars:50 }}
+                                            </span>
+                                        {% else %}
+                                            <span class="text-muted">Açıklama yok</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ file.get_file_size_display }}</td>
+                                    <td>{{ file.uploaded_by.get_full_name|default:file.uploaded_by.username }}</td>
+                                    <td>{{ file.uploaded_at|date:"d.m.Y H:i" }}</td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <a href="{{ file.file.url }}" class="btn btn-sm btn-outline-primary" title="İndir">
+                                                <i class="fas fa-download"></i>
+                                            </a>
+                                            <a href="{% url 'sellers:file_preview' file.pk %}" class="btn btn-sm btn-outline-secondary" title="Görüntüle">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            <a href="{% url 'sellers:file_delete' file.pk %}" 
+                                               class="btn btn-sm btn-outline-danger" title="Sil"
+                                               onclick="return confirm('Bu dosyayı silmek istediğinizden emin misiniz?')">
+                                                <i class="fas fa-trash"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-file-archive fa-3x text-gray-300 mb-3"></i>
+                        <p class="text-muted">Henüz dosya yüklenmemiş.</p>
+                        <p class="text-muted">Dosya yüklemek için yukarıdaki "Dosya Ekle" butonunu kullanın.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Ödeme Makbuzları -->
+        <div class="card shadow mb-4">
+            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                <h6 class="m-0 font-weight-bold text-primary">Ödeme Makbuzları</h6>
+                <a href="{% url 'sellers:add_payment_receipt' sale.pk %}" class="btn btn-sm btn-success">
+                    <i class="fas fa-plus"></i> Makbuz Ekle
+                </a>
+            </div>
+            <div class="card-body">
+                {% if payment_receipts %}
+                    <div class="table-responsive">
+                        <table class="table table-bordered" width="100%" cellspacing="0">
+                            <thead>
+                                <tr>
+                                    <th>Makbuz No</th>
+                                    <th>Ödeme Türü</th>
+                                    <th>Tutar</th>
+                                    <th>Ödeme Tarihi</th>
+                                    <th>Yöntem</th>
+                                    <th>Durum</th>
+                                    <th>İşlemler</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for payment in payment_receipts %}
+                                <tr>
+                                    <td>
+                                        <i class="fas fa-receipt text-success me-2"></i>
+                                        {{ payment.receipt_number|default:"-" }}
+                                    </td>
+                                    <td>
+                                        <span class="badge badge-info">
+                                            {{ payment.get_payment_type_display }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <strong>{{ payment.amount|floatformat:2 }} ₺</strong>
+                                    </td>
+                                    <td>{{ payment.payment_date|date:"d.m.Y" }}</td>
+                                    <td>{{ payment.payment_method }}</td>
+                                    <td>
+                                        {% if payment.status == 'completed' %}
+                                            <span class="badge badge-success">Tamamlandı</span>
+                                        {% elif payment.status == 'pending' %}
+                                            <span class="badge badge-warning">Beklemede</span>
+                                        {% elif payment.status == 'failed' %}
+                                            <span class="badge badge-danger">Başarısız</span>
+                                        {% else %}
+                                            <span class="badge badge-secondary">{{ payment.get_status_display }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            {% if payment.receipt_file %}
+                                                <a href="{{ payment.receipt_file.url }}" class="btn btn-sm btn-outline-primary" title="Makbuzu Görüntüle" target="_blank">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                            {% endif %}
+                                            <a href="{% url 'sellers:edit_payment_receipt' payment.pk %}" class="btn btn-sm btn-outline-warning" title="Düzenle">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <a href="{% url 'sellers:delete_payment_receipt' payment.pk %}" class="btn btn-sm btn-outline-danger" title="Sil" onclick="return confirm('Bu ödeme makbuzunu silmek istediğinizden emin misiniz?')">
+                                                <i class="fas fa-trash"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <!-- Ödeme Özeti -->
+                    <div class="row mt-3">
+                        <div class="col-md-4">
+                            <div class="text-center">
+                                <h6 class="text-primary">Toplam Ödenen</h6>
+                                <h4 class="text-success">{{ total_paid|floatformat:2 }} ₺</h4>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="text-center">
+                                <h6 class="text-primary">Kalan Tutar</h6>
+                                <h4 class="text-warning">{{ remaining_amount|floatformat:2 }} ₺</h4>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="text-center">
+                                <h6 class="text-primary">Ödeme Oranı</h6>
+                                <h4 class="text-info">{{ payment_percentage|floatformat:1 }}%</h4>
+                            </div>
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-receipt fa-3x text-gray-300 mb-3"></i>
+                        <p class="text-muted">Henüz ödeme makbuzu eklenmemiş.</p>
+                        <p class="text-muted">Ödeme makbuzu eklemek için yukarıdaki "Makbuz Ekle" butonunu kullanın.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Yan Panel -->
+    <div class="col-lg-4 mb-4">
+        <!-- Tarihler -->
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Tarihler</h6>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <strong>Teklif Tarihi:</strong><br>
+                    {{ sale.quote_date|date:"d.m.Y"|default:"-" }}
+                </div>
+                <div class="mb-3">
+                    <strong>Başlangıç Tarihi:</strong><br>
+                    {{ sale.start_date|date:"d.m.Y"|default:"-" }}
+                </div>
+                <div class="mb-3">
+                    <strong>Bitiş Tarihi:</strong><br>
+                    {{ sale.end_date|date:"d.m.Y"|default:"-" }}
+                </div>
+                <div class="mb-3">
+                    <strong>Teslim Tarihi:</strong><br>
+                    {{ sale.delivery_date|date:"d.m.Y"|default:"-" }}
+                </div>
+            </div>
+        </div>
+
+        <!-- Süre Bilgileri -->
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Süre Bilgileri</h6>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <strong>Tahmini Süre:</strong><br>
+                    {{ sale.estimated_duration_days|default:"-" }} gün
+                </div>
+                <div class="mb-3">
+                    <strong>Gerçek Süre:</strong><br>
+                    {% if sale.actual_duration_days %}
+                        {{ sale.actual_duration_days }} gün
+                    {% else %}
+                        - gün
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Ek Hizmetler -->
+        <div class="card shadow mb-4">
+            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                <h6 class="m-0 font-weight-bold text-primary">Ek Hizmetler</h6>
+                <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#extraServiceModal">
+                    <i class="fas fa-plus"></i>
+                </button>
+            </div>
+            <div class="card-body">
+                {% if extra_services %}
+                    {% for service in extra_services %}
+                    <div class="d-flex justify-content-between align-items-center mb-2 p-3 border rounded">
+                        <div>
+                            <h6 class="mb-0">{{ service.get_service_name }}</h6>
+                            <small class="text-muted">{{ service.quantity }} adet × {{ service.unit_price|floatformat:2 }} ₺</small>
+                            {% if service.notes %}
+                                <br><small class="text-muted">{{ service.notes }}</small>
+                            {% endif %}
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <div class="text-end me-3">
+                                <strong>{{ service.total_price|floatformat:2 }} ₺</strong>
+                                {% if service.is_approved %}
+                                    <span class="badge badge-success ms-1">Onaylı</span>
+                                {% else %}
+                                    <span class="badge badge-warning ms-1">Beklemede</span>
+                                {% endif %}
+                            </div>
+                            <div class="btn-group" role="group">
+                                <a href="{% url 'sellers:edit_extra_service' service.pk %}" class="btn btn-sm btn-outline-primary" title="Düzenle">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <a href="{% url 'sellers:delete_extra_service' service.pk %}" class="btn btn-sm btn-outline-danger" title="Sil">
+                                    <i class="fas fa-trash"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-muted text-center">Henüz ek hizmet eklenmemiş.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Ek Maliyetler -->
+        <div class="card shadow mb-4">
+            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                <h6 class="m-0 font-weight-bold text-primary">Ek Maliyetler</h6>
+                <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#additionalCostModal">
+                    <i class="fas fa-plus"></i>
+                </button>
+            </div>
+            <div class="card-body">
+                {% if additional_costs %}
+                    {% for cost in additional_costs %}
+                    <div class="d-flex justify-content-between align-items-center mb-2 p-3 border rounded">
+                        <div>
+                            <h6 class="mb-0">{{ cost.name }}</h6>
+                            <small class="text-muted">{{ cost.get_cost_type_display }}</small>
+                            {% if cost.description %}
+                                <br><small class="text-muted">{{ cost.description }}</small>
+                            {% endif %}
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <div class="text-end me-3">
+                                <strong>{{ cost.cost|floatformat:2 }} ₺</strong>
+                                {% if cost.is_customer_paid %}
+                                    <span class="badge badge-warning ms-1">Müşteri</span>
+                                {% else %}
+                                    <span class="badge badge-info ms-1">Biz</span>
+                                {% endif %}
+                            </div>
+                            <div class="btn-group" role="group">
+                                <a href="{% url 'sellers:edit_additional_cost' cost.pk %}" class="btn btn-sm btn-outline-primary" title="Düzenle">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <a href="{% url 'sellers:delete_additional_cost' cost.pk %}" class="btn btn-sm btn-outline-danger" title="Sil">
+                                    <i class="fas fa-trash"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-muted text-center">Henüz ek maliyet eklenmemiş.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block modals %}
+<!-- Dosya Yükleme Modal -->
+<div class="modal fade" id="fileUploadModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Dosya Yükle</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="{% url 'sellers:file_upload' sale.pk %}" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <!-- File validation error alert -->
+                    <div id="file-validation-alert" class="alert alert-danger d-none" role="alert">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <span id="file-validation-message"></span>
+                    </div>
+                    {{ file_form|crispy }}
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                    <button type="submit" class="btn btn-primary">Yükle</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Ek Hizmet Modal -->
+<div class="modal fade" id="extraServiceModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Ek Hizmet Ekle</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="{% url 'sellers:add_extra_service' sale.pk %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    {{ extra_service_form|crispy }}
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                    <button type="submit" class="btn btn-primary">Ekle</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Ek Maliyet Modal -->
+<div class="modal fade" id="additionalCostModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Ek Maliyet Ekle</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="{% url 'sellers:add_additional_cost' sale.pk %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    {{ additional_cost_form|crispy }}
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                    <button type="submit" class="btn btn-primary">Ekle</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

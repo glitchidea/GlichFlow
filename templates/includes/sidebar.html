@@ -1,0 +1,198 @@
+{% load static %}
+{% load account_tags %}
+<!-- Sidebar -->
+<nav id="sidebar">
+    <div class="sidebar-header">
+        <div class="d-flex align-items-center">
+            <img src="{% static 'img/favicon.svg' %}" alt="GlichFlow" width="24" height="24" class="me-2">
+            <h5 class="m-0">GlichFlow</h5>
+        </div>
+    </div>
+    
+    <ul class="list-unstyled components">
+        <li>
+            <a href="{% url 'dashboard:index' %}" class="{% if request.resolver_match.view_name == 'dashboard:index' %}active{% endif %}">
+                <i class="fas fa-tachometer-alt"></i> Dashboard
+            </a>
+        </li>
+        <li>
+            <a href="{% url 'dashboard:personal_menu' %}" class="{% if request.resolver_match.view_name == 'dashboard:personal_menu' %}active{% endif %}">
+                <i class="fas fa-user-cog"></i> Kişisel Menü
+            </a>
+        </li>
+        <li>
+            <a href="#projectsSubmenu" data-bs-toggle="collapse" aria-expanded="false" class="dropdown-toggle">
+                <i class="fas fa-project-diagram"></i> Projeler
+            </a>
+            <ul class="collapse list-unstyled" id="projectsSubmenu">
+                <li>
+                    <a href="{% url 'projects:project_list' %}"><i class="fas fa-list"></i> Tüm Projeler</a>
+                </li>
+                <li>
+                    <a href="{% url 'projects:project_create' %}"><i class="fas fa-plus"></i> Yeni Proje</a>
+                </li>
+            </ul>
+        </li>
+        <li>
+            <a href="#prdSubmenu" data-bs-toggle="collapse" aria-expanded="false" class="dropdown-toggle">
+                <i class="fas fa-file-alt"></i> PRD'ler
+            </a>
+            <ul class="collapse list-unstyled" id="prdSubmenu">
+                <li>
+                    <a href="{% url 'projects:prd_list' %}"><i class="fas fa-list"></i> Tüm PRD'ler</a>
+                </li>
+                <li>
+                    <a href="{% url 'projects:prd_create' %}"><i class="fas fa-plus"></i> Yeni PRD</a>
+                </li>
+            </ul>
+        </li>
+        <li>
+            <a href="#tasksSubmenu" data-bs-toggle="collapse" aria-expanded="false" class="dropdown-toggle">
+                <i class="fas fa-tasks"></i> Görevler
+            </a>
+            <ul class="collapse list-unstyled" id="tasksSubmenu">
+                <li>
+                    <a href="{% url 'tasks:task_list' %}"><i class="fas fa-list"></i> Tüm Görevler</a>
+                </li>
+                <li>
+                    <a href="{% url 'tasks:task_create' %}"><i class="fas fa-plus"></i> Yeni Görev</a>
+                </li>
+            </ul>
+        </li>
+        <li>
+            <a href="#teamsSubmenu" data-bs-toggle="collapse" aria-expanded="false" class="dropdown-toggle">
+                <i class="fas fa-users"></i> Ekipler
+            </a>
+            <ul class="collapse list-unstyled" id="teamsSubmenu">
+                <li>
+                    <a href="{% url 'teams:team_list' %}"><i class="fas fa-list"></i> Tüm Ekipler</a>
+                </li>
+                {% if user.role == 'admin' or user.role == 'project_manager' %}
+                <li>
+                    <a href="{% url 'teams:team_create' %}"><i class="fas fa-plus"></i> Yeni Ekip</a>
+                </li>
+                {% endif %}
+            </ul>
+        </li>
+        <li class="side-nav-item">
+            <a href="#messagesSubmenu" data-bs-toggle="collapse" aria-expanded="false" class="dropdown-toggle">
+                <i class="fas fa-comments"></i>
+                <span> Mesajlar </span>
+                <span class="badge bg-primary rounded-pill float-end message-count" id="unreadMessageCount"></span>
+            </a>
+            <ul class="collapse list-unstyled" id="messagesSubmenu">
+                <li>
+                    <a href="{% url 'communications:direct_messages_list' %}"><i class="fas fa-comment-alt"></i> Direkt Mesajlar</a>
+                </li>
+                
+                <li>
+                    <a href="{% url 'communications:chat_list' %}"><i class="fas fa-comments"></i> Grup Mesajları</a>
+                </li>
+                <li>
+                    <a href="{% url 'communications:new_direct_message' %}"><i class="fas fa-plus"></i> Yeni Mesaj</a>
+                </li>
+            </ul>
+        </li>
+        <li>
+            <a href="{% url 'calendar:calendar' %}" class="{% if 'calendar' in request.resolver_match.namespace %}active{% endif %}">
+                <i class="fas fa-calendar-alt"></i> Takvim
+            </a>
+        </li>
+        <li>
+            <a href="{% url 'reports:report_list' %}" class="{% if 'reports' in request.resolver_match.namespace %}active{% endif %}">
+                <i class="fas fa-chart-bar"></i> Raporlar
+            </a>
+        </li>
+        <li>
+            <a href="#githubSubmenu" data-bs-toggle="collapse" aria-expanded="false" class="dropdown-toggle {% if 'github_integration' in request.resolver_match.namespace %}active{% endif %}">
+                <i class="fab fa-github"></i> GitHub
+            </a>
+            <ul class="collapse list-unstyled" id="githubSubmenu">
+                <li>
+                    <a href="{% url 'github_integration:github_profile' %}"><i class="fas fa-user-circle"></i> GitHub Profili</a>
+                </li>
+                <li>
+                    <a href="{% url 'github_integration:github_messages_list' %}"><i class="fas fa-comments"></i> GitHub Mesajlar</a>
+                </li>
+                <li>
+                    <a href="{% url 'github_integration:sync_logs' %}"><i class="fas fa-history"></i> Senkronizasyon Kayıtları</a>
+                </li>
+            </ul>
+        </li>
+        {% if request.user.is_authenticated and request.user|has_any_tag:'muhasebeci,muhasebeadmin' %}
+        <li>
+            <a href="#accountingSubmenu" data-bs-toggle="collapse" aria-expanded="false" class="dropdown-toggle {% if 'accounting' in request.resolver_match.namespace %}active{% endif %}">
+                <i class="fas fa-calculator"></i> Muhasebe
+            </a>
+            <ul class="collapse list-unstyled" id="accountingSubmenu">
+                <li>
+                    <a href="{% url 'accounting:index' %}"><i class="fas fa-receipt"></i> Hesaplayıcı</a>
+                </li>
+                {% if request.user|has_tag:'muhasebeadmin' %}
+                <li>
+                    <a href="{% url 'accounting:package_manager' %}"><i class="fas fa-boxes"></i> Paket Yöneticisi</a>
+                </li>
+                {% endif %}
+            </ul>
+        </li>
+        {% endif %}
+        {% if request.user.is_authenticated and request.user|has_tag:'idea' %}
+        <li>
+            <a href="{% url 'ideas:idea_list' %}" class="{% if 'ideas' in request.resolver_match.namespace %}active{% endif %}">
+                <i class="fas fa-lightbulb"></i> Fikir Not Defteri
+            </a>
+        </li>
+        {% endif %}
+        {% if request.user.is_authenticated and request.user|has_tag:'makale' %}
+        <li>
+            <a href="{% url 'articles:article_list' %}" class="{% if 'articles' in request.resolver_match.namespace %}active{% endif %}">
+                <i class="fas fa-newspaper"></i> Makaleler
+            </a>
+        </li>
+        {% endif %}
+        {% if request.user.is_authenticated and request.user|has_tag:'seller' %}
+        <li>
+            <a href="#sellerSubmenu" data-bs-toggle="collapse" aria-expanded="false" class="dropdown-toggle {% if 'sellers' in request.resolver_match.namespace %}active{% endif %}">
+                <i class="fas fa-handshake"></i> Satış Yönetimi
+            </a>
+            <ul class="collapse list-unstyled" id="sellerSubmenu">
+                <li>
+                    <a href="{% url 'sellers:index' %}"><i class="fas fa-chart-line"></i> Dashboard</a>
+                </li>
+                <li>
+                    <a href="{% url 'sellers:customer_list' %}"><i class="fas fa-users"></i> Müşteriler</a>
+                </li>
+                <li>
+                    <a href="{% url 'sellers:sale_list' %}"><i class="fas fa-project-diagram"></i> Proje Satışları</a>
+                </li>
+                <li>
+                    <a href="{% url 'sellers:sale_create' %}"><i class="fas fa-plus"></i> Yeni Satış</a>
+                </li>
+            </ul>
+        </li>
+        {% endif %}
+        <li>
+            <a href="{% url 'admin:index' %}"><i class="fas fa-cog"></i> Yönetim</a>
+        </li>
+        {% if request.user.is_authenticated and request.user|has_tag:'ai' %}
+        <li>
+            <a href="{% url 'chatbot:chat_list' %}" class="{% if 'chatbot' in request.resolver_match.namespace %}active{% endif %}">
+                <i class="fas fa-robot"></i> AI Asistan
+            </a>
+        </li>
+        {% endif %}
+    </ul>
+    
+    <div class="px-3 py-2 mt-auto mb-3">
+        <div class="d-flex align-items-center">
+        </div>
+        <div class="mt-2">
+            <form method="post" action="{% url 'accounts:logout' %}">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-outline-light btn-sm w-100">
+                    <i class="fas fa-sign-out-alt"></i> Çıkış Yap
+                </button>
+            </form>
+        </div>
+    </div>
+</nav>

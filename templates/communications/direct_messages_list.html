@@ -1,0 +1,127 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Direkt Mesajlar | {{ request.site_settings.site_name }}{% endblock %}
+
+{% block page_title %}Direkt Mesajlar{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'dashboard:index' %}">Anasayfa</a></li>
+<li class="breadcrumb-item active">Direkt Mesajlar</li>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-comments me-2"></i> Direkt Mesajlar
+                </h5>
+                <a href="{% url 'communications:new_direct_message' %}" class="btn btn-sm btn-primary">
+                    <i class="fas fa-plus me-1"></i> Yeni Mesaj
+                </a>
+            </div>
+            <div class="card-body p-0">
+                {% if direct_messages %}
+                <div class="list-group list-group-flush">
+                    {% for dm in direct_messages %}
+                    <a href="{% url 'communications:direct_message_detail' dm.id %}" class="list-group-item list-group-item-action p-3 {% if dm.unread_count > 0 %}bg-light{% endif %}">
+                        <div class="d-flex w-100 justify-content-between align-items-center">
+                            <div class="d-flex align-items-center">
+                                <div class="avatar-container me-3">
+                                    {% if dm.other_user.profile_picture %}
+                                    <img src="{{ dm.other_user.profile_picture.url }}" alt="{{ dm.other_user.get_full_name }}" class="rounded-circle" width="48" height="48">
+                                    {% else %}
+                                    <div class="avatar-placeholder rounded-circle bg-primary text-white d-flex align-items-center justify-content-center" style="width: 48px; height: 48px;">
+                                        {{ dm.other_user.get_initials }}
+                                    </div>
+                                    {% endif %}
+                                    {% if dm.other_user.is_online %}
+                                    <span class="status-indicator online"></span>
+                                    {% endif %}
+                                </div>
+                                <div>
+                                    <h6 class="mb-1 {% if dm.unread_count > 0 %}fw-bold{% endif %}">
+                                        {{ dm.other_user.get_full_name|default:dm.other_user.username }}
+                                        {% if dm.unread_count > 0 %}
+                                        <span class="badge bg-primary rounded-pill ms-2">{{ dm.unread_count }}</span>
+                                        {% endif %}
+                                    </h6>
+                                    <div class="text-muted small text-truncate" style="max-width: 300px;">
+                                        {% if dm.last_message %}
+                                            {% if dm.last_message.sender == request.user %}
+                                            <span class="text-muted">Sen: </span>
+                                            {% endif %}
+                                            {{ dm.last_message.content|truncatechars:60 }}
+                                        {% else %}
+                                            <i>Henüz mesaj yok</i>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            {% if dm.last_message %}
+                            <small class="text-muted">{{ dm.last_message.sent_at|date:"d.m.Y H:i" }}</small>
+                            {% endif %}
+                        </div>
+                    </a>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-5">
+                    <div class="mb-3">
+                        <i class="fas fa-comments fa-3x text-muted"></i>
+                    </div>
+                    <h5>Direkt Mesaj Bulunamadı</h5>
+                    <p class="text-muted mb-4">Henüz hiçbir direkt mesajlaşmanız bulunmuyor.</p>
+                    <a href="{% url 'communications:new_direct_message' %}" class="btn btn-primary">
+                        <i class="fas fa-plus me-2"></i> Yeni Direkt Mesaj Başlat
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.avatar-container {
+    position: relative;
+}
+.status-indicator {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 2px solid white;
+}
+.status-indicator.online {
+    background-color: #28a745;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        // 30 saniyede bir, okunmamış mesaj sayısını kontrol et
+        function checkUnreadCount() {
+            $.getJSON("{% url 'communications:get_unread_dm_count' %}", function(data) {
+                if (data.unread_count > 0) {
+                    // Sayfa başlığını güncelle
+                    document.title = `(${data.unread_count}) Direkt Mesajlar | {{ request.site_settings.site_name }}`;
+                }
+            });
+        }
+        
+        // Sayfayı periyodik olarak yenile
+        setInterval(function() {
+            checkUnreadCount();
+        }, 30000);
+    });
+</script>
+{% endblock %} 

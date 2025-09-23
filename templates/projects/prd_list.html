@@ -1,0 +1,305 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/prd_list.css' %}?v=1.1">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Heading -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">{{ title }}</h1>
+        <a href="{% url 'projects:prd_create' %}" class="btn btn-primary btn-sm">
+            <i class="fas fa-plus fa-sm"></i> Yeni PRD
+        </a>
+    </div>
+
+    <!-- İstatistikler -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="stats-card">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-white-50 text-uppercase mb-1">
+                            Toplam PRD
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-white">{{ total_prds }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-file-alt fa-2x text-white-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="stats-card">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-white-50 text-uppercase mb-1">
+                            Taslak
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-white">{{ draft_prds }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-edit fa-2x text-white-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="stats-card">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-white-50 text-uppercase mb-1">
+                            İncelemede
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-white">{{ review_prds }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-search fa-2x text-white-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="stats-card">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-white-50 text-uppercase mb-1">
+                            Onaylanan
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-white">{{ approved_prds }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-check-circle fa-2x text-white-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtreler -->
+    <div class="filter-section">
+        <form method="get" class="row">
+            <div class="col-md-3">
+                <label for="status" class="form-label">Durum</label>
+                <select name="status" id="status" class="form-select">
+                    <option value="">Tümü</option>
+                    {% for value, label in status_choices %}
+                    <option value="{{ value }}" {% if status_filter == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+
+            
+            <div class="col-md-3">
+                <label for="assigned_to" class="form-label">Atandığı</label>
+                <select name="assigned_to" id="assigned_to" class="form-select">
+                    <option value="">Tümü</option>
+                    <option value="project" {% if assigned_to_filter == 'project' %}selected{% endif %}>Projeler</option>
+                    <option value="task" {% if assigned_to_filter == 'task' %}selected{% endif %}>Görevler</option>
+                    <option value="unassigned" {% if assigned_to_filter == 'unassigned' %}selected{% endif %}>Atanmamış</option>
+                </select>
+            </div>
+            
+            <div class="col-md-3">
+                <label for="project" class="form-label">Proje</label>
+                <select name="project" id="project" class="form-select">
+                    <option value="">Tüm Projeler</option>
+                    {% for project in projects %}
+                    <option value="{{ project.id }}" {% if project_filter == project.id %}selected{% endif %}>
+                        {{ project.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="col-md-3">
+                <label for="search" class="form-label">Arama</label>
+                <input type="text" name="search" id="search" class="form-control" 
+                       value="{{ search_query }}" placeholder="PRD başlığı...">
+            </div>
+            
+            <div class="col-12 mt-3">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-search"></i> Filtrele
+                </button>
+                <a href="{% url 'projects:prd_list' %}" class="btn btn-secondary">
+                    <i class="fas fa-times"></i> Temizle
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- PRD Listesi -->
+    <div class="row">
+        {% for prd in prds %}
+        <div class="col-lg-6 col-xl-4 mb-4">
+            <div class="card prd-card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-primary">{{ prd.title|truncatechars:50 }}</h6>
+                    <span class="badge bg-{{ prd.status }}">
+                        {{ prd.get_status_display }}
+                    </span>
+                </div>
+                
+                <div class="card-body">
+                    {% if prd.product_summary %}
+                    <p class="card-text text-gray-600">{{ prd.product_summary|truncatechars:100 }}</p>
+                    {% endif %}
+                    
+                    <div class="small text-muted mb-2">
+                        <i class="fas fa-user"></i> {{ prd.created_by.get_full_name|default:prd.created_by.username }}
+                    </div>
+                    
+                    {% if prd.assigned_to %}
+                    <div class="small text-muted mb-2">
+                        <i class="fas fa-link"></i> 
+                        {% if prd.project %}
+                            Proje: {{ prd.project.name }}
+                        {% elif prd.task %}
+                            Görev: {{ prd.task.title }}
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                    
+                    <div class="small text-muted">
+                        <i class="fas fa-calendar"></i> {{ prd.created_at|date:"d.m.Y H:i" }}
+                    </div>
+                    
+                    {% if prd.document %}
+                    <div class="small text-muted mt-2">
+                        <i class="fas fa-paperclip text-primary"></i> 
+                        <span class="text-primary">{{ prd.document.name|slice:"-30:" }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <div class="card-footer bg-transparent">
+                    <div class="btn-group w-100" role="group">
+                        <a href="{% url 'projects:prd_detail' prd.id %}" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-eye"></i> Görüntüle
+                        </a>
+                        
+                        {% if prd.document %}
+                        <a href="{% url 'projects:prd_document_view' prd.id %}" class="btn btn-outline-info btn-sm" target="_blank">
+                            <i class="fas fa-file-alt"></i> Doküman
+                        </a>
+                        {% endif %}
+                        
+                        {% if user.role in 'admin,project_manager' or user == prd.created_by %}
+                        <a href="{% url 'projects:prd_edit' prd.id %}" class="btn btn-outline-secondary btn-sm">
+                            <i class="fas fa-edit"></i> Düzenle
+                        </a>
+                        {% endif %}
+                        
+                        {% if user.role in 'admin,project_manager' %}
+                        <button class="btn btn-outline-info btn-sm prd-toggle-assign" 
+                                data-prd-id="{{ prd.id }}"
+                                data-assigned="{% if prd.project or prd.task %}true{% else %}false{% endif %}">
+                            <i class="fas fa-link"></i> 
+                            <span class="toggle-text">
+                                {% if prd.project or prd.task %}Atamayı Kaldır{% else %}Ata{% endif %}
+                            </span>
+                        </button>
+                        {% endif %}
+                        
+                        {% if user.role in 'admin,project_manager' or user == prd.created_by %}
+                        <a href="{% url 'projects:prd_delete' prd.id %}" class="btn btn-outline-danger btn-sm">
+                            <i class="fas fa-trash"></i> Sil
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="text-center py-5">
+                <i class="fas fa-file-alt fa-3x text-gray-300 mb-3"></i>
+                <h5 class="text-gray-500">Henüz PRD bulunmuyor</h5>
+                <p class="text-gray-400">İlk PRD'nizi oluşturmak için yukarıdaki butonu kullanın.</p>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Sayfalama -->
+    {% if prds.has_other_pages %}
+    <nav aria-label="PRD sayfalama">
+        <ul class="pagination justify-content-center">
+            {% if prds.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ prds.previous_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if priority_filter %}&priority={{ priority_filter }}{% endif %}{% if assigned_to_filter %}&assigned_to={{ assigned_to_filter }}{% endif %}{% if project_filter %}&project={{ project_filter }}{% endif %}{% if task_filter %}&task={{ task_filter }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}">
+                    Önceki
+                </a>
+            </li>
+            {% endif %}
+            
+            {% for num in prds.paginator.page_range %}
+            <li class="page-item {% if prds.number == num %}active{% endif %}">
+                <a class="page-link" href="?page={{ num }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if priority_filter %}&priority={{ priority_filter }}{% endif %}{% if assigned_to_filter %}&assigned_to={{ assigned_to_filter }}{% endif %}{% if project_filter %}&project={{ project_filter }}{% endif %}{% if task_filter %}&task={{ task_filter }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}">
+                    {{ num }}
+                </a>
+            </li>
+            {% endfor %}
+            
+            {% if prds.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ prds.next_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if priority_filter %}&priority={{ priority_filter }}{% endif %}{% if assigned_to_filter %}&assigned_to={{ assigned_to_filter }}{% endif %}{% if project_filter %}&project={{ project_filter }}{% endif %}{% if task_filter %}&task={{ task_filter }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}">
+                    Sonraki
+                </a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // PRD atama toggle
+    $('.prd-toggle-assign').click(function() {
+        const button = $(this);
+        const prdId = button.data('prd-id');
+        const isAssigned = button.data('assigned');
+        
+        $.ajax({
+            url: `/projects/prd/${prdId}/toggle-assign/`,
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': $('[name=csrfmiddlewaretoken]').val()
+            },
+            success: function(response) {
+                if (response.success) {
+                    if (response.action === 'removed') {
+                        button.data('assigned', false);
+                        button.find('.toggle-text').text('Ata');
+                    } else {
+                        button.data('assigned', true);
+                        button.find('.toggle-text').text('Atamayı Kaldır');
+                    }
+                    
+                    // Sayfayı yenile
+                    location.reload();
+                } else {
+                    alert('Hata: ' + response.message);
+                }
+            },
+            error: function() {
+                alert('Bir hata oluştu.');
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

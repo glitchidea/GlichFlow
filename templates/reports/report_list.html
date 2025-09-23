@@ -1,0 +1,239 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block page_title %}{{ title }}{% endblock %}
+
+{% block breadcrumb %}
+<div class="page-title-box">
+    <div class="page-title-right">
+        <ol class="breadcrumb m-0">
+            <li class="breadcrumb-item"><a href="{% url 'dashboard:index' %}">Ana Sayfa</a></li>
+            <li class="breadcrumb-item active">{{ title }}</li>
+        </ol>
+    </div>
+    <h4 class="page-title">{{ title }}</h4>
+</div>
+{% endblock %}
+
+{% block page_actions %}
+<a href="{% url 'reports:report_create' %}" class="btn btn-primary">
+    <i class="mdi mdi-plus-circle-outline me-1"></i> Yeni Rapor
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-8">
+                        <form method="get" class="mb-2">
+                            <div class="input-group">
+                                <input type="text" class="form-control" placeholder="Rapor ara..." name="q" value="{{ current_filters.q }}">
+                                <button class="btn btn-primary" type="submit">
+                                    <i class="mdi mdi-magnify"></i>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="d-flex justify-content-end">
+                            <div class="dropdown me-2">
+                                <button class="btn btn-light dropdown-toggle" type="button" id="typeFilterDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                    {% if current_report_type_display %}
+                                    {{ current_report_type_display }}
+                                    {% else %}
+                                    Tüm Tipler
+                                    {% endif %}
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="typeFilterDropdown">
+                                    <li><a class="dropdown-item" href="{% url 'reports:report_list' %}">Tüm Tipler</a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    {% for type_value, type_label in report_types.items %}
+                                    <li><a class="dropdown-item" href="{% url 'reports:report_list' %}?type={{ type_value }}{% if current_filters.q %}&q={{ current_filters.q }}{% endif %}{% if current_filters.project %}&project={{ current_filters.project }}{% endif %}">{{ type_label }}</a></li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                            
+                            <div class="dropdown">
+                                <button class="btn btn-light dropdown-toggle" type="button" id="projectFilterDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                    {% if current_filters.project %}
+                                    {% for project in projects %}
+                                    {% if project.id|slugify == current_filters.project %}
+                                    {{ project.name }}
+                                    {% endif %}
+                                    {% endfor %}
+                                    {% else %}
+                                    Tüm Projeler
+                                    {% endif %}
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="projectFilterDropdown">
+                                    <li><a class="dropdown-item" href="{% url 'reports:report_list' %}{% if current_filters.q or current_filters.type %}?{% endif %}{% if current_filters.q %}q={{ current_filters.q }}{% endif %}{% if current_filters.q and current_filters.type %}&{% endif %}{% if current_filters.type %}type={{ current_filters.type }}{% endif %}">Tüm Projeler</a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    {% for project in projects %}
+                                    <li><a class="dropdown-item" href="{% url 'reports:report_list' %}?project={{ project.id }}{% if current_filters.q %}&q={{ current_filters.q }}{% endif %}{% if current_filters.type %}&type={{ current_filters.type }}{% endif %}">{{ project.name }}</a></li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                {% if page_obj %}
+                <div class="table-responsive">
+                    <table class="table table-centered table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th style="width: 30px;">#</th>
+                                <th>Rapor Adı</th>
+                                <th>Tip</th>
+                                <th>Proje</th>
+                                <th>Oluşturan</th>
+                                <th>Son Çalıştırma</th>
+                                <th>İşlemler</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for report in page_obj %}
+                            <tr>
+                                <td>{{ forloop.counter }}</td>
+                                <td>
+                                    <a href="{% url 'reports:report_detail' report_id=report.id %}" class="text-body fw-semibold">
+                                        {{ report.title }}
+                                    </a>
+                                    <p class="text-muted mb-0 small">{{ report.description|truncatechars:50 }}</p>
+                                </td>
+                                <td>
+                                    <span class="badge bg-primary-subtle text-primary">
+                                        {{ report.get_report_type_display }}
+                                    </span>
+                                </td>
+                                <td>
+                                    {% if report.project %}
+                                    <a href="{% url 'projects:project_detail' project_id=report.project.id %}">
+                                        {{ report.project.name }}
+                                    </a>
+                                    {% else %}
+                                    <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        {% if report.created_by.profile_picture %}
+                                        <img src="{{ report.created_by.profile_picture.url }}" class="rounded-circle me-2" width="24" height="24" alt="{{ report.created_by.get_full_name }}">
+                                        {% else %}
+                                        <div class="avatar avatar-xs me-2">
+                                            <span class="avatar-title rounded-circle bg-primary text-white">
+                                                {{ report.created_by.get_full_name|default:report.created_by.username|slice:":1" }}
+                                            </span>
+                                        </div>
+                                        {% endif %}
+                                        <span>{{ report.created_by.get_full_name|default:report.created_by.username }}</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    {% if report.last_run %}
+                                    {{ report.last_run|date:"d M Y H:i" }}
+                                    {% else %}
+                                    <span class="text-muted">Çalıştırılmadı</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="dropdown">
+                                        <a href="#" class="dropdown-toggle card-drop" data-bs-toggle="dropdown" aria-expanded="false">
+                                            <i class="mdi mdi-dots-vertical font-18"></i>
+                                        </a>
+                                        <div class="dropdown-menu dropdown-menu-end">
+                                            <a href="{% url 'reports:report_detail' report_id=report.id %}" class="dropdown-item">
+                                                <i class="mdi mdi-eye me-1"></i> Görüntüle
+                                            </a>
+                                            <a href="{% url 'reports:report_run' report_id=report.id %}" class="dropdown-item">
+                                                <i class="mdi mdi-refresh me-1"></i> Çalıştır
+                                            </a>
+                                            <a href="{% url 'reports:report_update' report_id=report.id %}" class="dropdown-item">
+                                                <i class="mdi mdi-pencil me-1"></i> Düzenle
+                                            </a>
+                                            <div class="dropdown-divider"></div>
+                                            <a href="{% url 'reports:report_delete' report_id=report.id %}" class="dropdown-item text-danger">
+                                                <i class="mdi mdi-delete me-1"></i> Sil
+                                            </a>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <nav aria-label="Page navigation">
+                            <ul class="pagination justify-content-center">
+                                {% if page_obj.has_previous %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page=1{% if current_filters.q %}&q={{ current_filters.q }}{% endif %}{% if current_filters.type %}&type={{ current_filters.type }}{% endif %}{% if current_filters.project %}&project={{ current_filters.project }}{% endif %}">
+                                        <i class="mdi mdi-chevron-double-left"></i>
+                                    </a>
+                                </li>
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if current_filters.q %}&q={{ current_filters.q }}{% endif %}{% if current_filters.type %}&type={{ current_filters.type }}{% endif %}{% if current_filters.project %}&project={{ current_filters.project }}{% endif %}">
+                                        <i class="mdi mdi-chevron-left"></i>
+                                    </a>
+                                </li>
+                                {% endif %}
+
+                                <li class="page-item active">
+                                    <span class="page-link">
+                                        {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}
+                                    </span>
+                                </li>
+
+                                {% if page_obj.has_next %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if current_filters.q %}&q={{ current_filters.q }}{% endif %}{% if current_filters.type %}&type={{ current_filters.type }}{% endif %}{% if current_filters.project %}&project={{ current_filters.project }}{% endif %}">
+                                        <i class="mdi mdi-chevron-right"></i>
+                                    </a>
+                                </li>
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if current_filters.q %}&q={{ current_filters.q }}{% endif %}{% if current_filters.type %}&type={{ current_filters.type }}{% endif %}{% if current_filters.project %}&project={{ current_filters.project }}{% endif %}">
+                                        <i class="mdi mdi-chevron-double-right"></i>
+                                    </a>
+                                </li>
+                                {% endif %}
+                            </ul>
+                        </nav>
+                    </div>
+                </div>
+                {% else %}
+                <div class="text-center py-5">
+                    <div class="mb-3">
+                        <i class="mdi mdi-file-document-outline" style="font-size: 4rem; color: #ccc;"></i>
+                    </div>
+                    <h5>Henüz rapor bulunmuyor</h5>
+                    <p class="text-muted">
+                        {% if current_filters.q or current_filters.type or current_filters.project %}
+                        Arama sonuçlarına uygun rapor bulunamadı. Filtrelerinizi değiştirerek tekrar deneyin.
+                        {% else %}
+                        Proje ve görevlerinizle ilgili raporlar oluşturarak ilerleme durumunu takip edebilirsiniz.
+                        {% endif %}
+                    </p>
+                    {% if current_filters.q or current_filters.type or current_filters.project %}
+                    <a href="{% url 'reports:report_list' %}" class="btn btn-light">
+                        <i class="mdi mdi-filter-remove me-1"></i> Filtreleri Temizle
+                    </a>
+                    {% else %}
+                    <a href="{% url 'reports:report_create' %}" class="btn btn-primary">
+                        <i class="mdi mdi-plus-circle-outline me-1"></i> Yeni Rapor Oluştur
+                    </a>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

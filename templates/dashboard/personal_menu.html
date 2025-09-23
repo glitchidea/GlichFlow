@@ -1,0 +1,1344 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Kişisel Menü - GlichFlow{% endblock %}
+
+{% block page_title %}Kişisel Menü{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Fix for progress bar styling */
+    .progress-bar {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        overflow: hidden;
+        color: #fff;
+        text-align: center;
+        white-space: nowrap;
+        background-color: #0d6efd;
+        transition: width .6s ease;
+    }
+    
+    /* Card border styling */
+    .border-left-info {
+        border-left: 0.25rem solid #36b9cc !important;
+    }
+    .border-left-primary {
+        border-left: 0.25rem solid #4e73df !important;
+    }
+    .border-left-success {
+        border-left: 0.25rem solid #1cc88a !important;
+    }
+    .border-left-warning {
+        border-left: 0.25rem solid #f6c23e !important;
+    }
+    .border-left-secondary {
+        border-left: 0.25rem solid #858796 !important;
+    }
+    
+    /* Add some animation to the cards */
+    .card {
+        transition: all 0.3s ease;
+    }
+    .card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 .5rem 1rem rgba(0,0,0,.15) !important;
+    }
+    
+    /* Fixed height for scrollable containers with scrolling */
+    .scrollable-container {
+        max-height: 300px;
+        overflow-y: auto;
+        scrollbar-width: thin;
+    }
+    
+    /* Custom scrollbar styling */
+    .scrollable-container::-webkit-scrollbar {
+        width: 6px;
+    }
+    
+    .scrollable-container::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 10px;
+    }
+    
+    .scrollable-container::-webkit-scrollbar-thumb {
+        background: #c1c1c1;
+        border-radius: 10px;
+    }
+    
+    .scrollable-container::-webkit-scrollbar-thumb:hover {
+        background: #a8a8a8;
+    }
+
+    /* Scoped Kanban + Pomodoro styles */
+    #personal-kanban .kanban-board {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 12px;
+    }
+    #personal-kanban .kanban-column {
+        background: #f8f9fc;
+        border: 1px solid #e3e6f0;
+        border-radius: .35rem;
+        min-height: 260px;
+        display: flex;
+        flex-direction: column;
+    }
+    #personal-kanban .kanban-column-header {
+        padding: .5rem .75rem;
+        border-bottom: 1px solid #e3e6f0;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    #personal-kanban .kanban-column-body {
+        padding: .5rem;
+        flex: 1;
+        overflow-y: auto;
+    }
+    #personal-kanban .kanban-item {
+        background: #ffffff;
+        border: 1px solid #e3e6f0;
+        border-radius: .35rem;
+        padding: .5rem .6rem;
+        margin-bottom: .5rem;
+        cursor: grab;
+    }
+    #personal-kanban .kanban-item.dragging {
+        opacity: .6;
+    }
+    #personal-kanban .kanban-column-body.drag-over {
+        background: #eef2ff;
+        outline: 2px dashed #4e73df;
+        outline-offset: -6px;
+    }
+    #pomodoro-widget .form-control,
+    #pomodoro-widget .btn { font-size: .875rem; }
+    #pomodoro-widget .time-display { font-size: 2rem; font-weight: 700; }
+    #pomodoro-widget .chip { display:inline-block; padding:.15rem .5rem; border-radius:1rem; background:#e9ecef; margin-left:.25rem; font-size:.75rem; }
+    #personal-kanban .kanban-controls select { max-width: 220px; }
+    /* Center modal text a bit nicer */
+    #pomoPhaseModal .modal-body { font-size: 1rem; }
+    @media (max-width: 991.98px) {
+        #personal-kanban .kanban-board { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 575.98px) {
+        #personal-kanban .kanban-board { grid-template-columns: 1fr; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="alert alert-info mb-4">
+                <div class="d-flex align-items-center">
+                    <i class="fas fa-info-circle fa-2x mr-3"></i>
+                    <div>
+                        <h5 class="alert-heading mb-1">Kişisel Menünüze Hoş Geldiniz</h5>
+                        <p class="mb-0">Bu sayfada size atanan projeler, görevler ve ilişkili raporları görüntüleyebilirsiniz.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hızlı Erişim Butonları -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Hızlı Erişim</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3 col-sm-6 mb-3">
+                            <a href="{% url 'communications:new_direct_message' %}" class="btn btn-info btn-block">
+                                <i class="fas fa-comment-alt mr-2"></i>Kişisel Mesaj Başlat
+                            </a>
+                        </div>
+                        <div class="col-md-3 col-sm-6 mb-3">
+                            <a href="{% url 'tasks:task_create' %}" class="btn btn-primary btn-block">
+                                <i class="fas fa-tasks mr-2"></i>Yeni Görev Oluştur
+                            </a>
+                        </div>
+                        <div class="col-md-3 col-sm-6 mb-3">
+                            <a href="{% url 'communications:direct_messages_list' %}" class="btn btn-success btn-block">
+                                <i class="fas fa-envelope mr-2"></i>Mesajlarımı Görüntüle
+                            </a>
+                        </div>
+                        <div class="col-md-3 col-sm-6 mb-3">
+                            <a href="{% url 'reports:report_create' %}" class="btn btn-warning btn-block">
+                                <i class="fas fa-chart-bar mr-2"></i>Rapor Oluştur
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Görev ve bildirimler -->
+    <div class="row">
+        <!-- Görevler -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow h-100">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-tasks mr-2"></i>Görevlerim
+                    </h6>
+                    <a href="{% url 'tasks:task_list' %}" class="btn btn-sm btn-primary">
+                        <i class="fas fa-list"></i> Tümünü Gör
+                    </a>
+                </div>
+                <div class="card-body">
+                    {% if assigned_tasks %}
+                        <div class="scrollable-container">
+                            <div class="table-responsive">
+                                <table id="my-tasks-table" class="table table-hover table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>Görev</th>
+                                            <th>Durum</th>
+                                            <th>Proje</th>
+                                            <th>Teslim Tarihi</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for task in assigned_tasks %}
+                                        <tr data-project-id="{{ task.project.id }}" data-project-name="{{ task.project.name|escape }}" data-update-url="{% url 'tasks:update_status' task.id %}" data-task-id="{{ task.id }}">
+                                            <td>
+                                                <a href="{% url 'tasks:task_detail' task_id=task.id %}">
+                                                    {{ task.title }}
+                                                </a>
+                                            </td>
+                                            <td>
+                                                {% if task.status == 'todo' %}
+                                                <span class="badge badge-secondary">Yapılacak</span>
+                                                {% elif task.status == 'in_progress' %}
+                                                <span class="badge badge-primary">Devam Ediyor</span>
+                                                {% elif task.status == 'review' %}
+                                                <span class="badge badge-info">İncelemede</span>
+                                                {% elif task.status == 'completed' %}
+                                                <span class="badge badge-success">Tamamlandı</span>
+                                                {% elif task.status == 'cancelled' %}
+                                                <span class="badge badge-danger">İptal Edildi</span>
+                                                {% else %}
+                                                <span class="badge badge-secondary">{{ task.get_status_display }}</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <a href="{% url 'projects:project_detail' project_id=task.project.id %}">
+                                                    {{ task.project.name }}
+                                                </a>
+                                            </td>
+                                            <td>
+                                                {% if task.due_date %}
+                                                    {{ task.due_date|date:"d.m.Y" }}
+                                                    {% if task.due_date < now.date and task.status != 'completed' %}
+                                                    <span class="badge badge-danger ml-1">Gecikmiş</span>
+                                                    {% endif %}
+                                                {% else %}
+                                                    -
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        {% if assigned_tasks.count > 5 %}
+                        <div class="text-center mt-3">
+                            <a href="{% url 'tasks:task_list' %}" class="btn btn-outline-primary">
+                                Tüm Görevlerimi Görüntüle ({{ assigned_tasks.count }})
+                            </a>
+                        </div>
+                        {% endif %}
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-tasks fa-3x text-gray-300 mb-3"></i>
+                            <p class="mb-0">Size atanmış görev bulunmamaktadır.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Bildirimler -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow h-100">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-bell mr-2"></i>Bildirimlerim
+                    </h6>
+                    <a href="{% url 'communications:notification_list' %}" class="btn btn-sm btn-primary">
+                        <i class="fas fa-list"></i> Tümünü Gör
+                    </a>
+                </div>
+                <div class="card-body">
+                    {% if notifications %}
+                        <div class="scrollable-container">
+                            <div class="list-group">
+                                {% for notification in notifications %}
+                                <a href="{% url 'communications:notification_detail' notification_id=notification.id %}" class="list-group-item list-group-item-action">
+                                    <div class="d-flex w-100 align-items-center">
+                                        <div class="notification-icon bg-{{ notification.notification_type }} text-white rounded-circle text-center mr-3" style="width: 36px; height: 36px; line-height: 36px;">
+                                            {% if notification.notification_type == 'info' %}
+                                            <i class="fas fa-info"></i>
+                                            {% elif notification.notification_type == 'success' %}
+                                            <i class="fas fa-check"></i>
+                                            {% elif notification.notification_type == 'warning' %}
+                                            <i class="fas fa-exclamation"></i>
+                                            {% elif notification.notification_type == 'error' %}
+                                            <i class="fas fa-times"></i>
+                                            {% endif %}
+                                        </div>
+                                        <div class="flex-grow-1">
+                                            <div class="d-flex w-100 justify-content-between">
+                                                <h6 class="mb-1">{{ notification.title }}</h6>
+                                                <small class="text-muted">{{ notification.created_at|timesince }} önce</small>
+                                            </div>
+                                            <p class="mb-1">{{ notification.content|truncatechars:100 }}</p>
+                                            <small class="text-muted">
+                                                {% if notification.related_project %}
+                                                Proje: {{ notification.related_project.name }}
+                                                {% endif %}
+                                                
+                                                {% if notification.related_task %}
+                                                {% if notification.related_project %} • {% endif %}
+                                                Görev: {{ notification.related_task.title }}
+                                                {% endif %}
+                                            </small>
+                                        </div>
+                                        {% if not notification.is_read %}
+                                        <span class="badge badge-{{ notification.notification_type }} ml-2">Yeni</span>
+                                        {% endif %}
+                                    </div>
+                                </a>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-bell-slash fa-3x text-gray-300 mb-3"></i>
+                            <p class="mb-0">Okunmamış bildiriminiz bulunmamaktadır.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Projeler -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-project-diagram mr-2"></i>Projelerim
+                    </h6>
+                    <a href="{% url 'projects:project_list' %}" class="btn btn-sm btn-primary">
+                        <i class="fas fa-list"></i> Tümünü Gör
+                    </a>
+                </div>
+                <div class="card-body">
+                    {% if assigned_projects %}
+                        <div class="scrollable-container">
+                            <div class="table-responsive">
+                                <table class="table table-hover table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>Proje</th>
+                                            <th>Durum</th>
+                                            <th>İlerleme</th>
+                                            <th>Bitiş Tarihi</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for project in assigned_projects %}
+                                        <tr>
+                                            <td>
+                                                <a href="{% url 'projects:project_detail' project_id=project.id %}">
+                                                    {{ project.name }}
+                                                </a>
+                                            </td>
+                                            <td>
+                                                {% if project.status == 'not_started' %}
+                                                <span class="badge badge-secondary">Başlamadı</span>
+                                                {% elif project.status == 'in_progress' %}
+                                                <span class="badge badge-primary">Devam Ediyor</span>
+                                                {% elif project.status == 'on_hold' %}
+                                                <span class="badge badge-warning">Beklemede</span>
+                                                {% else %}
+                                                <span class="badge badge-secondary">{{ project.get_status_display }}</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <span class="badge badge-success px-2 py-1">{{ project.progress }}%</span>
+                                            </td>
+                                            <td>
+                                                {% if project.end_date %}
+                                                    {{ project.end_date|date:"d.m.Y" }}
+                                                    {% if project.end_date < now.date and project.status != 'completed' %}
+                                                    <span class="badge badge-danger ml-1">Gecikmiş</span>
+                                                    {% endif %}
+                                                {% else %}
+                                                    -
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        {% if assigned_projects.count > 5 %}
+                        <div class="text-center mt-3">
+                            <a href="{% url 'projects:project_list' %}" class="btn btn-outline-primary">
+                                Tüm Projelerimi Görüntüle ({{ assigned_projects.count }})
+                            </a>
+                        </div>
+                        {% endif %}
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-project-diagram fa-3x text-gray-300 mb-3"></i>
+                            <p class="mb-0">Size atanmış aktif proje bulunmamaktadır.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Kişisel Kanban ve Pomodoro -->
+    <div class="row mb-4">
+        <div class="col-lg-8 mb-4">
+            <div id="personal-kanban" class="card shadow h-100">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-columns mr-2"></i>Kişisel Kanban
+                    </h6>
+                    <div class="kanban-controls d-flex align-items-center">
+                        <div class="mr-2">
+                            <select id="kanban-project-filter" class="form-control form-control-sm">
+                                <option value="">Tüm Projeler</option>
+                            </select>
+                        </div>
+                        <button id="kanban-add-task" class="btn btn-sm btn-primary"><i class="fas fa-plus mr-1"></i>Görev Ekle</button>
+                        <button id="kanban-reset" class="btn btn-sm btn-outline-secondary ml-1" title="Yerel durumu sıfırla">Sıfırla</button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="kanban-board">
+                        <div class="kanban-column" data-status="todo">
+                            <div class="kanban-column-header text-secondary">Yapılacak <span class="chip" id="count-todo">0</span></div>
+                            <div class="kanban-column-body scrollable-container" id="col-todo"></div>
+                        </div>
+                        <div class="kanban-column" data-status="in_progress">
+                            <div class="kanban-column-header text-primary">Yapılıyor <span class="chip" id="count-in_progress">0</span></div>
+                            <div class="kanban-column-body scrollable-container" id="col-in_progress"></div>
+                        </div>
+                        <div class="kanban-column" data-status="review">
+                            <div class="kanban-column-header text-info">İncelemede <span class="chip" id="count-review">0</span></div>
+                            <div class="kanban-column-body scrollable-container" id="col-review"></div>
+                        </div>
+                        <div class="kanban-column" data-status="completed">
+                            <div class="kanban-column-header text-success">Tamamlandı <span class="chip" id="count-completed">0</span></div>
+                            <div class="kanban-column-body scrollable-container" id="col-completed"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4 mb-4">
+            <div id="pomodoro-widget" class="card shadow h-100">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-danger">
+                        <i class="fas fa-clock mr-2"></i>Pomodoro
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3 d-flex align-items-center justify-content-between">
+                        <div class="time-display" id="pomodoro-display">25:00</div>
+                        <div>
+                            <button id="pomodoro-start" class="btn btn-success btn-sm mr-1"><i class="fas fa-play"></i></button>
+                            <button id="pomodoro-pause" class="btn btn-warning btn-sm mr-1"><i class="fas fa-pause"></i></button>
+                            <button id="pomodoro-reset" class="btn btn-outline-secondary btn-sm"><i class="fas fa-undo"></i></button>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-6 form-group mb-2">
+                            <label class="small mb-1">Çalışma (dk)</label>
+                            <input type="number" id="pomo-work" class="form-control" min="5" max="180" step="1" value="25">
+                        </div>
+                        <div class="col-6 form-group mb-2">
+                            <label class="small mb-1">Kısa Mola (dk)</label>
+                            <input type="number" id="pomo-short" class="form-control" min="1" max="60" step="1" value="5">
+                        </div>
+                        <div class="col-6 form-group mb-2">
+                            <label class="small mb-1">Uzun Mola (dk)</label>
+                            <input type="number" id="pomo-long" class="form-control" min="5" max="120" step="1" value="15">
+                        </div>
+                        <div class="col-6 form-group mb-2">
+                            <label class="small mb-1">Turlar (uzun mola öncesi)</label>
+                            <input type="number" id="pomo-intervals" class="form-control" min="1" max="12" step="1" value="4">
+                        </div>
+                        <div class="col-6 form-group mb-2">
+                            <label class="small mb-1 d-flex align-items-center justify-content-between">Çalışma Sesi <button id="pomo-test-work" type="button" class="btn btn-sm btn-outline-secondary">Test</button></label>
+                            <select id="pomo-sound-work" class="form-control">
+                                <option value="0">Klasik Ding</option>
+                                <option value="1">Yükselen Üç Ton</option>
+                                <option value="2">Kısa Bip</option>
+                                <option value="3">Uzun Bip</option>
+                                <option value="4">Arpej</option>
+                                <option value="5">Düşen İki Ton</option>
+                                <option value="6">Piyano Benzeri</option>
+                                <option value="7">Zil</option>
+                                <option value="8">Ahşap Tok</option>
+                                <option value="9">Synth Ping</option>
+                                <option value="10">Alarm 1 (yüksek)</option>
+                                <option value="11">Alarm 2 (siren)</option>
+                                <option value="12">Beep-Beep x3</option>
+                                <option value="13">Zil Çarpması</option>
+                                <option value="14">Yüksek Ping Yığını</option>
+                                <option value="15">Sert Kare Dalga</option>
+                                <option value="16">Hızlı Siren</option>
+                                <option value="17">Çan Dizisi</option>
+                            </select>
+                        </div>
+                        <div class="col-6 form-group mb-2">
+                            <label class="small mb-1 d-flex align-items-center justify-content-between">Mola Sesi <button id="pomo-test-break" type="button" class="btn btn-sm btn-outline-secondary">Test</button></label>
+                            <select id="pomo-sound-break" class="form-control">
+                                <option value="0">Klasik Ding</option>
+                                <option value="1">Yükselen Üç Ton</option>
+                                <option value="2">Kısa Bip</option>
+                                <option value="3">Uzun Bip</option>
+                                <option value="4">Arpej</option>
+                                <option value="5">Düşen İki Ton</option>
+                                <option value="6">Piyano Benzeri</option>
+                                <option value="7">Zil</option>
+                                <option value="8">Ahşap Tok</option>
+                                <option value="9">Synth Ping</option>
+                                <option value="10">Alarm 1 (yüksek)</option>
+                                <option value="11">Alarm 2 (siren)</option>
+                                <option value="12">Beep-Beep x3</option>
+                                <option value="13">Zil Çarpması</option>
+                                <option value="14">Yüksek Ping Yığını</option>
+                                <option value="15">Sert Kare Dalga</option>
+                                <option value="16">Hızlı Siren</option>
+                                <option value="17">Çan Dizisi</option>
+                            </select>
+                        </div>
+                        <div class="col-6 form-group mb-2">
+                            <label class="small mb-1">Ses Gücü (boost)</label>
+                            <input type="range" id="pomo-sound-boost" class="form-control" min="0" max="100" step="5" value="30" oninput="this.nextElementSibling.value=this.value+'%'">
+                            <output class="small text-muted">30%</output>
+                        </div>
+                        <div class="col-6 form-group mb-2">
+                            <label class="small mb-1">Tekrar Sayısı</label>
+                            <input type="number" id="pomo-sound-repeat" class="form-control" min="1" max="5" step="1" value="1">
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-center justify-content-between mt-2">
+                        <div class="small text-muted">Durum: <span id="pomodoro-phase">Çalışma</span></div>
+                        <button id="pomodoro-save" class="btn btn-primary btn-sm">Ayarları Kaydet</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Raporlar Bölümü -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-chart-line mr-2"></i>Raporlar
+                    </h6>
+                    <a href="{% url 'reports:report_list' %}" class="btn btn-sm btn-primary">
+                        <i class="fas fa-list"></i> Tüm Raporları Gör
+                    </a>
+                </div>
+                <div class="card-body">
+                    {% if report_categories %}
+                        <div class="row">
+                            {% for report_type, category in report_categories.items %}
+                                <div class="col-md-6 mb-4">
+                                    <div class="card border-left-{{ category.color }} shadow h-100">
+                                        <div class="card-header bg-transparent py-2">
+                                            <h6 class="mb-0 font-weight-bold text-{{ category.color }}">
+                                                <i class="fas fa-{{ category.icon }} mr-2"></i>
+                                                {{ category.name }}
+                                                <span class="badge badge-{{ category.color }} float-right">{{ category.reports|length }}</span>
+                                            </h6>
+                                        </div>
+                                        <div class="card-body pt-2">
+                                            <div class="scrollable-container">
+                                                <div class="list-group list-group-flush">
+                                                    {% for report in category.reports %}
+                                                    <a href="{% url 'reports:report_detail' report_id=report.id %}" class="list-group-item list-group-item-action p-2">
+                                                        <div class="d-flex w-100 justify-content-between">
+                                                            <h6 class="mb-1">{{ report.title }}</h6>
+                                                            <small class="text-muted">{{ report.created_at|date:"d.m.Y" }}</small>
+                                                        </div>
+                                                        <p class="mb-1 small text-muted">{{ report.description|default:"Açıklama yok"|truncatechars:80 }}</p>
+                                                        <div class="d-flex justify-content-between align-items-center mt-1">
+                                                            <small class="text-muted">
+                                                                {% if report.project %}
+                                                                <i class="fas fa-project-diagram mr-1"></i> {{ report.project.name }}
+                                                                {% endif %}
+                                                            </small>
+                                                            <small class="text-muted">
+                                                                <i class="fas fa-user mr-1"></i> {{ report.created_by.get_full_name|default:report.created_by.username }}
+                                                            </small>
+                                                        </div>
+                                                    </a>
+                                                    {% endfor %}
+                                                </div>
+                                            </div>
+                                            
+                                            {% if category.reports|length >= 5 %}
+                                            <div class="text-center mt-3">
+                                                <a href="{% url 'reports:report_list' %}?type={{ report_type }}" class="btn btn-sm btn-outline-{{ category.color }}">
+                                                    Tüm {{ category.name }} Raporlarını Görüntüle
+                                                </a>
+                                            </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                        
+                        <div class="text-center mt-3">
+                            <a href="{% url 'reports:report_list' %}" class="btn btn-outline-primary">
+                                Tüm Raporları Görüntüle ({{ related_reports.count }})
+                            </a>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-chart-line fa-3x text-gray-300 mb-3"></i>
+                            <p class="mb-0">Size ilişkin herhangi bir rapor bulunmamaktadır.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tamamlanmış Projeler -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-success">
+                        <i class="fas fa-check-circle mr-2"></i>Tamamlanmış Projeler
+                    </h6>
+                </div>
+                <div class="card-body">
+                    {% if completed_projects %}
+                        <div class="scrollable-container">
+                            <div class="table-responsive">
+                                <table class="table table-hover table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>Proje</th>
+                                            <th>Tamamlanma Oranı</th>
+                                            <th>Başlangıç</th>
+                                            <th>Bitiş</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for project in completed_projects %}
+                                        <tr>
+                                            <td>
+                                                <a href="{% url 'projects:project_detail' project_id=project.id %}">
+                                                    {{ project.name }}
+                                                </a>
+                                            </td>
+                                            <td>
+                                                <span class="badge badge-success px-2 py-1">{{ project.progress }}%</span>
+                                            </td>
+                                            <td>{{ project.start_date|date:"d.m.Y" }}</td>
+                                            <td>{{ project.end_date|date:"d.m.Y" }}</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-clipboard-check fa-3x text-gray-300 mb-3"></i>
+                            <p class="mb-0">Henüz tamamlanmış projeniz bulunmamaktadır.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Hidden form + iframe for secure same-origin status updates without navigation -->
+<iframe name="taskUpdateHiddenFrame" style="display:none;width:0;height:0;border:0;"></iframe>
+<form id="taskStatusUpdateForm" method="get" target="taskUpdateHiddenFrame" style="display:none;">
+    <input type="hidden" name="status" value="">
+    <input type="hidden" name="next" value="{{ request.path }}">
+    <!-- GET used per server's update_status implementation; CSRF not required for GET -->
+    <!-- Action will be set dynamically to the per-task update URL -->
+    <!-- We restrict to same-origin and whitelist path pattern in JS before submit -->
+    <!-- If you later change update_status to POST, switch method and add CSRF here. -->
+    {% csrf_token %}
+    <!-- csrf_token present for future switch; not sent on GET by browsers but harmless here -->
+    <noscript>
+        Bu işlem JavaScript gerektirir.
+    </noscript>
+  </form>
+<script>
+    $(document).ready(function() {
+        // Animasyonlu gösterim için
+        $('.card').each(function(i) {
+            $(this).delay(100 * i).animate({'opacity': 1}, 300);
+        });
+    });
+</script>
+<script>
+    (function() {
+        // ===== KANBAN =====
+        const userId = '{{ request.user.id|default:"anon" }}';
+        const storageKey = `kanban_tasks_${userId}`;
+        const filterKey = `kanban_filter_${userId}`;
+        const columns = ['todo','in_progress','review','completed'];
+        const colEls = {
+            'todo': document.getElementById('col-todo'),
+            'in_progress': document.getElementById('col-in_progress'),
+            'review': document.getElementById('col-review'),
+            'completed': document.getElementById('col-completed')
+        };
+        const countEls = {
+            'todo': document.getElementById('count-todo'),
+            'in_progress': document.getElementById('count-in_progress'),
+            'review': document.getElementById('count-review'),
+            'completed': document.getElementById('count-completed')
+        };
+
+        function readStoredTasks() {
+            try { return JSON.parse(localStorage.getItem(storageKey)) || []; } catch(e) { return []; }
+        }
+        function writeStoredTasks(tasks) {
+            localStorage.setItem(storageKey, JSON.stringify(tasks));
+        }
+        function getCsrfToken() {
+            const match = document.cookie.match(/csrftoken=([^;]+)/);
+            return match ? decodeURIComponent(match[1]) : '';
+        }
+        async function tryGet(url) {
+            try {
+                const res = await fetch(url, { method: 'GET', credentials: 'same-origin' });
+                return res.ok;
+            } catch(e) { return false; }
+        }
+        async function markTaskStatusOnServer(task, newStatus) {
+            // Build same-origin GET URL with status & next; use fetch to avoid iframe X-Frame-Options issues
+            // Prefer explicit updateUrl captured from server-rendered table
+            let action = task.updateUrl || '';
+            if (!action) {
+                // Fallback to known name pattern with taskId
+                if (task.taskId) {
+                    action = `/tasks/${task.taskId}/update_status/`;
+                }
+            }
+            if (!action) return false; // cannot update local-only tasks
+            try {
+                const urlObj = new URL(action, window.location.origin);
+                // Enforce same-origin
+                if (urlObj.origin !== window.location.origin) return false;
+                // Append/override query params safely
+                urlObj.searchParams.set('status', newStatus);
+                const nextPath = window.location.pathname;
+                if (nextPath) urlObj.searchParams.set('next', nextPath);
+                // If this is our fallback path, keep minimal sanity check
+                if (!task.updateUrl) {
+                    if (!/^\/tasks\/(\d+)\//.test(urlObj.pathname)) return false;
+                }
+                const res = await fetch(urlObj.toString(), {
+                    method: 'GET',
+                    credentials: 'same-origin',
+                    redirect: 'follow',
+                    cache: 'no-store'
+                });
+                return res.ok;
+            } catch(e) {
+                return false;
+            }
+        }
+        function createTaskElement(task) {
+            const item = document.createElement('div');
+            item.className = 'kanban-item';
+            item.draggable = true;
+            item.dataset.id = task.id;
+            item.dataset.status = task.status;
+            item.innerHTML = task.url
+                ? `<a href="${task.url}" class="text-body" target="_blank">${task.title}</a>`
+                : `<span>${task.title}</span>`;
+            item.addEventListener('dragstart', (e) => {
+                item.classList.add('dragging');
+                e.dataTransfer.setData('text/plain', task.id);
+            });
+            item.addEventListener('dragend', () => item.classList.remove('dragging'));
+            return item;
+        }
+        function render(tasks) {
+            const projectFilterEl = document.getElementById('kanban-project-filter');
+            const selectedProjectId = projectFilterEl ? projectFilterEl.value : '';
+            const filteredTasks = selectedProjectId
+                ? tasks.filter(t => String(t.projectId || '') === String(selectedProjectId))
+                : tasks.slice();
+            columns.forEach(c => { colEls[c].innerHTML = ''; });
+            const byStatus = { todo:[], in_progress:[], review:[], completed:[] };
+            filteredTasks.forEach(t => { if (byStatus[t.status]) byStatus[t.status].push(t); });
+            columns.forEach(c => {
+                byStatus[c].forEach(t => colEls[c].appendChild(createTaskElement(t)));
+                countEls[c].textContent = byStatus[c].length;
+            });
+        }
+        function ensureInitialTasks() {
+            const existing = readStoredTasks();
+            if (existing.length) return existing;
+            // Derive from existing Görevlerim tablosu
+            const initial = [];
+            try {
+                const taskRows = document.querySelectorAll('.card:has(.fa-tasks) tbody tr');
+                taskRows.forEach((tr, idx) => {
+                    const link = tr.querySelector('td:nth-child(1) a');
+                    const statusBadge = tr.querySelector('td:nth-child(2) .badge');
+                    const projectLink = tr.querySelector('td:nth-child(3) a');
+                    if (!link) return;
+                    const title = link.textContent.trim();
+                    const url = link.getAttribute('href');
+                    const statusText = statusBadge ? statusBadge.textContent.trim() : '';
+                    let projectId = '';
+                    let projectName = '';
+                    if (projectLink) {
+                        projectName = projectLink.textContent.trim();
+                        const href = projectLink.getAttribute('href') || '';
+                        const m = href.match(/(\d+)/);
+                        if (m) projectId = m[1];
+                    }
+                    const updateUrl = tr.getAttribute('data-update-url') || '';
+                    const taskIdAttr = tr.getAttribute('data-task-id') || '';
+                    const taskId = taskIdAttr && /^(\d+)$/.test(taskIdAttr) ? taskIdAttr : '';
+                    let status = 'todo';
+                    if (statusText === 'Yapılacak') status = 'todo';
+                    else if (statusText === 'Devam Ediyor') status = 'in_progress';
+                    else if (statusText === 'İncelemede') status = 'review';
+                    else if (statusText === 'Tamamlandı') status = 'completed';
+                    initial.push({ id: `srv-${idx}-${Date.now()}`, title, status, url, projectId, projectName, updateUrl, taskId });
+                });
+            } catch(e) { /* ignore */ }
+            if (initial.length) writeStoredTasks(initial);
+            return initial;
+        }
+        function populateProjectFilter(tasks) {
+            const select = document.getElementById('kanban-project-filter');
+            if (!select) return;
+            // preserve first option (All)
+            // Clear others
+            while (select.options.length > 1) select.remove(1);
+            const map = new Map();
+            tasks.forEach(t => {
+                const pid = String(t.projectId || '');
+                const pname = t.projectName || '';
+                if (pid && !map.has(pid)) map.set(pid, pname || `Proje ${pid}`);
+            });
+            Array.from(map.entries()).sort((a,b) => a[1].localeCompare(b[1],'tr')).forEach(([pid, pname]) => {
+                const opt = document.createElement('option');
+                opt.value = pid;
+                opt.textContent = pname || `Proje ${pid}`;
+                select.appendChild(opt);
+            });
+            const saved = localStorage.getItem(filterKey) || '';
+            select.value = saved && map.has(saved) ? saved : '';
+        }
+        function setupDnD() {
+            const bodies = document.querySelectorAll('#personal-kanban .kanban-column-body');
+            bodies.forEach(body => {
+                body.addEventListener('dragover', (e) => { e.preventDefault(); body.classList.add('drag-over'); });
+                body.addEventListener('dragleave', () => body.classList.remove('drag-over'));
+                body.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    body.classList.remove('drag-over');
+                    const id = e.dataTransfer.getData('text/plain');
+                    const status = body.parentElement.getAttribute('data-status');
+                    const tasks = readStoredTasks();
+                    const idx = tasks.findIndex(t => String(t.id) === String(id));
+                    if (idx !== -1) {
+                        tasks[idx].status = status;
+                        writeStoredTasks(tasks);
+                        render(tasks);
+                        if (status === 'completed') {
+                            const task = tasks[idx];
+                            // Only ask once when moved to Tamamlandı
+                            setTimeout(async () => {
+                                const proceed = await showConfirmModal('Görevi Tamamla', 'Bu görevi sunucuda da Tamamlandı olarak işaretleyelim mi?', 'Evet', 'Vazgeç');
+                                if (proceed) {
+                                    const ok = await markTaskStatusOnServer(task, 'completed');
+                                    if (!ok) {
+                                        alert('Sunucuya güncelleme gönderilemedi. Daha sonra tekrar deneyin.');
+                                    }
+                                }
+                            }, 0);
+                        }
+                    }
+                });
+            });
+        }
+        function addNewTask(title) {
+            const tasks = readStoredTasks();
+            const projectFilterEl = document.getElementById('kanban-project-filter');
+            const selectedProjectId = projectFilterEl ? projectFilterEl.value : '';
+            let projectName = '';
+            if (selectedProjectId) {
+                const opt = projectFilterEl.querySelector(`option[value="${CSS.escape(String(selectedProjectId))}"]`);
+                projectName = opt ? opt.textContent : '';
+            }
+            const newTask = { id: `local-${Date.now()}`, title: title, status: 'todo', projectId: selectedProjectId || '', projectName, taskId: '', updateUrl: '' };
+            tasks.push(newTask);
+            writeStoredTasks(tasks);
+            render(tasks);
+        }
+        function resetKanban() {
+            localStorage.removeItem(storageKey);
+            const tasks = ensureInitialTasks();
+            populateProjectFilter(tasks);
+            render(tasks);
+        }
+        // Initialize
+        const initTasks = ensureInitialTasks();
+        populateProjectFilter(initTasks);
+        render(initTasks);
+        setupDnD();
+        // UI buttons
+        const addBtn = document.getElementById('kanban-add-task');
+        if (addBtn) addBtn.addEventListener('click', function() {
+            const title = prompt('Yeni görev başlığı?');
+            if (title && title.trim()) addNewTask(title.trim());
+        });
+        const resetBtn = document.getElementById('kanban-reset');
+        if (resetBtn) resetBtn.addEventListener('click', function() {
+            if (confirm('Yerel Kanban durumunu sıfırlamak istiyor musunuz?')) resetKanban();
+        });
+        const projectFilterEl = document.getElementById('kanban-project-filter');
+        if (projectFilterEl) projectFilterEl.addEventListener('change', function() {
+            localStorage.setItem(filterKey, projectFilterEl.value || '');
+            render(readStoredTasks());
+        });
+
+        // ===== POMODORO =====
+        const pomoKey = `pomodoro_settings_${userId}`;
+        const stateKey = `pomodoro_state_${userId}`;
+        const displayEl = document.getElementById('pomodoro-display');
+        const phaseEl = document.getElementById('pomodoro-phase');
+        const inputs = {
+            work: document.getElementById('pomo-work'),
+            shortBreak: document.getElementById('pomo-short'),
+            longBreak: document.getElementById('pomo-long'),
+            intervals: document.getElementById('pomo-intervals'),
+            soundWork: document.getElementById('pomo-sound-work'),
+            soundBreak: document.getElementById('pomo-sound-break'),
+            soundBoost: document.getElementById('pomo-sound-boost'),
+            soundRepeat: document.getElementById('pomo-sound-repeat')
+        };
+        const startBtn = document.getElementById('pomodoro-start');
+        const pauseBtn = document.getElementById('pomodoro-pause');
+        const resetBtnP = document.getElementById('pomodoro-reset');
+        const saveBtn = document.getElementById('pomodoro-save');
+        let timerId = null;
+        let state = {
+            phase: 'work', // work | short | long
+            remainingSec: 25*60,
+            completedWorkSessions: 0,
+            running: false,
+            phaseStartAt: null, // ms epoch
+            phaseEndAt: null    // ms epoch
+        };
+        function readPomoSettings() {
+            try { return JSON.parse(localStorage.getItem(pomoKey)) || null; } catch(e) { return null; }
+        }
+        function writePomoSettings(s) { localStorage.setItem(pomoKey, JSON.stringify(s)); }
+        function readPomoState() { try { return JSON.parse(localStorage.getItem(stateKey)) || null; } catch(e){ return null; } }
+        function writePomoState(s) { localStorage.setItem(stateKey, JSON.stringify(s)); }
+        function applySettingsToInputs(s) {
+            if (!s) return;
+            inputs.work.value = s.work;
+            inputs.shortBreak.value = s.shortBreak;
+            inputs.longBreak.value = s.longBreak;
+            inputs.intervals.value = s.intervals;
+            if (typeof s.soundWork === 'number') inputs.soundWork.value = String(s.soundWork);
+            if (typeof s.soundBreak === 'number') inputs.soundBreak.value = String(s.soundBreak);
+            if (typeof s.soundBoost === 'number' && inputs.soundBoost) { inputs.soundBoost.value = String(s.soundBoost); if (inputs.soundBoost.nextElementSibling) inputs.soundBoost.nextElementSibling.value = s.soundBoost + '%'; }
+            if (typeof s.soundRepeat === 'number' && inputs.soundRepeat) inputs.soundRepeat.value = String(s.soundRepeat);
+        }
+        function defaultSettings() { return { work: 25, shortBreak: 5, longBreak: 15, intervals: 4, soundWork: 0, soundBreak: 0, soundBoost: 30, soundRepeat: 1 }; }
+        function formatTime(sec) { const m = Math.floor(sec/60); const s = sec%60; return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`; }
+        function updateDisplay() {
+            displayEl.textContent = formatTime(Math.max(0, Math.floor(state.remainingSec)));
+            const label = state.phase === 'work' ? 'Çalışma' : (state.phase === 'short' ? 'Kısa Mola' : 'Uzun Mola');
+            phaseEl.textContent = label;
+        }
+        function loadPomodoro() {
+            const s = readPomoSettings() || defaultSettings();
+            applySettingsToInputs(s);
+            const persisted = readPomoState();
+            if (persisted) state = persisted;
+            if (state.phaseEndAt && state.running) {
+                reconcileTimeAcrossNavigation();
+            } else if (!persisted) {
+                state.remainingSec = s.work * 60;
+            }
+            updateDisplay();
+        }
+        function setPhaseDurationsAccordingToSettings() {
+            const s = readPomoSettings() || defaultSettings();
+            if (state.phase === 'work') state.remainingSec = s.work * 60;
+            else if (state.phase === 'short') state.remainingSec = s.shortBreak * 60;
+            else state.remainingSec = s.longBreak * 60;
+            state.phaseStartAt = Date.now();
+            state.phaseEndAt = state.phaseStartAt + state.remainingSec * 1000;
+        }
+        function nextPhase() {
+            const s = readPomoSettings() || defaultSettings();
+            if (state.phase === 'work') {
+                state.completedWorkSessions += 1;
+                if (state.completedWorkSessions % s.intervals === 0) {
+                    state.phase = 'long';
+                } else {
+                    state.phase = 'short';
+                }
+            } else {
+                state.phase = 'work';
+            }
+            setPhaseDurationsAccordingToSettings();
+            updateDisplay();
+            writePomoState(state);
+            playPhaseAlert(state.phase);
+            maybeNotify(state.phase);
+        }
+        function tick() {
+            if (!state.running) return;
+            if (state.phaseEndAt) {
+                const now = Date.now();
+                state.remainingSec = Math.ceil((state.phaseEndAt - now) / 1000);
+            }
+            if (state.remainingSec > 0) {
+                updateDisplay();
+                writePomoState(state);
+            } else {
+                // Handle potential multiple skipped phases when away
+                advancePhasesIfOverdue();
+            }
+        }
+        function advancePhasesIfOverdue() {
+            const safetyMax = 20; // prevent infinite loops
+            let guard = 0;
+            while (guard < safetyMax) {
+                const now = Date.now();
+                if (state.phaseEndAt && now >= state.phaseEndAt) {
+                    nextPhase();
+                    guard += 1;
+                    continue;
+                }
+                // Recompute remainingSec based on current phase end
+                state.remainingSec = state.phaseEndAt ? Math.ceil((state.phaseEndAt - now)/1000) : state.remainingSec;
+                break;
+            }
+            updateDisplay();
+            writePomoState(state);
+        }
+        function reconcileTimeAcrossNavigation() {
+            // On load, compute remaining time and auto-advance if needed
+            advancePhasesIfOverdue();
+        }
+        function start() {
+            if (state.running) return;
+            state.running = true;
+            if (!state.phaseEndAt) setPhaseDurationsAccordingToSettings();
+            else {
+                // resume: adjust remaining based on current end
+                const now = Date.now();
+                state.remainingSec = state.phaseEndAt ? Math.ceil((state.phaseEndAt - now)/1000) : state.remainingSec;
+                state.phaseStartAt = state.phaseStartAt || now;
+            }
+            writePomoState(state);
+            if (timerId) clearInterval(timerId);
+            timerId = setInterval(tick, 1000);
+        }
+        function pause() {
+            // compute remaining based on now and freeze
+            const now = Date.now();
+            if (state.phaseEndAt) {
+                state.remainingSec = Math.max(0, Math.ceil((state.phaseEndAt - now)/1000));
+                state.phaseStartAt = null;
+                state.phaseEndAt = null;
+            }
+            state.running = false;
+            writePomoState(state);
+            if (timerId) { clearInterval(timerId); timerId = null; }
+            updateDisplay();
+        }
+        function reset() {
+            pause();
+            const s = readPomoSettings() || defaultSettings();
+            state = { phase: 'work', remainingSec: s.work*60, completedWorkSessions: 0, running: false, phaseStartAt: null, phaseEndAt: null };
+            writePomoState(state);
+            updateDisplay();
+        }
+        if (startBtn) startBtn.addEventListener('click', start);
+        if (pauseBtn) pauseBtn.addEventListener('click', pause);
+        if (resetBtnP) resetBtnP.addEventListener('click', reset);
+        if (saveBtn) saveBtn.addEventListener('click', function() {
+            const s = {
+                work: Math.max(1, parseInt(inputs.work.value || 25, 10)),
+                shortBreak: Math.max(1, parseInt(inputs.shortBreak.value || 5, 10)),
+                longBreak: Math.max(1, parseInt(inputs.longBreak.value || 15, 10)),
+                intervals: Math.max(1, parseInt(inputs.intervals.value || 4, 10)),
+                soundWork: Math.max(0, parseInt(inputs.soundWork.value || 0, 10)),
+                soundBreak: Math.max(0, parseInt(inputs.soundBreak.value || 0, 10)),
+                soundBoost: Math.max(0, parseInt((inputs.soundBoost && inputs.soundBoost.value) || 0, 10)),
+                soundRepeat: Math.max(1, parseInt((inputs.soundRepeat && inputs.soundRepeat.value) || 1, 10))
+            };
+            writePomoSettings(s);
+            if (state.phase === 'work') { state.remainingSec = s.work * 60; }
+            else if (state.phase === 'short') { state.remainingSec = s.shortBreak * 60; }
+            else { state.remainingSec = s.longBreak * 60; }
+            writePomoState(state);
+            updateDisplay();
+        });
+        loadPomodoro();
+        // keep interval fresh on load
+        if (state.running) {
+            if (timerId) clearInterval(timerId);
+            timerId = setInterval(tick, 1000);
+        }
+
+        // ===== Alerts & Notifications =====
+        function playToneSequence(steps, opts) {
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const now = ctx.currentTime;
+                const repeat = Math.max(1, Number((opts && opts.repeat) || 1));
+                const boost = Math.min(2.0, Math.max(0, Number(((opts && opts.boost) || 0) / 100)));
+                for (let r = 0; r < repeat; r++) {
+                    const offsetBase = r * 0.7;
+                    steps.forEach((step) => {
+                        const osc = ctx.createOscillator();
+                        const gain = ctx.createGain();
+                        osc.type = step.type || 'sine';
+                        osc.frequency.value = step.freq;
+                        const vol = (step.volume ?? 0.15) + boost;
+                        gain.gain.setValueAtTime(Math.min(1.0, vol), now + offsetBase + step.offset);
+                        gain.gain.exponentialRampToValueAtTime(0.0001, now + offsetBase + step.offset + step.dur);
+                        osc.connect(gain).connect(ctx.destination);
+                        osc.start(now + offsetBase + step.offset);
+                        osc.stop(now + offsetBase + step.offset + step.dur + 0.02);
+                    });
+                }
+            } catch(e) { /* ignore */ }
+        }
+        function presetSound(index, isWork) {
+            switch(Number(index)) {
+                case 0: return isWork ? [{freq:880, dur:0.2, offset:0},{freq:660, dur:0.15, offset:0.25}] : [{freq:523.25, dur:0.25, offset:0}];
+                case 1: return [{freq:440, dur:0.15, offset:0},{freq:660, dur:0.15, offset:0.2},{freq:880, dur:0.2, offset:0.4}];
+                case 2: return [{freq:1000, dur:0.1, offset:0}];
+                case 3: return [{freq:520, dur:0.5, offset:0}];
+                case 4: return [{freq:523.25, dur:0.12, offset:0},{freq:659.25, dur:0.12, offset:0.15},{freq:783.99, dur:0.2, offset:0.3}];
+                case 5: return [{freq:880, dur:0.15, offset:0},{freq:660, dur:0.25, offset:0.2}];
+                case 6: return [{freq:392, dur:0.18, offset:0, type:'triangle'},{freq:523.25, dur:0.22, offset:0.22, type:'triangle'}];
+                case 7: return [{freq:1200, dur:0.08, offset:0, type:'square'},{freq:1400, dur:0.08, offset:0.12, type:'square'},{freq:1600, dur:0.08, offset:0.24, type:'square'}];
+                case 8: return [{freq:600, dur:0.05, offset:0, type:'square'},{freq:500, dur:0.05, offset:0.1, type:'square'},{freq:400, dur:0.05, offset:0.2, type:'square'}];
+                case 9: return [{freq:1046.5, dur:0.18, offset:0, type:'sine'},{freq:1568, dur:0.18, offset:0.22, type:'sine'}];
+                case 10: return [{freq:1800, dur:0.2, offset:0, type:'square'},{freq:1800, dur:0.2, offset:0.25, type:'square'},{freq:1800, dur:0.2, offset:0.5, type:'square'}];
+                case 11: return [{freq:900, dur:0.2, offset:0, type:'sawtooth'},{freq:1200, dur:0.2, offset:0.25, type:'sawtooth'},{freq:900, dur:0.2, offset:0.5, type:'sawtooth'},{freq:1200, dur:0.2, offset:0.75, type:'sawtooth'}];
+                case 12: return [{freq:1500, dur:0.1, offset:0, type:'square'},{freq:1500, dur:0.1, offset:0.15, type:'square'},{freq:1500, dur:0.1, offset:0.3, type:'square'}];
+                case 13: return [{freq:800, dur:0.12, offset:0},{freq:1200, dur:0.12, offset:0.18},{freq:1600, dur:0.18, offset:0.34}];
+                case 14: return [{freq:1200, dur:0.12, offset:0},{freq:1400, dur:0.12, offset:0.16},{freq:1600, dur:0.12, offset:0.32},{freq:1800, dur:0.2, offset:0.48}];
+                case 15: return [{freq:1000, dur:0.25, offset:0, type:'square'},{freq:1000, dur:0.25, offset:0.35, type:'square'}];
+                case 16: return [{freq:800, dur:0.15, offset:0, type:'sawtooth'},{freq:1200, dur:0.15, offset:0.2, type:'sawtooth'},{freq:800, dur:0.15, offset:0.4, type:'sawtooth'},{freq:1200, dur:0.15, offset:0.6, type:'sawtooth'}];
+                case 17: return [{freq:523.25, dur:0.16, offset:0},{freq:659.25, dur:0.16, offset:0.2},{freq:783.99, dur:0.22, offset:0.42},{freq:1046.5, dur:0.26, offset:0.68}];
+                default: return [{freq:800, dur:0.2, offset:0}];
+            }
+        }
+        function playPhaseAlert(phase) {
+            const s = readPomoSettings() || defaultSettings();
+            const isWork = (phase === 'work');
+            const steps = presetSound(isWork ? s.soundWork : s.soundBreak, isWork);
+            playToneSequence(steps, { boost: s.soundBoost, repeat: s.soundRepeat });
+        }
+        function ensureNotificationPermission() {
+            try {
+                if (!('Notification' in window)) return;
+                if (Notification.permission === 'default') Notification.requestPermission();
+            } catch(e) { /* ignore */ }
+        }
+        function maybeNotify(phase) {
+            const title = phase === 'work' ? 'Çalışma zamanı' : (phase === 'short' ? 'Kısa mola zamanı' : 'Uzun mola zamanı');
+            const body = phase === 'work' ? 'Yeni çalışma oturumu başladı.' : 'Mola zamanı!';
+            if (document.hidden && 'Notification' in window && Notification.permission === 'granted') {
+                try { new Notification(title, { body: body, icon: undefined }); } catch(e) {}
+            } else if (document.hidden) {
+                // Fallback: sayfa gizliyken modal tetiklemek için bayrak set edilir, geri dönince gösterilir
+                sessionStorage.setItem('pomo_show_modal', JSON.stringify({ title, body }));
+            } else {
+                // sayfa açıkken sadece ses çalındı, ekstra popup yok
+            }
+        }
+        ensureNotificationPermission();
+        // geri dönünce modal göster
+        document.addEventListener('visibilitychange', function() {
+            if (!document.hidden) {
+                const data = sessionStorage.getItem('pomo_show_modal');
+                if (data) {
+                    try {
+                        const d = JSON.parse(data);
+                        showPhaseModal(d.title, d.body);
+                    } catch(e) {}
+                    sessionStorage.removeItem('pomo_show_modal');
+                }
+            }
+        });
+        function showPhaseModal(title, body) {
+            const id = 'pomoPhaseModal';
+            let modal = document.getElementById(id);
+            if (!modal) {
+                const html = `
+<div class="modal fade" id="${id}" tabindex="-1" role="dialog" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">${title}</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">${body}</div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary" data-dismiss="modal">Tamam</button>
+      </div>
+    </div>
+  </div>
+ </div>`;
+                const wrapper = document.createElement('div');
+                wrapper.innerHTML = html;
+                document.body.appendChild(wrapper.firstElementChild);
+                modal = document.getElementById(id);
+            } else {
+                modal.querySelector('.modal-title').textContent = title;
+                modal.querySelector('.modal-body').textContent = body;
+            }
+            if (window.$ && window.$.fn && window.$.fn.modal) {
+                window.$('#' + id).modal('show');
+            } else {
+                modal.style.display = 'block';
+                modal.classList.add('show');
+            }
+        }
+
+        // Minimal reusable confirm modal returning a Promise<boolean>
+        function showConfirmModal(title, body, confirmText, cancelText) {
+            return new Promise((resolve) => {
+                const id = 'kanbanConfirmModal';
+                let modal = document.getElementById(id);
+                if (!modal) {
+                    const html = `
+<div class="modal fade" id="${id}" tabindex="-1" role="dialog" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"></h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+      </div>
+      <div class="modal-body"></div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal" id="${id}-cancel"></button>
+        <button type="button" class="btn btn-primary" id="${id}-ok"></button>
+      </div>
+    </div>
+  </div>
+</div>`;
+                    const wrapper = document.createElement('div');
+                    wrapper.innerHTML = html;
+                    document.body.appendChild(wrapper.firstElementChild);
+                    modal = document.getElementById(id);
+                }
+                modal.querySelector('.modal-title').textContent = title || '';
+                modal.querySelector('.modal-body').textContent = body || '';
+                const btnOk = document.getElementById(id + '-ok');
+                const btnCancel = document.getElementById(id + '-cancel');
+                btnOk.textContent = confirmText || 'Onayla';
+                btnCancel.textContent = cancelText || 'İptal';
+
+                let resolved = false;
+                const cleanup = () => {
+                    btnOk.removeEventListener('click', onOk);
+                    btnCancel.removeEventListener('click', onCancel);
+                    modal.removeEventListener('hidden.bs.modal', onHidden);
+                };
+                const hideModal = () => {
+                    if (window.$ && window.$.fn && window.$.fn.modal) {
+                        window.$('#' + id).modal('hide');
+                    } else {
+                        modal.classList.remove('show');
+                        modal.style.display = 'none';
+                    }
+                };
+                const onHidden = () => {
+                    cleanup();
+                    if (!resolved) { resolved = true; resolve(false); }
+                };
+                const onOk = () => {
+                    hideModal();
+                    cleanup();
+                    if (!resolved) { resolved = true; resolve(true); }
+                };
+                const onCancel = () => {
+                    hideModal();
+                    cleanup();
+                    if (!resolved) { resolved = true; resolve(false); }
+                };
+                btnOk.addEventListener('click', onOk);
+                btnCancel.addEventListener('click', onCancel);
+                modal.addEventListener('hidden.bs.modal', onHidden, { once: true });
+
+                if (window.$ && window.$.fn && window.$.fn.modal) {
+                    window.$('#' + id).modal('show');
+                } else {
+                    modal.style.display = 'block';
+                    modal.classList.add('show');
+                }
+            });
+        }
+
+        // Test buttons
+        const testWork = document.getElementById('pomo-test-work');
+        if (testWork) testWork.addEventListener('click', function() {
+            const idx = parseInt(inputs.soundWork.value || '0', 10);
+            const s = readPomoSettings() || defaultSettings();
+            playToneSequence(presetSound(idx, true), { boost: (inputs.soundBoost ? inputs.soundBoost.value : s.soundBoost), repeat: (inputs.soundRepeat ? inputs.soundRepeat.value : s.soundRepeat) });
+        });
+        const testBreak = document.getElementById('pomo-test-break');
+        if (testBreak) testBreak.addEventListener('click', function() {
+            const idx = parseInt(inputs.soundBreak.value || '0', 10);
+            const s = readPomoSettings() || defaultSettings();
+            playToneSequence(presetSound(idx, false), { boost: (inputs.soundBoost ? inputs.soundBoost.value : s.soundBoost), repeat: (inputs.soundRepeat ? inputs.soundRepeat.value : s.soundRepeat) });
+        });
+    })();
+</script>
+{% endblock %} 

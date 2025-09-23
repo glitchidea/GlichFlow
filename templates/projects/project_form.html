@@ -1,0 +1,193 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }} - GlichFlow{% endblock %}
+
+{% block page_title %}{{ title }}{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'projects:project_list' %}">Projeler</a></li>
+<li class="breadcrumb-item active">{{ title }}</li>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 mx-auto">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">{{ project.name|default:"Yeni Proje" }}</h5>
+            </div>
+            <div class="card-body">
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Proje Adı *</label>
+                        <input type="text" class="form-control" id="name" name="name" value="{{ project.name|default:'' }}" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Açıklama</label>
+                        <textarea class="form-control" id="description" name="description" rows="4">{{ project.description|default:'' }}</textarea>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="start_date" class="form-label">Başlangıç Tarihi *</label>
+                            <input type="date" class="form-control" id="start_date" name="start_date" value="{{ project.start_date|date:'Y-m-d'|default:'' }}" required>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="end_date" class="form-label">Bitiş Tarihi</label>
+                            <input type="date" class="form-control" id="end_date" name="end_date" value="{{ project.end_date|date:'Y-m-d'|default:'' }}">
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="status" class="form-label">Durum *</label>
+                            <select class="form-select" id="status" name="status" required>
+                                {% for key, value in status_choices %}
+                                <option value="{{ key }}" {% if project.status == key %}selected{% endif %}>{{ value }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="priority" class="form-label">Öncelik *</label>
+                            <select class="form-select" id="priority" name="priority" required>
+                                {% for key, value in priority_choices %}
+                                <option value="{{ key }}" {% if project.priority == key %}selected{% endif %}>{{ value }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="budget" class="form-label">Bütçe (₺)</label>
+                            <input type="number" class="form-control" id="budget" name="budget" value="{{ project.budget|default:'' }}" step="0.01">
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="cost" class="form-label">Maliyet (₺)</label>
+                            <input type="number" class="form-control" id="cost" name="cost" value="{{ project.cost|default:'' }}" step="0.01">
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="manager" class="form-label">Proje Yöneticisi</label>
+                        <select class="form-select" id="manager" name="manager">
+                            <option value="">-- Seçiniz --</option>
+                            {% for manager in managers %}
+                            <option value="{{ manager.id }}" {% if project.manager.id == manager.id %}selected{% endif %}>
+                                {{ manager.get_full_name|default:manager.username }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="team_members" class="form-label">Takım Üyeleri</label>
+                        <select class="form-select" id="team_members" name="team_members" multiple>
+                            {% for member in team_members %}
+                            <option value="{{ member.id }}" 
+                                {% if project and member in project.team_members.all %}selected{% endif %}>
+                                {{ member.get_full_name|default:member.username }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                        <div class="form-text">Birden fazla üye seçmek için Ctrl tuşuna basılı tutarak tıklayın.</div>
+                    </div>
+
+                    <!-- PRD Ekleme Seçeneği -->
+                    <div class="card mt-4">
+                        <div class="card-header">
+                            <h6 class="mb-0">
+                                <i class="fas fa-file-alt text-primary"></i> PRD (Product Requirements Document)
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="checkbox" id="create_prd" name="create_prd">
+                                <label class="form-check-label" for="create_prd">
+                                    <strong>Bu proje için PRD oluştur</strong>
+                                </label>
+                                <div class="form-text">İsteğe bağlı: Proje için detaylı gereksinim dokümanı oluşturmak istiyorsanız işaretleyin.</div>
+                            </div>
+                            
+                            <div id="prd_fields" style="display: none;">
+                                <div class="mb-3">
+                                    <label for="prd_title" class="form-label">PRD Başlığı</label>
+                                    <input type="text" class="form-control" id="prd_title" name="prd_title" placeholder="Örn: Proje Adı - PRD">
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="prd_product_summary" class="form-label">Ürün Özeti</label>
+                                    <textarea class="form-control" id="prd_product_summary" name="prd_product_summary" rows="3" placeholder="Ürünün genel açıklaması ve amacı"></textarea>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="prd_target_audience" class="form-label">Hedef Kitle</label>
+                                    <textarea class="form-control" id="prd_target_audience" name="prd_target_audience" rows="3" placeholder="Ürünün hedef kullanıcıları ve kullanım senaryoları"></textarea>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="prd_functional_requirements" class="form-label">Fonksiyonel Gereksinimler</label>
+                                    <textarea class="form-control" id="prd_functional_requirements" name="prd_functional_requirements" rows="4" placeholder="Ürünün ne yapacağını açıklayan gereksinimler"></textarea>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="prd_document" class="form-label">PRD Dosyası (Opsiyonel)</label>
+                                    <input type="file" class="form-control" id="prd_document" name="prd_document" accept=".pdf,.doc,.docx,.txt,.md,.markdown">
+                                    <div class="form-text">PDF, Word, metin veya Markdown dosyası yükleyebilirsiniz. Maksimum dosya boyutu: 10MB</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-end mt-4">
+                        <a href="{% url 'projects:project_list' %}" class="btn btn-secondary me-2">İptal</a>
+                        <button type="submit" class="btn btn-primary">Kaydet</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Select2 for better dropdown experience -->
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script>
+    $(document).ready(function() {
+        $('#team_members').select2({
+            placeholder: 'Takım üyelerini seçin',
+            allowClear: true
+        });
+        
+        $('#manager').select2({
+            placeholder: 'Proje yöneticisini seçin',
+            allowClear: true
+        });
+        
+        // PRD alanlarını göster/gizle
+        $('#create_prd').change(function() {
+            if ($(this).is(':checked')) {
+                $('#prd_fields').slideDown();
+            } else {
+                $('#prd_fields').slideUp();
+            }
+        });
+        
+        // Proje adı değiştiğinde PRD başlığını otomatik güncelle
+        $('#name').on('input', function() {
+            var projectName = $(this).val();
+            if (projectName) {
+                $('#prd_title').val(projectName + ' - PRD');
+            }
+        });
+    });
+</script>
+{% endblock %} 

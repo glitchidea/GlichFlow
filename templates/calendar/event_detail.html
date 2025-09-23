@@ -1,0 +1,245 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load calendar_tags %}
+
+{% block title %}{{ event.title }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'calendar/css/calendar.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-12">
+            <div class="event-detail-header">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <nav aria-label="breadcrumb">
+                            <ol class="breadcrumb">
+                                <li class="breadcrumb-item">
+                                    <a href="{% url 'calendar:calendar' %}">
+                                        <i class="fas fa-calendar-alt"></i> Takvim
+                                    </a>
+                                </li>
+                                <li class="breadcrumb-item active" aria-current="page">{{ event.title }}</li>
+                            </ol>
+                        </nav>
+                        
+                        <h1 class="event-title">
+                            <span class="event-type-indicator" style="background-color: {{ event.color }}"></span>
+                            {{ event.title }}
+                        </h1>
+                        
+                        <div class="event-meta">
+                            <span class="event-type-badge">
+                                <i class="fas fa-tag"></i>
+                                {{ event.get_event_type_display }}
+                            </span>
+                            
+                            {% if event.priority == 'urgent' %}
+                                <span class="badge bg-danger">Acil</span>
+                            {% elif event.priority == 'high' %}
+                                <span class="badge bg-warning">Yüksek</span>
+                            {% elif event.priority == 'medium' %}
+                                <span class="badge bg-info">Orta</span>
+                            {% else %}
+                                <span class="badge bg-secondary">Düşük</span>
+                            {% endif %}
+                            
+                            {% if event.is_completed %}
+                                <span class="badge bg-success">
+                                    <i class="fas fa-check"></i> Tamamlandı
+                                </span>
+                            {% elif event.is_overdue %}
+                                <span class="badge bg-danger">
+                                    <i class="fas fa-exclamation-triangle"></i> Süresi Geçmiş
+                                </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4 text-end">
+                        <div class="event-actions">
+                            {% if event.get_absolute_url %}
+                                <a href="{{ event.get_absolute_url }}" class="btn btn-primary">
+                                    <i class="fas fa-external-link-alt"></i> Orijinal Sayfaya Git
+                                </a>
+                            {% endif %}
+                            
+                            <button type="button" class="btn btn-outline-success toggle-completion-btn" 
+                                    data-event-id="{{ event.id }}" 
+                                    data-completed="{{ event.is_completed|yesno:'true,false' }}">
+                                {% if event.is_completed %}
+                                    <i class="fas fa-undo"></i> Geri Al
+                                {% else %}
+                                    <i class="fas fa-check"></i> Tamamla
+                                {% endif %}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="event-detail-content">
+                <div class="row">
+                    <div class="col-md-8">
+                        <!-- Açıklama -->
+                        {% if event.description %}
+                            <div class="event-section">
+                                <h3 class="section-title">
+                                    <i class="fas fa-align-left"></i>
+                                    Açıklama
+                                </h3>
+                                <div class="event-description">
+                                    {{ event.description|linebreaks }}
+                                </div>
+                            </div>
+                        {% endif %}
+                        
+                        <!-- Tarih Bilgileri -->
+                        <div class="event-section">
+                            <h3 class="section-title">
+                                <i class="fas fa-calendar"></i>
+                                Tarih Bilgileri
+                            </h3>
+                            <div class="date-info">
+                                <div class="date-item">
+                                    <strong>Başlangıç:</strong>
+                                    <span>{{ event.start_date|date:"d.m.Y H:i" }}</span>
+                                </div>
+                                
+                                {% if event.end_date %}
+                                    <div class="date-item">
+                                        <strong>Bitiş:</strong>
+                                        <span>{{ event.end_date|date:"d.m.Y H:i" }}</span>
+                                    </div>
+                                {% endif %}
+                                
+                                {% if event.duration_hours %}
+                                    <div class="date-item">
+                                        <strong>Süre:</strong>
+                                        <span>{{ event.duration_hours|floatformat:1 }} saat</span>
+                                    </div>
+                                {% endif %}
+                                
+                                {% if event.is_all_day %}
+                                    <div class="date-item">
+                                        <span class="badge bg-info">Tüm Gün</span>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- İlgili Nesne -->
+                        {% if event.content_object %}
+                            <div class="event-section">
+                                <h3 class="section-title">
+                                    <i class="fas fa-link"></i>
+                                    İlgili Nesne
+                                </h3>
+                                <div class="related-object">
+                                    <p><strong>Tür:</strong> {{ event.content_type.model|title }}</p>
+                                    <p><strong>ID:</strong> {{ event.object_id }}</p>
+                                    {% if event.get_absolute_url %}
+                                        <a href="{{ event.get_absolute_url }}" class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-external-link-alt"></i> Detayları Görüntüle
+                                        </a>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <!-- Etkinlik Bilgileri -->
+                        <div class="event-info-card">
+                            <h4 class="card-title">
+                                <i class="fas fa-info-circle"></i>
+                                Etkinlik Bilgileri
+                            </h4>
+                            
+                            <div class="info-item">
+                                <strong>Oluşturan:</strong>
+                                <span>{{ event.user.get_full_name|default:event.user.username }}</span>
+                            </div>
+                            
+                            <div class="info-item">
+                                <strong>Oluşturulma:</strong>
+                                <span>{{ event.created_at|date:"d.m.Y H:i" }}</span>
+                            </div>
+                            
+                            <div class="info-item">
+                                <strong>Son Güncelleme:</strong>
+                                <span>{{ event.updated_at|date:"d.m.Y H:i" }}</span>
+                            </div>
+                            
+                            <div class="info-item">
+                                <strong>Görünürlük:</strong>
+                                <span class="badge {% if event.is_visible %}bg-success{% else %}bg-secondary{% endif %}">
+                                    {% if event.is_visible %}Görünür{% else %}Gizli{% endif %}
+                                </span>
+                            </div>
+                        </div>
+                        
+                        <!-- Hızlı İşlemler -->
+                        <div class="quick-actions-card">
+                            <h4 class="card-title">
+                                <i class="fas fa-bolt"></i>
+                                Hızlı İşlemler
+                            </h4>
+                            
+                            <div class="d-grid gap-2">
+                                <button type="button" class="btn btn-outline-primary" onclick="window.history.back()">
+                                    <i class="fas fa-arrow-left"></i> Geri Dön
+                                </button>
+                                
+                                <a href="{% url 'calendar:calendar' %}" class="btn btn-outline-secondary">
+                                    <i class="fas fa-calendar-alt"></i> Takvime Dön
+                                </a>
+                                
+                                <a href="{% url 'calendar:agenda' %}" class="btn btn-outline-info">
+                                    <i class="fas fa-list"></i> Ajandaya Git
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Tamamlama durumu değiştirme
+    const toggleBtn = document.querySelector('.toggle-completion-btn');
+    if (toggleBtn) {
+        toggleBtn.addEventListener('click', function() {
+            const eventId = this.dataset.eventId;
+            const isCompleted = this.dataset.completed === 'true';
+            
+            fetch(`/calendar/api/events/${eventId}/toggle/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                    'Content-Type': 'application/json',
+                },
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert('Bir hata oluştu: ' + data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Bir hata oluştu');
+            });
+        });
+    }
+});
+</script>
+{% endblock %}

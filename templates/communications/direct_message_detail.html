@@ -1,0 +1,423 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ other_user.get_full_name|default:other_user.username }} ile Mesajlaşma | {{ request.site_settings.site_name }}{% endblock %}
+
+{% block page_title %}{{ other_user.get_full_name|default:other_user.username }} ile Mesajlaşma{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'dashboard:index' %}">Anasayfa</a></li>
+<li class="breadcrumb-item"><a href="{% url 'communications:direct_messages_list' %}">Direkt Mesajlar</a></li>
+<li class="breadcrumb-item active">{{ other_user.get_full_name|default:other_user.username }}</li>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-light">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div class="d-flex align-items-center">
+                        <div class="avatar-container me-3">
+                            {% if other_user.profile_picture %}
+                            <img src="{{ other_user.profile_picture.url }}" alt="{{ other_user.get_full_name }}" class="rounded-circle" width="42" height="42">
+                            {% else %}
+                            <div class="avatar-placeholder rounded-circle bg-primary text-white d-flex align-items-center justify-content-center" style="width: 42px; height: 42px;">
+                                {{ other_user.get_initials }}
+                            </div>
+                            {% endif %}
+                            {% if other_user.is_online %}
+                            <span class="status-indicator online"></span>
+                            {% endif %}
+                        </div>
+                        <div>
+                            <h5 class="mb-0">{{ other_user.get_full_name|default:other_user.username }}</h5>
+                            <small class="text-muted">
+                                {% if other_user.is_online %}
+                                <i class="fas fa-circle text-success me-1 small"></i> Çevrimiçi
+                                {% else %}
+                                <i class="fas fa-circle text-secondary me-1 small"></i> Çevrimdışı
+                                {% endif %}
+                            </small>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="dropdown">
+                            <button class="btn btn-light btn-sm" type="button" id="messageOptionsDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="fas fa-ellipsis-v"></i>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="messageOptionsDropdown">
+                                <li><a class="dropdown-item" href="{% url 'accounts:user_profile' user_id=other_user.id %}"><i class="fas fa-user me-2"></i> Profili Görüntüle</a></li>
+                                <li><a class="dropdown-item" href="#"><i class="fas fa-bell-slash me-2"></i> Bildirimleri Kapat</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item text-danger" href="#" id="deleteConversationBtn"><i class="fas fa-trash me-2"></i> Konuşmayı Sil</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card-body p-0">
+                <!-- Mesaj Listesi -->
+                <div class="chat-messages p-4" id="chatMessages">
+                    {% if messages_list %}
+                        {% for message in messages_list %}
+                            <div class="chat-message-wrapper mb-4 {% if message.sender == request.user %}text-end{% endif %}">
+                                {% if message.message_type == 'system' %}
+                                    <div class="system-message py-2 px-3 bg-light text-center rounded mb-3">
+                                        <small class="text-muted">{{ message.content }}</small>
+                                    </div>
+                                {% else %}
+                                    {% if message.sender != request.user %}
+                                    <div class="message-sender-info d-flex align-items-center mb-1">
+                                        <div class="avatar-container me-2">
+                                            {% if message.sender.profile_picture %}
+                                            <img src="{{ message.sender.profile_picture.url }}" alt="{{ message.sender.get_full_name }}" class="rounded-circle" width="24" height="24">
+                                            {% else %}
+                                            <div class="avatar-placeholder rounded-circle bg-primary text-white d-flex align-items-center justify-content-center" style="width: 24px; height: 24px; font-size: 10px;">
+                                                {{ message.sender.get_initials }}
+                                            </div>
+                                            {% endif %}
+                                        </div>
+                                        <div>
+                                            <h6 class="mb-0 fs-6">{{ message.sender.get_full_name|default:message.sender.username }}</h6>
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                    
+                                    <div class="chat-bubble {% if message.sender == request.user %}chat-bubble-right{% else %}chat-bubble-left{% endif %} p-3 mb-1">
+                                        {% if message.message_type == 'text' %}
+                                            {{ message.content|linebreaks }}
+                                        {% elif message.message_type == 'image' %}
+                                            <div class="chat-image mb-1">
+                                                <a href="{{ message.file.url }}" target="_blank">
+                                                    <img src="{{ message.file.url }}" alt="Image" class="img-fluid rounded" style="max-height: 200px;">
+                                                </a>
+                                            </div>
+                                            {% if message.content %}
+                                                <div>{{ message.content|linebreaks }}</div>
+                                            {% endif %}
+                                        {% elif message.message_type == 'file' %}
+                                            <div class="chat-file mb-2">
+                                                <a href="{{ message.file.url }}" target="_blank" class="btn btn-sm btn-light">
+                                                    <i class="fas fa-file me-2"></i> {{ message.file.name|slice:'16:' }}
+                                                </a>
+                                            </div>
+                                            {% if message.content %}
+                                                <div>{{ message.content|linebreaks }}</div>
+                                            {% endif %}
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <div class="message-meta small text-muted">
+                                        <span>{{ message.sent_at|date:"H:i" }}</span>
+                                        {% if message.sender == request.user %}
+                                            {% if message.is_read %}
+                                                <i class="fas fa-check-double text-primary ms-1" title="Okundu"></i>
+                                            {% else %}
+                                                <i class="fas fa-check ms-1" title="İletildi"></i>
+                                            {% endif %}
+                                        {% endif %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center py-5">
+                            <div class="mb-3">
+                                <i class="fas fa-comments fa-3x text-muted"></i>
+                            </div>
+                            <h5>Henüz mesaj yok</h5>
+                            <p class="text-muted">Aşağıdaki mesaj kutusundan ilk mesajınızı gönderebilirsiniz.</p>
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <!-- Mesaj Gönderme Alanı -->
+                <div class="chat-input-area border-top p-3 bg-light">
+                    <form id="messageForm" method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <div class="input-group">
+                            <input type="text" name="content" id="messageContent" class="form-control" placeholder="Mesajınızı yazın...">
+                            <button type="button" class="btn btn-outline-secondary" id="fileAttachButton">
+                                <i class="fas fa-paperclip"></i>
+                            </button>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-paper-plane"></i>
+                            </button>
+                        </div>
+                        <input type="file" name="file" id="fileAttachment" class="d-none">
+                        <div id="filePreview" class="mt-2 d-none">
+                            <div class="d-flex align-items-center">
+                                <span class="file-name me-2 text-truncate"></span>
+                                <button type="button" class="btn btn-sm btn-light" id="removeFile">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.chat-messages {
+    max-height: 500px;
+    overflow-y: auto;
+}
+.chat-bubble {
+    max-width: 70%;
+    display: inline-block;
+    border-radius: 12px;
+    word-break: break-word;
+}
+.chat-bubble-left {
+    background-color: #f1f0f0;
+    color: #212529;
+    border-bottom-left-radius: 4px;
+}
+.chat-bubble-right {
+    background-color: #0d6efd;
+    color: white;
+    border-bottom-right-radius: 4px;
+}
+.chat-image img {
+    max-width: 250px;
+    max-height: 200px;
+    object-fit: contain;
+}
+.avatar-container {
+    position: relative;
+}
+.status-indicator {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    border: 2px solid white;
+}
+.status-indicator.online {
+    background-color: #28a745;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        // Sohbet mesajları alanını en alta kaydır
+        function scrollToBottom() {
+            var chatMessages = document.getElementById('chatMessages');
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+        
+        // Sayfa yüklendiğinde en alta kaydır
+        scrollToBottom();
+        
+        // Dosya ekleme
+        $('#fileAttachButton').click(function() {
+            $('#fileAttachment').click();
+        });
+        
+        // Dosya seçildiğinde önizleme göster
+        $('#fileAttachment').change(function() {
+            if (this.files.length > 0) {
+                $('#filePreview').removeClass('d-none');
+                $('.file-name').text(this.files[0].name);
+            } else {
+                $('#filePreview').addClass('d-none');
+            }
+        });
+        
+        // Dosyayı kaldır
+        $('#removeFile').click(function() {
+            $('#fileAttachment').val('');
+            $('#filePreview').addClass('d-none');
+        });
+        
+        // AJAX ile mesaj gönderme
+        $('#messageForm').submit(function(e) {
+            e.preventDefault();
+            
+            var content = $('#messageContent').val();
+            var hasFile = $('#fileAttachment')[0].files.length > 0;
+            
+            if (!content && !hasFile) {
+                return false;
+            }
+            
+            var formData = new FormData(this);
+            
+            $.ajax({
+                url: "{% url 'communications:direct_message_detail' direct_message.id %}",
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                success: function(response) {
+                    if (response.status === 'success') {
+                        // Mesajı ekle
+                        var messageContent = response.message.content;
+                        
+                        // Eğer dosya varsa, dosya tipine göre görüntüle
+                        if (response.message.file_url) {
+                            if (response.message.message_type === 'image') {
+                                messageContent = '<div class="chat-image mb-1">' +
+                                    '<a href="' + response.message.file_url + '" target="_blank">' +
+                                    '<img src="' + response.message.file_url + '" alt="Image" class="img-fluid rounded" style="max-height: 200px; max-width: 250px; object-fit: contain;">' +
+                                    '</a></div>' + messageContent;
+                            } else if (response.message.message_type === 'file') {
+                                messageContent = '<div class="chat-file mb-2">' +
+                                    '<a href="' + response.message.file_url + '" target="_blank" class="btn btn-sm btn-light">' +
+                                    '<i class="fas fa-file me-2"></i> ' + response.message.file_name +
+                                    '</a></div>' + messageContent;
+                            }
+                        }
+                        
+                        var messageHtml = '<div class="chat-message-wrapper mb-4 text-end">' +
+                            '<div class="chat-bubble chat-bubble-right p-3 mb-1">' + 
+                            messageContent + '</div>' +
+                            '<div class="message-meta small text-muted">' +
+                            '<span>' + response.message.sent_at + '</span>' +
+                            '<i class="fas fa-check ms-1" title="İletildi"></i>' +
+                            '</div></div>';
+                        
+                        $('#chatMessages').append(messageHtml);
+                        
+                        // Form temizle
+                        $('#messageContent').val('');
+                        $('#fileAttachment').val('');
+                        $('#filePreview').addClass('d-none');
+                        
+                        // En alta kaydır
+                        scrollToBottom();
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error("Mesaj gönderilirken hata oluştu:", error);
+                    alert("Mesaj gönderilemedi. Lütfen tekrar deneyin.");
+                }
+            });
+        });
+        
+        // Yeni mesajları periyodik olarak kontrol et
+        var lastMessageId = 0;
+        {% if messages_list.last %}
+            lastMessageId = {{ messages_list.last.id }};
+        {% endif %}
+        
+        function checkNewMessages() {
+            var messageUrl = "{% url 'communications:load_more_direct_messages' direct_message.id %}?last_message_id=" + lastMessageId;
+            $.getJSON(messageUrl, function(data) {
+                if (data.messages && data.messages.length > 0) {
+                    // Yeni mesajlar ekle
+                    data.messages.forEach(function(message) {
+                        var bubbleClass = message.is_sender ? 'chat-bubble-right' : 'chat-bubble-left';
+                        var alignment = message.is_sender ? 'text-end' : '';
+                        var readIcon = message.is_sender ? '<i class="fas fa-check ms-1" title="İletildi"></i>' : '';
+                        
+                        if (message.is_system) {
+                            var messageHtml = '<div class="chat-message-wrapper mb-4">' +
+                                '<div class="system-message py-2 px-3 bg-light text-center rounded mb-3">' +
+                                '<small class="text-muted">' + message.content + '</small>' +
+                                '</div></div>';
+                        } else {
+                            var messageContent = message.content;
+                            
+                            // Eğer dosya varsa, dosya içeriğini ekle
+                            if (message.file_url) {
+                                if (message.message_type === 'image') {
+                                    messageContent = '<div class="chat-image mb-1">' +
+                                        '<a href="' + message.file_url + '" target="_blank">' +
+                                        '<img src="' + message.file_url + '" alt="Image" class="img-fluid rounded" style="max-height: 200px; max-width: 250px; object-fit: contain;">' +
+                                        '</a></div>';
+                                } else if (message.message_type === 'file') {
+                                    messageContent = '<div class="chat-file mb-2">' +
+                                        '<a href="' + message.file_url + '" target="_blank" class="btn btn-sm btn-light">' +
+                                        '<i class="fas fa-file me-2"></i> ' + message.file_name +
+                                        '</a></div>';
+                                }
+                            }
+                            
+                            var senderInfo = !message.is_sender ? 
+                                '<div class="message-sender-info d-flex align-items-center mb-1">' +
+                                '<div class="avatar-container me-2">' +
+                                '<div class="avatar-placeholder rounded-circle bg-primary text-white d-flex align-items-center justify-content-center" style="width: 24px; height: 24px; font-size: 10px;">' +
+                                '{{ other_user.get_initials }}' +
+                                '</div></div>' +
+                                '<div><h6 class="mb-0 fs-6">{{ other_user.get_full_name|default:other_user.username }}</h6></div>' +
+                                '</div>' : '';
+                            
+                            var messageHtml = '<div class="chat-message-wrapper mb-4 ' + alignment + '">' +
+                                senderInfo +
+                                '<div class="chat-bubble ' + bubbleClass + ' p-3 mb-1">' + 
+                                messageContent + '</div>' +
+                                '<div class="message-meta small text-muted">' +
+                                '<span>' + message.sent_at + '</span>' +
+                                readIcon +
+                                '</div></div>';
+                        }
+                        
+                        $('#chatMessages').append(messageHtml);
+                        lastMessageId = message.id;
+                    });
+                    
+                    // Sadece karşı taraftan gelen mesajlar için ses çal
+                    var hasIncomingMessages = data.messages.some(function(message) {
+                        return !message.is_sender;
+                    });
+                    
+                    if (hasIncomingMessages) {
+                        // Mesaj sesini oynat
+                        var notificationSound = "{% static 'sounds/notification.mp3' %}";
+                        var audio = new Audio(notificationSound);
+                        audio.play();
+                    }
+                    
+                    // En alta kaydır
+                    scrollToBottom();
+                }
+            });
+        }
+        
+        // 5 saniyede bir yeni mesajları kontrol et
+        setInterval(checkNewMessages, 5000);
+        
+        // Konuşmayı silme işlemi
+        $('#deleteConversationBtn').click(function(e) {
+            e.preventDefault();
+            
+            if (confirm("Bu konuşmayı silmek istediğinizden emin misiniz?")) {
+                $.ajax({
+                    url: "{% url 'communications:delete_direct_message' direct_message.id %}",
+                    type: 'POST',
+                    data: {
+                        'csrfmiddlewaretoken': '{{ csrf_token }}'
+                    },
+                    success: function(response) {
+                        if (response.status === 'success') {
+                            // Başarılı ise direkt mesajlar listesine yönlendir
+                            window.location.href = "{% url 'communications:direct_messages_list' %}";
+                        } else {
+                            alert(response.message || "Konuşma silinemedi.");
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error("Konuşma silinirken hata oluştu:", error);
+                        alert("Konuşma silinirken bir hata oluştu. Lütfen tekrar deneyin.");
+                    }
+                });
+            }
+        });
+    });
+</script>
+{% endblock %} 

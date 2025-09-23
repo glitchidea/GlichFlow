@@ -1,0 +1,136 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load calendar_tags %}
+
+{% block title %}Takvim{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'calendar/css/calendar.css' %}">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.css">
+<!-- FullCalendar Plugin Styles -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/plugins/daygrid/index.global.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/plugins/timegrid/index.global.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/plugins/list/index.global.min.css">
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/locales/tr.global.min.js"></script>
+<!-- FullCalendar Plugins -->
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/plugins/daygrid/index.global.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/plugins/timegrid/index.global.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/plugins/list/index.global.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/plugins/interaction/index.global.min.js"></script>
+<script src="{% static 'calendar/js/calendar.js' %}"></script>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <!-- Sidebar -->
+        <div class="col-md-3 col-lg-2 sidebar">
+            <div class="sidebar-content">
+                <h5 class="sidebar-title">
+                    <i class="fas fa-calendar-alt"></i>
+                    Takvim
+                </h5>
+                
+                <!-- Görünüm Seçenekleri -->
+                <div class="view-options">
+                    <h6>Görünüm</h6>
+                    <div class="btn-group-vertical w-100" role="group">
+                        <button type="button" class="btn btn-outline-primary btn-sm view-btn" data-view="month">
+                            <i class="fas fa-calendar"></i> Aylık
+                        </button>
+                        <button type="button" class="btn btn-outline-primary btn-sm view-btn" data-view="week">
+                            <i class="fas fa-calendar-week"></i> Haftalık
+                        </button>
+                        <button type="button" class="btn btn-outline-primary btn-sm view-btn" data-view="day">
+                            <i class="fas fa-calendar-day"></i> Günlük
+                        </button>
+                        <a href="{% url 'calendar:agenda' %}" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-list"></i> Ajanda
+                        </a>
+                    </div>
+                </div>
+                
+                
+                <!-- Hızlı Erişim -->
+                <div class="quick-actions mt-3">
+                    <h6>Hızlı Erişim</h6>
+                    <div class="btn-group-vertical w-100" role="group">
+                        <button type="button" class="btn btn-outline-secondary btn-sm" id="today-btn">
+                            <i class="fas fa-home"></i> Bugün
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" id="sync-btn">
+                            <i class="fas fa-sync"></i> Senkronize Et
+                        </button>
+                        <a href="{% url 'calendar:settings' %}" class="btn btn-outline-secondary btn-sm">
+                            <i class="fas fa-cog"></i> Ayarlar
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Ana İçerik -->
+        <div class="col-md-9 col-lg-10 main-content">
+            <div class="calendar-header">
+                <div class="row align-items-center">
+                    <div class="col-md-6">
+                        <h2 class="calendar-title">
+                            <i class="fas fa-calendar-alt"></i>
+                            Takvim
+                        </h2>
+                    </div>
+                    <div class="col-md-6 text-end">
+                        <div class="calendar-navigation">
+                            <button type="button" class="btn btn-outline-primary" id="prev-btn">
+                                <i class="fas fa-chevron-left"></i>
+                            </button>
+                            <button type="button" class="btn btn-outline-primary" id="next-btn">
+                                <i class="fas fa-chevron-right"></i>
+                            </button>
+                            <button type="button" class="btn btn-primary" id="today-btn-header">
+                                Bugün
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="calendar-container">
+                <div id="calendar"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Etkinlik Detay Modal -->
+<div class="modal fade" id="eventModal" tabindex="-1" aria-labelledby="eventModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="eventModalLabel">Etkinlik Detayları</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="event-details">
+                    <!-- Etkinlik detayları buraya yüklenecek -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Kapat</button>
+                <button type="button" class="btn btn-primary" id="view-event-btn">Detayları Görüntüle</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Yükleme Spinner -->
+<div class="loading-overlay" id="loading-overlay" style="display: none;">
+    <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Yükleniyor...</span>
+    </div>
+</div>
+{% endblock %}

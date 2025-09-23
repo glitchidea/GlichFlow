@@ -1,0 +1,307 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Sayfa Başlığı -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-users mr-2 text-primary"></i>{{ team.name }}
+        </h1>
+        <div>
+            {% if user.role == 'admin' or user.role == 'project_manager' or user == team.leader %}
+            <a href="{% url 'teams:team_update' team_id=team.id %}" class="btn btn-sm btn-warning shadow-sm mr-2">
+                <i class="fas fa-edit fa-sm mr-1"></i> Düzenle
+            </a>
+            {% endif %}
+            {% if user.role == 'admin' or user.role == 'project_manager' %}
+            <a href="{% url 'teams:team_delete' team_id=team.id %}" class="btn btn-sm btn-danger shadow-sm">
+                <i class="fas fa-trash fa-sm mr-1"></i> Sil
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- İçerik -->
+    <div class="row">
+        <!-- Ekip Bilgileri -->
+        <div class="col-xl-4 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Ekip Bilgileri</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ team.name }}</div>
+                            <hr>
+                            <p class="text-gray-600 mb-2">
+                                <strong>Açıklama:</strong><br>
+                                {% if team.description %}
+                                {{ team.description }}
+                                {% else %}
+                                <span class="text-muted">Açıklama bulunmuyor</span>
+                                {% endif %}
+                            </p>
+                            <p class="text-gray-600 mb-2">
+                                <strong>Oluşturulma Tarihi:</strong><br>
+                                {{ team.created_at|date:"d F Y, H:i" }}
+                            </p>
+                            <p class="text-gray-600 mb-0">
+                                <strong>Son Güncelleme:</strong><br>
+                                {{ team.updated_at|date:"d F Y, H:i" }}
+                            </p>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-users fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Ekip Lideri -->
+        <div class="col-xl-4 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Ekip Lideri</div>
+                            {% if team.leader %}
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                <div class="d-flex align-items-center mt-2 mb-3">
+                                    {% if team.leader.profile_picture %}
+                                    <img src="{{ team.leader.profile_picture.url }}" class="rounded-circle mr-3" width="50" height="50">
+                                    {% else %}
+                                    <div class="rounded-circle mr-3 d-flex align-items-center justify-content-center text-white bg-success" style="width: 50px; height: 50px; font-size: 20px;">
+                                        {{ team.leader.get_initials }}
+                                    </div>
+                                    {% endif %}
+                                    {{ team.leader.get_full_name }}
+                                </div>
+                            </div>
+                            <p class="text-gray-600 mb-2">
+                                <strong>E-posta:</strong><br>
+                                {{ team.leader.email }}
+                            </p>
+                            <p class="text-gray-600 mb-0">
+                                <strong>Pozisyon:</strong><br>
+                                {{ team.leader.get_role_display }}
+                            </p>
+                            {% else %}
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                <span class="text-muted">Lider Atanmamış</span>
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-user-tie fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- İstatistikler -->
+        <div class="col-xl-4 col-md-12 mb-4">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                İstatistikler</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">Ekip Özeti</div>
+                            <hr>
+                            
+                            <div class="d-flex justify-content-between mb-2">
+                                <span class="text-gray-600"><i class="fas fa-users mr-1 text-info"></i> Üye Sayısı:</span>
+                                <span class="font-weight-bold">{{ team.members.count }}</span>
+                            </div>
+                            
+                            <div class="d-flex justify-content-between mb-2">
+                                <span class="text-gray-600"><i class="fas fa-project-diagram mr-1 text-info"></i> Proje Sayısı:</span>
+                                <span class="font-weight-bold">{{ team.projects.count }}</span>
+                            </div>
+                            
+                            <div class="d-flex justify-content-between mb-2">
+                                <span class="text-gray-600"><i class="fas fa-tasks mr-1 text-info"></i> Aktif Görevler:</span>
+                                <span class="font-weight-bold">{{ team.projects.all|length }}</span>
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-clipboard-list fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ekip Üyeleri Tablosu -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">Ekip Üyeleri</h6>
+                    {% if user.role == 'admin' or user.role == 'project_manager' or user == team.leader %}
+                    <a href="{% url 'teams:team_update' team_id=team.id %}" class="btn btn-sm btn-primary">
+                        <i class="fas fa-user-plus fa-sm"></i> Üye Ekle/Çıkar
+                    </a>
+                    {% endif %}
+                </div>
+                <div class="card-body">
+                    {% if team_members %}
+                        <div class="table-responsive">
+                            <table class="table table-bordered" id="membersTable" width="100%" cellspacing="0">
+                                <thead>
+                                    <tr>
+                                        <th>Üye</th>
+                                        <th>E-posta</th>
+                                        <th>Pozisyon</th>
+                                        <th>Rol</th>
+                                        <th>Katılma Tarihi</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for member in team_members %}
+                                    <tr>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                {% if member.user.profile_picture %}
+                                                <img src="{{ member.user.profile_picture.url }}" class="rounded-circle mr-2" width="40" height="40">
+                                                {% else %}
+                                                <div class="rounded-circle mr-2 d-flex align-items-center justify-content-center text-white bg-primary" style="width: 40px; height: 40px;">
+                                                    {{ member.user.get_initials }}
+                                                </div>
+                                                {% endif %}
+                                                <div>
+                                                    {{ member.user.get_full_name }}
+                                                    {% if member.user == team.leader %}
+                                                    <span class="badge badge-success ml-2">Lider</span>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td style="color: black;">{{ member.user.email }}</td>
+                                        <td style="color: black;">{{ member.user.get_role_display }}</td>
+                                        <td>
+                                            {% if member.role == 'lead' %}
+                                            <span class="badge badge-success">Lider</span>
+                                            {% elif member.role == 'member' %}
+                                            <span class="badge badge-primary">Üye</span>
+                                            {% else %}
+                                            <span class="badge badge-secondary">{{ member.role }}</span>
+                                            {% endif %}
+                                        </td>
+                                        <td style="color: black;">{{ member.joined_at|date:"d.m.Y" }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <p>Bu ekipte henüz üye bulunmuyor.</p>
+                            {% if user.role == 'admin' or user.role == 'project_manager' or user == team.leader %}
+                            <a href="{% url 'teams:team_update' team_id=team.id %}" class="btn btn-primary">
+                                <i class="fas fa-user-plus mr-2"></i>Üye Ekle
+                            </a>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ekip Projeleri -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">Ekip Projeleri</h6>
+                </div>
+                <div class="card-body">
+                    {% if team.projects.all %}
+                        <div class="table-responsive">
+                            <table class="table table-bordered" id="projectsTable" width="100%" cellspacing="0">
+                                <thead>
+                                    <tr>
+                                        <th>Proje Adı</th>
+                                        <th>Durum</th>
+                                        <th>İlerleme</th>
+                                        <th>Başlangıç</th>
+                                        <th>Bitiş</th>
+                                        <th>İşlemler</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for project in team.projects.all %}
+                                    <tr>
+                                        <td><a href="{% url 'projects:project_detail' project_id=project.id %}">{{ project.name }}</a></td>
+                                        <td>
+                                            {% if project.status == 'not_started' %}
+                                            <span class="badge badge-secondary">Başlamadı</span>
+                                            {% elif project.status == 'in_progress' %}
+                                            <span class="badge badge-primary">Devam Ediyor</span>
+                                            {% elif project.status == 'completed' %}
+                                            <span class="badge badge-success">Tamamlandı</span>
+                                            {% elif project.status == 'on_hold' %}
+                                            <span class="badge badge-warning">Beklemede</span>
+                                            {% elif project.status == 'cancelled' %}
+                                            <span class="badge badge-danger">İptal Edildi</span>
+                                            {% else %}
+                                            <span class="badge badge-secondary">{{ project.get_status_display }}</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <div class="progress">
+                                                <div class="progress-bar bg-success" role="progressbar" 
+                                                    style="width: {{ project.progress }}%;"
+                                                    aria-valuenow="{{ project.progress }}" 
+                                                    aria-valuemin="0" 
+                                                    aria-valuemax="100">{{ project.progress }}%</div>
+                                            </div>
+                                        </td>
+                                        <td>{{ project.start_date|date:"d.m.Y" }}</td>
+                                        <td>{{ project.end_date|date:"d.m.Y" }}</td>
+                                        <td>
+                                            <a href="{% url 'projects:project_detail' project_id=project.id %}" class="btn btn-info btn-sm">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <p>Bu ekibe henüz proje atanmamış.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        $('#membersTable').DataTable({
+            "language": {
+                "url": "//cdn.datatables.net/plug-ins/1.10.24/i18n/Turkish.json"
+            }
+        });
+        
+        $('#projectsTable').DataTable({
+            "language": {
+                "url": "//cdn.datatables.net/plug-ins/1.10.24/i18n/Turkish.json"
+            }
+        });
+    });
+</script>
+{% endblock %} 

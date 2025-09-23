@@ -1,0 +1,121 @@
+<!-- Proje İlerleme Raporu -->
+<div class="report-section">
+    <h4 class="mb-3">Proje İlerleme Durumu</h4>
+    
+    <div class="row mb-4">
+        <div class="col-lg-8">
+            <div class="chart-container">
+                <canvas id="projectProgressChart"></canvas>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title mb-3">Özet Bilgiler</h5>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Toplam Proje:</span>
+                        <strong>{{ project_data|length }}</strong>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Tamamlanmış Projeler:</span>
+                        <strong>
+                            {% with completed_count=0 %}
+                            {% for item in project_data %}
+                                {% if item.progress == 100 %}
+                                    {% with completed_count=completed_count|add:1 %}{% endwith %}
+                                {% endif %}
+                            {% endfor %}
+                            {{ completed_count }}
+                            {% endwith %}
+                        </strong>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Ortalama İlerleme:</span>
+                        <strong>
+                            {% with total_progress=0 %}
+                            {% for item in project_data %}
+                                {% with total_progress=total_progress|add:item.progress %}{% endwith %}
+                            {% endfor %}
+                            {% if project_data|length > 0 %}
+                                {% with project_count=project_data|length %}
+                                    {{ total_progress|divisibleby:project_count|floatformat:1 }}%
+                                {% endwith %}
+                            {% else %}
+                                0%
+                            {% endif %}
+                            {% endwith %}
+                        </strong>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span>Geciken Projeler:</span>
+                        <strong class="text-danger">
+                            {% with overdue_count=0 %}
+                            {% for item in project_data %}
+                                {% if item.is_overdue %}
+                                    {% with overdue_count=overdue_count|add:1 %}{% endwith %}
+                                {% endif %}
+                            {% endfor %}
+                            {{ overdue_count }}
+                            {% endwith %}
+                        </strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="table-responsive">
+        <table class="table table-centered table-hover mb-0">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Proje Adı</th>
+                    <th>Görevler</th>
+                    <th>İlerleme</th>
+                    <th>Durum</th>
+                    <th>Bitiş Tarihi</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in project_data %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td>
+                        <a href="{% url 'projects:project_detail' project_id=item.project.id %}" class="text-body fw-semibold">
+                            {{ item.project.name }}
+                        </a>
+                    </td>
+                    <td>{{ item.completed_tasks }} / {{ item.total_tasks }}</td>
+                    <td>
+                        <div class="progress" style="height: 6px; width: 120px;">
+                            <div class="progress-bar {% if item.is_overdue %}bg-danger{% else %}bg-primary{% endif %}" style="width: {{ item.progress }}%;" role="progressbar" aria-valuenow="{{ item.progress }}" aria-valuemin="0" aria-valuemax="100"></div>
+                        </div>
+                        <small class="ms-1">{{ item.progress }}%</small>
+                    </td>
+                    <td>
+                        <span class="badge {% if item.project.status == 'completed' %}bg-success{% elif item.project.status == 'in_progress' %}bg-primary{% elif item.project.status == 'on_hold' %}bg-warning{% elif item.project.status == 'not_started' %}bg-secondary{% else %}bg-danger{% endif %}">
+                            {{ item.project.get_status_display }}
+                        </span>
+                    </td>
+                    <td>
+                        {% if item.project.end_date %}
+                        <span class="{% if item.is_overdue %}text-danger{% endif %}">
+                            {{ item.project.end_date|date:"d M Y" }}
+                            {% if item.is_overdue %}<i class="mdi mdi-alert-circle-outline text-danger" data-bs-toggle="tooltip" title="Gecikmiş Proje"></i>{% endif %}
+                        </span>
+                        {% else %}
+                        <span class="text-muted">Belirlenmedi</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="text-center py-3">
+                        <div class="text-muted">Henüz proje verisi bulunmuyor</div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div> 

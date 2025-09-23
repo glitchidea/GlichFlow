@@ -1,0 +1,17 @@
+<!-- Page Header -->
+<div class="page-header mb-4">
+    <div class="row align-items-center">
+        <div class="col">
+            <h1 class="h3 mb-0">{% block page_title %}Dashboard{% endblock %}</h1>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-0">
+                    <li class="breadcrumb-item"><a href="{% url 'dashboard:index' %}">Ana Sayfa</a></li>
+                    {% block breadcrumb %}{% endblock %}
+                </ol>
+            </nav>
+        </div>
+        <div class="col-auto">
+            {% block page_actions %}{% endblock %}
+        </div>
+    </div>
+</div>

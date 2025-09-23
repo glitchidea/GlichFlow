@@ -1,0 +1,339 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/prd_detail.css' %}?v=1.1">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- PRD Header -->
+    <div class="prd-header">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h1 class="h3 mb-2">{{ prd.title }}</h1>
+                <div class="d-flex align-items-center gap-3">
+                                    <span class="badge bg-{{ prd.status }}">
+                    {{ prd.get_status_display }}
+                </span>
+                </div>
+            </div>
+            <div class="col-md-4 text-md-end">
+                <div class="btn-group" role="group">
+                    {% if user.role in 'admin,project_manager' or user == prd.created_by %}
+                    <a href="{% url 'projects:prd_edit' prd.id %}" class="btn btn-light btn-sm">
+                        <i class="fas fa-edit"></i> Düzenle
+                    </a>
+                    {% endif %}
+                    
+                    {% if user.role in 'admin,project_manager' %}
+                    <a href="{% url 'projects:prd_assign' prd.id %}" class="btn btn-light btn-sm">
+                        <i class="fas fa-link"></i> Ata
+                    </a>
+                    {% endif %}
+                    
+                    {% if user.role in 'admin,project_manager' or user == prd.created_by %}
+                    <a href="{% url 'projects:prd_delete' prd.id %}" class="btn btn-danger btn-sm">
+                        <i class="fas fa-trash"></i> Sil
+                    </a>
+                    {% endif %}
+                    
+                    <a href="{% url 'projects:prd_list' %}" class="btn btn-light btn-sm">
+                        <i class="fas fa-arrow-left"></i> Geri
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Sol Kolon - PRD İçeriği -->
+        <div class="col-lg-8">
+            <!-- Ürün Özeti -->
+            {% if prd.product_summary %}
+            <div class="content-section">
+                <h4 class="mb-3">
+                    <i class="fas fa-cube text-primary"></i> Ürün Özeti
+                </h4>
+                <div class="prd-content">
+                    {{ prd.product_summary|linebreaks }}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Hedef Kitle -->
+            {% if prd.target_audience %}
+            <div class="content-section">
+                <h4 class="mb-3">
+                    <i class="fas fa-users text-primary"></i> Hedef Kitle
+                </h4>
+                <div class="prd-content">
+                    {{ prd.target_audience|linebreaks }}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Fonksiyonel Gereksinimler -->
+            {% if prd.functional_requirements %}
+            <div class="content-section">
+                <h4 class="mb-3">
+                    <i class="fas fa-list-check text-primary"></i> Fonksiyonel Gereksinimler
+                </h4>
+                <div class="prd-content">
+                    {{ prd.functional_requirements|linebreaks }}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Fonksiyonel Olmayan Gereksinimler -->
+            {% if prd.non_functional_requirements %}
+            <div class="content-section">
+                <h4 class="mb-3">
+                    <i class="fas fa-shield-alt text-primary"></i> Fonksiyonel Olmayan Gereksinimler
+                </h4>
+                <div class="prd-content">
+                    {{ prd.non_functional_requirements|linebreaks }}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Kullanıcı Hikayeleri -->
+            {% if prd.user_stories %}
+            <div class="content-section">
+                <h4 class="mb-3">
+                    <i class="fas fa-book text-primary"></i> Kullanıcı Hikayeleri
+                </h4>
+                <div class="prd-content">
+                    {{ prd.user_stories|linebreaks }}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Kabul Kriterleri -->
+            {% if prd.acceptance_criteria %}
+            <div class="content-section">
+                <h4 class="mb-3">
+                    <i class="fas fa-check-circle text-primary"></i> Kabul Kriterleri
+                </h4>
+                <div class="prd-content">
+                    {{ prd.acceptance_criteria|linebreaks }}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Teknik Gereksinimler -->
+            {% if prd.technical_requirements %}
+            <div class="content-section">
+                <h4 class="mb-3">
+                    <i class="fas fa-cogs text-primary"></i> Teknik Gereksinimler
+                </h4>
+                <div class="prd-content">
+                    {{ prd.technical_requirements|linebreaks }}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Tasarım Kısıtlamaları -->
+            {% if prd.design_constraints %}
+            <div class="content-section">
+                <h4 class="mb-3">
+                    <i class="fas fa-palette text-primary"></i> Tasarım Kısıtlamaları
+                </h4>
+                <div class="prd-content">
+                    {{ prd.design_constraints|linebreaks }}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- PRD Dosyası -->
+            {% if prd.document %}
+            <div class="content-section">
+                <h4 class="mb-3">
+                    <i class="fas fa-paperclip text-primary"></i> PRD Dosyası
+                </h4>
+                <div class="document-preview">
+                    <i class="fas fa-file-pdf fa-3x text-gray-400 mb-3"></i>
+                    <h5>{{ prd.document.name|slice:"-50:" }}</h5>
+                    <p class="text-muted">PRD dosyası yüklendi</p>
+                    <div class="btn-group" role="group">
+                        <a href="{% url 'projects:prd_document_view' prd.id %}" class="btn btn-primary" target="_blank">
+                            <i class="fas fa-eye"></i> Görüntüle
+                        </a>
+                        <a href="{{ prd.document.url }}" class="btn btn-outline-primary" target="_blank">
+                            <i class="fas fa-download"></i> İndir
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Sağ Kolon - Bilgiler -->
+        <div class="col-lg-4">
+            <!-- Genel Bilgiler -->
+            <div class="content-section">
+                <h5 class="mb-3">
+                    <i class="fas fa-info-circle text-primary"></i> Genel Bilgiler
+                </h5>
+                
+                <div class="info-card">
+                    <div class="row">
+                        <div class="col-4 text-muted">Oluşturan:</div>
+                        <div class="col-8">{{ prd.created_by.get_full_name|default:prd.created_by.username }}</div>
+                    </div>
+                </div>
+                
+                <div class="info-card">
+                    <div class="row">
+                        <div class="col-4 text-muted">Oluşturulma:</div>
+                        <div class="col-8">{{ prd.created_at|date:"d.m.Y H:i" }}</div>
+                    </div>
+                </div>
+                
+                <div class="info-card">
+                    <div class="row">
+                        <div class="col-4 text-muted">Güncellenme:</div>
+                        <div class="col-8">{{ prd.updated_at|date:"d.m.Y H:i" }}</div>
+                    </div>
+                </div>
+                
+                {% if prd.assigned_by %}
+                <div class="info-card">
+                    <div class="row">
+                        <div class="col-4 text-muted">Atayan:</div>
+                        <div class="col-8">{{ prd.assigned_by.get_full_name|default:prd.assigned_by.username }}</div>
+                    </div>
+                </div>
+                
+                <div class="info-card">
+                    <div class="row">
+                        <div class="col-4 text-muted">Atanma:</div>
+                        <div class="col-8">{{ prd.assigned_at|date:"d.m.Y H:i" }}</div>
+                    </div>
+                </div>
+                {% endif %}
+                
+                {% if prd.reviewed_at %}
+                <div class="info-card">
+                    <div class="row">
+                        <div class="col-4 text-muted">İncelenme:</div>
+                        <div class="col-8">{{ prd.reviewed_at|date:"d.m.Y H:i" }}</div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Atama Bilgileri -->
+            {% if prd.assigned_to %}
+            <div class="content-section">
+                <h5 class="mb-3">
+                    <i class="fas fa-link text-primary"></i> Atama Bilgileri
+                </h5>
+                
+                {% if prd.project %}
+                <div class="info-card">
+                    <div class="row">
+                        <div class="col-4 text-muted">Atandığı:</div>
+                        <div class="col-8">Proje</div>
+                    </div>
+                </div>
+                
+                <div class="info-card">
+                    <div class="row">
+                        <div class="col-4 text-muted">Proje:</div>
+                        <div class="col-8">
+                            <a href="{% url 'projects:project_detail' prd.project.id %}" class="text-decoration-none">
+                                {{ prd.project.name }}
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+                
+                {% if prd.task %}
+                <div class="info-card">
+                    <div class="row">
+                        <div class="col-4 text-muted">Atandığı:</div>
+                        <div class="col-8">Görev</div>
+                    </div>
+                </div>
+                
+                <div class="info-card">
+                    <div class="row">
+                        <div class="col-4 text-muted">Görev:</div>
+                        <div class="col-8">
+                            <a href="{% url 'tasks:task_detail' prd.task.id %}" class="text-decoration-none">
+                                {{ prd.task.title }}
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
+
+            <!-- Durum Yönetimi -->
+            {% if user.role in 'admin,project_manager' %}
+            <div class="content-section">
+                <h5 class="mb-3">
+                    <i class="fas fa-cog text-primary"></i> Durum Yönetimi
+                </h5>
+                
+                <form id="status-form" class="mb-3">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="status" class="form-label">Durum</label>
+                        <select name="status" id="status" class="form-select">
+                            {% for value, label in prd.get_status_choices %}
+                            <option value="{{ value }}" {% if prd.status == value %}selected{% endif %}>
+                                {{ label }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-sm">
+                        <i class="fas fa-save"></i> Güncelle
+                    </button>
+                </form>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Durum değiştirme
+    $('#status-form').submit(function(e) {
+        e.preventDefault();
+        
+        const form = $(this);
+        const status = $('#status').val();
+        
+        $.ajax({
+            url: `/projects/prd/{{ prd.id }}/status/`,
+            method: 'POST',
+            data: {
+                status: status,
+                csrfmiddlewaretoken: $('[name=csrfmiddlewaretoken]').val()
+            },
+            success: function(response) {
+                if (response.success) {
+                    // Sayfayı yenile
+                    location.reload();
+                } else {
+                    alert('Hata: ' + response.message);
+                }
+            },
+            error: function() {
+                alert('Bir hata oluştu.');
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

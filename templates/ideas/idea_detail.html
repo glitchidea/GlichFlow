@@ -1,0 +1,211 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ idea.title }}{% endblock %}
+{% block page_title %}{{ idea.title }}{% endblock %}
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'ideas:idea_list' %}">Fikir Not Defteri</a></li>
+<li class="breadcrumb-item active">{{ idea.title }}</li>
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/ideas.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <div>
+                    <h5 class="mb-0">{{ idea.title }}</h5>
+                    <small class="text-muted">
+                        <i class="fas fa-calendar"></i> {{ idea.created_at|date:"d.m.Y H:i" }}
+                        {% if idea.updated_at != idea.created_at %}
+                        • <i class="fas fa-edit"></i> {{ idea.updated_at|date:"d.m.Y H:i" }}
+                        {% endif %}
+                    </small>
+                </div>
+                <div class="idea-badges">
+                    <span class="badge bg-{{ idea.priority_color }} me-1">{{ idea.get_priority_display }}</span>
+                    <span class="badge bg-{{ idea.status_color }}">{{ idea.get_status_display }}</span>
+                </div>
+            </div>
+            <div class="card-body">
+                {% if idea.description %}
+                <div class="idea-section">
+                    <h6><i class="fas fa-align-left"></i> Açıklama</h6>
+                    <div class="idea-content">
+                        {{ idea.description|linebreaks }}
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if idea.requirements %}
+                <div class="idea-section">
+                    <h6><i class="fas fa-list-check"></i> Gereksinimler</h6>
+                    <div class="idea-content">
+                        {{ idea.requirements|linebreaks }}
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if idea.working_principle %}
+                <div class="idea-section">
+                    <h6><i class="fas fa-cogs"></i> Çalışma Prensibi</h6>
+                    <div class="idea-content">
+                        {{ idea.working_principle|linebreaks }}
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if idea.technologies %}
+                <div class="idea-section">
+                    <h6><i class="fas fa-code"></i> Teknolojiler</h6>
+                    <div class="idea-content">
+                        {{ idea.technologies|linebreaks }}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+            <div class="card-footer">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <a href="{% url 'ideas:idea_list' %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left"></i> Geri Dön
+                        </a>
+                    </div>
+                    <div>
+                        <a href="{% url 'ideas:idea_update' idea.pk %}" class="btn btn-primary">
+                            <i class="fas fa-edit"></i> Düzenle
+                        </a>
+                        <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteModal">
+                            <i class="fas fa-trash"></i> Sil
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <!-- Hızlı İşlemler -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="fas fa-bolt"></i> Hızlı İşlemler</h6>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{% url 'ideas:idea_update' idea.pk %}" class="btn btn-outline-primary">
+                        <i class="fas fa-edit"></i> Fikri Düzenle
+                    </a>
+                    <a href="{% url 'ideas:idea_create' %}" class="btn btn-outline-success">
+                        <i class="fas fa-plus"></i> Yeni Fikir Ekle
+                    </a>
+                    <a href="{% url 'ideas:idea_list' %}" class="btn btn-outline-info">
+                        <i class="fas fa-list"></i> Tüm Fikirler
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Proje Bağlantıları -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="fas fa-project-diagram"></i> Proje Bağlantıları</h6>
+            </div>
+            <div class="card-body">
+                {% if idea.is_connected_to_project %}
+                    <div class="alert alert-success">
+                        <i class="fas fa-link"></i> <strong>Bağlı Proje:</strong><br>
+                        <a href="{% url 'projects:project_detail' idea.project.pk %}" class="text-decoration-none">
+                            {{ idea.project.name }}
+                        </a>
+                    </div>
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'projects:project_detail' idea.project.pk %}" class="btn btn-success btn-sm">
+                            <i class="fas fa-external-link-alt"></i> Projeyi Görüntüle
+                        </a>
+                        <a href="{% url 'ideas:idea_disconnect_from_project' idea.pk %}" class="btn btn-outline-warning btn-sm">
+                            <i class="fas fa-unlink"></i> Bağlantıyı Kes
+                        </a>
+                    </div>
+                {% else %}
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i> Bu fikir henüz bir projeye bağlı değil.
+                    </div>
+                    {% if idea.can_be_converted_to_project %}
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'ideas:idea_connect_to_project' idea.pk %}" class="btn btn-primary btn-sm">
+                            <i class="fas fa-link"></i> Mevcut Projeye Bağla
+                        </a>
+                    </div>
+                    {% else %}
+                    <div class="text-muted small">
+                        <i class="fas fa-lock"></i> Bu fikir projeye bağlanamaz.
+                    </div>
+                    {% endif %}
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Fikir İstatistikleri -->
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="fas fa-chart-bar"></i> İstatistikler</h6>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-6">
+                        <div class="stat-item">
+                            <div class="stat-value text-primary">{{ idea.created_at|date:"d" }}</div>
+                            <div class="stat-label">Gün</div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="stat-item">
+                            <div class="stat-value text-info">{{ idea.created_at|date:"m" }}</div>
+                            <div class="stat-label">Ay</div>
+                        </div>
+                    </div>
+                </div>
+                <hr>
+                <div class="text-center">
+                    <small class="text-muted">
+                        <i class="fas fa-calendar"></i> {{ idea.created_at|date:"Y" }} yılında oluşturuldu
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Silme Onay Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteModalLabel">Fikri Sil</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Bu fikri silmek istediğinizden emin misiniz?</p>
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <strong>Dikkat:</strong> Bu işlem geri alınamaz!
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                <form method="post" action="{% url 'ideas:idea_delete' idea.pk %}" style="display: inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash"></i> Sil
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

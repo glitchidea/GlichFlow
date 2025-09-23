@@ -1,0 +1,103 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Proje Bağlantısını Kes - {{ idea.title }}{% endblock %}
+{% block page_title %}Proje Bağlantısını Kes{% endblock %}
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'ideas:idea_list' %}">Fikir Not Defteri</a></li>
+<li class="breadcrumb-item"><a href="{% url 'ideas:idea_detail' idea.pk %}">{{ idea.title }}</a></li>
+<li class="breadcrumb-item active">Bağlantıyı Kes</li>
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/ideas.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-6">
+        <div class="card border-warning">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="mb-0">
+                    <i class="fas fa-unlink"></i> Proje Bağlantısını Kes
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-warning">
+                    <h6><i class="fas fa-exclamation-triangle"></i> Dikkat!</h6>
+                    <p class="mb-0">Bu işlem fikri projeden ayıracak ve fikir taslak duruma geçecektir.</p>
+                </div>
+
+                <div class="idea-preview mb-4">
+                    <h6>Bağlantısı Kesilecek Fikir:</h6>
+                    <div class="card">
+                        <div class="card-body">
+                            <h6 class="card-title">{{ idea.title }}</h6>
+                            {% if idea.description %}
+                            <p class="card-text">{{ idea.description|truncatewords:30 }}</p>
+                            {% endif %}
+                            <div class="d-flex justify-content-between align-items-center">
+                                <small class="text-muted">
+                                    <i class="fas fa-calendar"></i> {{ idea.created_at|date:"d.m.Y" }}
+                                </small>
+                                <div>
+                                    <span class="badge bg-{{ idea.priority_color }}">{{ idea.get_priority_display }}</span>
+                                    <span class="badge bg-{{ idea.status_color }}">{{ idea.get_status_display }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="project-info mb-4">
+                    <h6>Bağlı Proje:</h6>
+                    <div class="card border-success">
+                        <div class="card-body">
+                            <h6 class="card-title text-success">{{ idea.project.name }}</h6>
+                            {% if idea.project.description %}
+                            <p class="card-text">{{ idea.project.description|truncatewords:20 }}</p>
+                            {% endif %}
+                            <small class="text-muted">
+                                <i class="fas fa-user"></i> {{ idea.project.manager.get_full_name|default:idea.project.manager.username }}
+                            </small>
+                        </div>
+                    </div>
+                </div>
+
+                <form method="post" class="mt-4">
+                    {% csrf_token %}
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'ideas:idea_detail' idea.pk %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left"></i> İptal
+                        </a>
+                        <button type="submit" class="btn btn-warning">
+                            <i class="fas fa-unlink"></i> Bağlantıyı Kes
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Alternatif Seçenekler -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="fas fa-lightbulb"></i> Alternatif Seçenekler</h6>
+            </div>
+            <div class="card-body">
+                <p class="text-muted">Bağlantıyı kesmek yerine şunları da yapabilirsiniz:</p>
+                <div class="d-grid gap-2">
+                    <a href="{% url 'projects:project_detail' idea.project.pk %}" class="btn btn-outline-success">
+                        <i class="fas fa-external-link-alt"></i> Projeyi Görüntüle
+                    </a>
+                    <a href="{% url 'ideas:idea_update' idea.pk %}" class="btn btn-outline-info">
+                        <i class="fas fa-edit"></i> Fikri Düzenle
+                    </a>
+                    <a href="{% url 'ideas:idea_detail' idea.pk %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-eye"></i> Fikri Görüntüle
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

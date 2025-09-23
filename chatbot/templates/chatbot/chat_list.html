@@ -1,0 +1,153 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Sohbet Geçmişi - {{ block.super }}{% endblock %}
+
+{% block page_title %}Sohbet Geçmişi{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item active">Sohbet Geçmişi</li>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">Sohbet Geçmişiniz</h5>
+                    <div class="d-flex gap-2">
+                        <a href="{% url 'chatbot:ollama_settings' %}" class="btn btn-sm btn-outline-secondary">
+                            <i class="fas fa-cog me-1"></i> API Ayarları
+                        </a>
+                        <a href="{% url 'chatbot:new_chat_session' %}" class="btn btn-sm btn-primary">
+                            <i class="fas fa-plus me-1"></i> Yeni Sohbet
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if sessions %}
+                    <div class="list-group">
+                        {% for session in sessions %}
+                        <a href="{% url 'chatbot:chat_session' session_id=session.id %}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                            <div>
+                                <i class="fas fa-comments me-2"></i>
+                                {{ session.title }}
+                                <small class="text-muted ms-2">{{ session.updated_at|date:"d.m.Y H:i" }}</small>
+                            </div>
+                            <div class="btn-group">
+                                <button type="button" class="btn btn-sm btn-outline-secondary rename-btn" 
+                                        data-bs-toggle="modal" data-bs-target="#renameModal" 
+                                        data-session-id="{{ session.id }}" 
+                                        data-session-title="{{ session.title }}">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-danger delete-btn"
+                                        data-bs-toggle="modal" data-bs-target="#deleteModal"
+                                        data-session-id="{{ session.id }}"
+                                        data-session-title="{{ session.title }}">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </a>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-center p-5">
+                        <i class="fas fa-comments fa-3x text-muted mb-3"></i>
+                        <h5>Henüz sohbet geçmişiniz bulunmuyor</h5>
+                        <p class="text-muted">AI yardımcı ile ilk sohbetinizi başlatmak için "Yeni Sohbet" butonuna tıklayın.</p>
+                        <a href="{% url 'chatbot:new_chat_session' %}" class="btn btn-primary mt-2">
+                            <i class="fas fa-plus me-1"></i> Yeni Sohbet Başlat
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Rename Modal -->
+<div class="modal fade" id="renameModal" tabindex="-1" aria-labelledby="renameModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="renameModalLabel">Sohbet Başlığını Değiştir</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="renameForm" method="post" action="">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="sessionTitle" class="form-label">Yeni Başlık</label>
+                        <input type="text" class="form-control" id="sessionTitle" name="title" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                    <button type="submit" class="btn btn-primary">Kaydet</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteModalLabel">Sohbeti Sil</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Bu sohbeti silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.</p>
+                <p id="deleteSessionTitle" class="fw-bold text-danger"></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                <a href="#" id="confirmDeleteBtn" class="btn btn-danger">Sil</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Setup rename modal
+        const renameModal = document.getElementById('renameModal');
+        if (renameModal) {
+            renameModal.addEventListener('show.bs.modal', function(event) {
+                const button = event.relatedTarget;
+                const sessionId = button.getAttribute('data-session-id');
+                const sessionTitle = button.getAttribute('data-session-title');
+                
+                const form = document.getElementById('renameForm');
+                form.action = `{% url 'chatbot:chat_list' %}${sessionId}/rename/`;
+                
+                const titleInput = document.getElementById('sessionTitle');
+                titleInput.value = sessionTitle;
+            });
+        }
+        
+        // Setup delete modal
+        const deleteModal = document.getElementById('deleteModal');
+        if (deleteModal) {
+            deleteModal.addEventListener('show.bs.modal', function(event) {
+                const button = event.relatedTarget;
+                const sessionId = button.getAttribute('data-session-id');
+                const sessionTitle = button.getAttribute('data-session-title');
+                
+                const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
+                confirmDeleteBtn.href = `{% url 'chatbot:chat_list' %}${sessionId}/delete/`;
+                
+                const deleteSessionTitle = document.getElementById('deleteSessionTitle');
+                deleteSessionTitle.textContent = sessionTitle;
+            });
+        }
+    });
+</script>
+{% endblock %} 

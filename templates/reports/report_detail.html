@@ -1,0 +1,433 @@
+    {% extends 'base.html' %}
+    {% load static %}
+
+    {% block title %}{{ report.title }}{% endblock %}
+
+    {% block page_title %}{{ report.title }}{% endblock %}
+
+    {% block extra_css %}
+    <style>
+        .report-header {
+            background-color: #f8f9fa;
+            border-radius: 0.25rem;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        .report-meta {
+            display: flex;
+            flex-wrap: wrap;
+            margin-top: 1.5rem;
+            padding-top: 1rem;
+            border-top: 1px solid #eee;
+        }
+        .report-meta-item {
+            margin-right: 2rem;
+            margin-bottom: 1rem;
+        }
+        .report-section {
+            margin-bottom: 2rem;
+        }
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin-bottom: 1.5rem;
+        }
+        .data-card {
+            border-radius: 0.25rem;
+            padding: 1.25rem;
+            margin-bottom: 1rem;
+            background-color: #fff;
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+        }
+        .data-card .value {
+            font-size: 2rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+        .data-card .label {
+            font-size: 0.875rem;
+            color: #6c757d;
+        }
+        .progress-card {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        .progress-card .label {
+            width: 120px;
+            font-weight: 500;
+        }
+        .progress-card .progress {
+            flex-grow: 1;
+            height: 8px;
+            margin-right: 10px;
+        }
+        .progress-card .value {
+            width: 50px;
+            text-align: right;
+            font-weight: 500;
+        }
+        .preserve-whitespace {
+            white-space: pre-wrap;
+            background-color: #f8f9fa;
+            padding: 1rem;
+            border-radius: 0.25rem;
+            margin-top: 0.5rem;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+    </style>
+    {% endblock %}
+
+    {% block breadcrumb %}
+    <div class="page-title-box">
+        <div class="page-title-right">
+            <ol class="breadcrumb m-0">
+                <li class="breadcrumb-item"><a href="{% url 'dashboard:index' %}">Ana Sayfa</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'reports:report_list' %}">Raporlar</a></li>
+                <li class="breadcrumb-item active">{{ report.title }}</li>
+            </ol>
+        </div>
+        <h4 class="page-title">{{ report.title }}</h4>
+    </div>
+    {% endblock %}
+
+    {% block page_actions %}
+    <div class="d-flex">
+        <a href="{% url 'reports:report_run' report_id=report.id %}" class="btn btn-primary me-2">
+            <i class="mdi mdi-refresh me-1"></i> Raporu Çalıştır
+        </a>
+        <div class="dropdown me-2">
+            <button class="btn btn-secondary dropdown-toggle" type="button" id="reportActionsDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="mdi mdi-cog-outline me-1"></i> İşlemler
+            </button>
+            <ul class="dropdown-menu" aria-labelledby="reportActionsDropdown">
+                <li>
+                    <a class="dropdown-item" href="{% url 'reports:report_update' report_id=report.id %}">
+                        <i class="mdi mdi-pencil me-1"></i> Düzenle
+                    </a>
+                </li>
+                <li>
+                    <a class="dropdown-item" href="#" onclick="window.print(); return false;">
+                        <i class="mdi mdi-printer me-1"></i> Yazdır
+                    </a>
+                </li>
+                <li><hr class="dropdown-divider"></li>
+                <li>
+                    <a class="dropdown-item text-danger" href="{% url 'reports:report_delete' report_id=report.id %}">
+                        <i class="mdi mdi-delete me-1"></i> Sil
+                    </a>
+                </li>
+            </ul>
+        </div>
+        <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="toggle_subscription">
+            {% if is_subscribed %}
+            <button type="submit" class="btn btn-light">
+                <i class="mdi mdi-bell-off-outline me-1"></i> Abonelikten Çık
+            </button>
+            {% else %}
+            <button type="submit" class="btn btn-info">
+                <i class="mdi mdi-bell-outline me-1"></i> Abone Ol
+            </button>
+            {% endif %}
+        </form>
+    </div>
+    {% endblock %}
+
+    {% block content %}
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <!-- Rapor Başlığı ve Meta Bilgiler -->
+                    <div class="report-header">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h3 class="mb-0">{{ report.title }}</h3>
+                            <span class="badge bg-primary-subtle text-primary">{{ report.get_report_type_display }}</span>
+                        </div>
+                        {% if report.description %}
+                        <div class="mt-2">
+                            <h6 class="mb-2 text-muted">Açıklama:</h6>
+                            <div class="preserve-whitespace">{{ report.description|linebreaks }}</div>
+                        </div>
+                        {% endif %}
+                        
+                        <div class="report-meta">
+                            <div class="report-meta-item">
+                                <small class="text-muted d-block">Oluşturan</small>
+                                <span>{{ report.created_by.get_full_name|default:report.created_by.username }}</span>
+                            </div>
+                            <div class="report-meta-item">
+                                <small class="text-muted d-block">Oluşturulma Tarihi</small>
+                                <span>{{ report.created_at|date:"d F Y H:i" }}</span>
+                            </div>
+                            <div class="report-meta-item">
+                                <small class="text-muted d-block">Son Çalıştırma</small>
+                                <span>{% if report.last_run %}{{ report.last_run|date:"d F Y H:i" }}{% else %}Çalıştırılmadı{% endif %}</span>
+                            </div>
+                            {% if report.project %}
+                            <div class="report-meta-item">
+                                <small class="text-muted d-block">Proje</small>
+                                <span><a href="{% url 'projects:project_detail' project_id=report.project.id %}">{{ report.project.name }}</a></span>
+                            </div>
+                            {% endif %}
+                            {% if report.date_from or report.date_to %}
+                            <div class="report-meta-item">
+                                <small class="text-muted d-block">Tarih Aralığı</small>
+                                <span>
+                                    {% if report.date_from %}{{ report.date_from|date:"d M Y" }}{% else %}...{% endif %}
+                                    -
+                                    {% if report.date_to %}{{ report.date_to|date:"d M Y" }}{% else %}...{% endif %}
+                                </span>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <!-- Rapor İçeriği - Tipe göre farklı içerikler göster -->
+                    {% if report.report_type == 'project_progress' %}
+                        {% include 'reports/partials/project_progress.html' %}
+                    {% elif report.report_type == 'time_usage' %}
+                        {% include 'reports/partials/time_usage.html' %}
+                    {% elif report.report_type == 'user_performance' %}
+                        {% include 'reports/partials/user_performance.html' %}
+                    {% elif report.report_type == 'workload' %}
+                        {% include 'reports/partials/workload.html' %}
+                    {% else %}
+                    <div class="text-center py-5">
+                        <div class="mb-3">
+                            <i class="mdi mdi-chart-line" style="font-size: 4rem; color: #ccc;"></i>
+                        </div>
+                        <h5>Rapor verileri bulunamadı</h5>
+                        <p class="text-muted">
+                            Rapor verilerini görmek için 'Raporu Çalıştır' düğmesine tıklayın.
+                        </p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endblock %}
+
+    {% block extra_js %}
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        $(document).ready(function() {
+            // Örnek Chart.js kodları
+            // Gerçek projede rapor türüne göre özel grafikler oluşturulabilir
+            {% if report.report_type == 'project_progress' and project_data %}
+            // Proje İlerleme Grafiği
+            new Chart(document.getElementById('projectProgressChart'), {
+                type: 'bar',
+                data: {
+                    labels: [{% for item in project_data %}'{{ item.project.name }}',{% endfor %}],
+                    datasets: [{
+                        label: 'İlerleme (%)',
+                        data: [{% for item in project_data %}{{ item.progress }},{% endfor %}],
+                        backgroundColor: [{% for item in project_data %}{% if item.is_overdue %}'rgba(220, 53, 69, 0.7)'{% else %}'rgba(59, 125, 221, 0.7)'{% endif %},{% endfor %}],
+                        borderColor: [{% for item in project_data %}{% if item.is_overdue %}'rgb(220, 53, 69)'{% else %}'rgb(59, 125, 221)'{% endif %},{% endfor %}],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            ticks: {
+                                callback: function(value) {
+                                    return value + '%';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+            {% endif %}
+            
+            {% if report.report_type == 'time_usage' and user_hours %}
+            // Zaman Kullanım Grafiği
+            new Chart(document.getElementById('timeUsageChart'), {
+                type: 'pie',
+                data: {
+                    labels: [{% for item in user_hours %}'{{ item.user__first_name }} {{ item.user__last_name }}',{% endfor %}],
+                    datasets: [{
+                        data: [{% for item in user_hours %}{{ item.total_hours }},{% endfor %}],
+                        backgroundColor: [
+                            'rgba(59, 125, 221, 0.7)',
+                            'rgba(40, 167, 69, 0.7)',
+                            'rgba(255, 193, 7, 0.7)',
+                            'rgba(220, 53, 69, 0.7)',
+                            'rgba(108, 117, 125, 0.7)',
+                            'rgba(23, 162, 184, 0.7)',
+                            'rgba(111, 66, 193, 0.7)',
+                            'rgba(253, 126, 20, 0.7)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right'
+                        }
+                    }
+                }
+            });
+            {% endif %}
+            
+            {% if report.report_type == 'user_performance' and user_data %}
+            // Kullanıcı Performans Grafiği
+            new Chart(document.getElementById('userPerformanceChart'), {
+                type: 'bar',
+                data: {
+                    labels: [{% for item in user_data %}'{{ item.user.get_full_name|default:item.user.username }}',{% endfor %}],
+                    datasets: [{
+                        label: 'Tamamlanan Görevler',
+                        data: [{% for item in user_data %}{{ item.completed_tasks }},{% endfor %}],
+                        backgroundColor: 'rgba(59, 125, 221, 0.7)',
+                        borderColor: 'rgb(59, 125, 221)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+            {% endif %}
+            
+            {% if report.report_type == 'workload' and user_workload %}
+            // İş Yükü Grafiği - Ana çubuk grafik
+            new Chart(document.getElementById('workloadChart'), {
+                type: 'bar',
+                data: {
+                    labels: [{% for item in user_workload %}'{{ item.user__first_name }} {{ item.user__last_name|default:item.user__username }}',{% endfor %}],
+                    datasets: [{
+                        label: 'Açık Görevler',
+                        data: [{% for item in user_workload %}{{ item.active_tasks }},{% endfor %}],
+                        backgroundColor: 'rgba(255, 193, 7, 0.7)',
+                        borderColor: 'rgb(255, 193, 7)',
+                        borderWidth: 1
+                    }, {
+                        label: 'Tahmini Saat',
+                        data: [{% for item in user_workload %}{{ item.estimated_hours }},{% endfor %}],
+                        backgroundColor: 'rgba(23, 162, 184, 0.7)',
+                        borderColor: 'rgb(23, 162, 184)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+            
+            // İş Yükü Pasta Grafiği - Kullanıcı bazlı iş yükü dağılımı
+            new Chart(document.getElementById('workloadPieChart'), {
+                type: 'pie',
+                data: {
+                    labels: [{% for item in user_workload %}'{{ item.user__first_name }} {{ item.user__last_name|default:item.user__username }}',{% endfor %}],
+                    datasets: [{
+                        data: [{% for item in user_workload %}{{ item.workload_percentage }},{% endfor %}],
+                        backgroundColor: [
+                            'rgba(59, 125, 221, 0.7)',
+                            'rgba(40, 167, 69, 0.7)',
+                            'rgba(255, 193, 7, 0.7)',
+                            'rgba(220, 53, 69, 0.7)',
+                            'rgba(108, 117, 125, 0.7)',
+                            'rgba(23, 162, 184, 0.7)',
+                            'rgba(111, 66, 193, 0.7)',
+                            'rgba(253, 126, 20, 0.7)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                            labels: {
+                                generateLabels: function(chart) {
+                                    // Varsayılan etiketleri al
+                                    var labels = Chart.defaults.plugins.legend.labels.generateLabels(chart);
+                                    // Etiketlerin maksimum uzunluğunu sınırla
+                                    for (var i = 0; i < labels.length; i++) {
+                                        var text = labels[i].text;
+                                        if (text.length > 15) {
+                                            labels[i].text = text.substring(0, 15) + '...';
+                                        }
+                                    }
+                                    return labels;
+                                }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    var label = context.label || '';
+                                    var value = context.formattedValue;
+                                    return label + ': ' + value + '%';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // İş Yükü Zaman Grafiği - Tarihe göre iş yükü dağılımı
+            new Chart(document.getElementById('workloadTimeChart'), {
+                type: 'line',
+                data: {
+                    labels: [{% for item in user_workload %}'{{ item.user__first_name }} {{ item.user__last_name|default:item.user__username }}',{% endfor %}],
+                    datasets: [{
+                        label: 'İş Yükü (%)',
+                        data: [{% for item in user_workload %}{{ item.workload_percentage }},{% endfor %}],
+                        backgroundColor: 'rgba(59, 125, 221, 0.1)',
+                        borderColor: 'rgb(59, 125, 221)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4
+                    }, {
+                        label: 'Atanan Görevler',
+                        data: [{% for item in user_workload %}{{ item.assigned_tasks }},{% endfor %}],
+                        backgroundColor: 'rgba(23, 162, 184, 0.1)',
+                        borderColor: 'rgb(23, 162, 184)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+            {% endif %}
+        });
+    </script>
+    {% endblock %} 
