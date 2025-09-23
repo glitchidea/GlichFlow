@@ -1,9 +1,14 @@
+<p align="center">
+  <img src="static/img/favicon.svg" alt="GlichFlow Logo" width="96" height="96" />
+</p>
+
 # GlichFlow
 
 Takımınız için basit ve hızlı proje/görev yönetimi.
 
 - Canlı: [glichflow.glitchidea.com](http://glichflow.glitchidea.com/)
 - Dokümantasyon: [glichflow.glitchidea.com/docs.html](http://glichflow.glitchidea.com/docs.html)
+- Kaynak kodu: [github.com/glitchidea/GlichFlow](https://github.com/glitchidea/GlichFlow)
 
 ## Neler Sunar?
 
@@ -16,7 +21,7 @@ Takımınız için basit ve hızlı proje/görev yönetimi.
 ## Hızlı Başlangıç
 
 ```bash
-git clone https://github.com/glitchidea/glichflow.git
+git clone https://github.com/glitchidea/GlichFlow.git
 cd glichflow
 python -m venv venv && source venv/bin/activate  # Windows: venv\Scripts\activate
 pip install -r requirements.txt
@@ -27,3 +32,7 @@ python manage.py runserver
 
 Prod ve ileri seviye kurulumlar için dokümantasyonu ziyaret edin.
 
+
+## Lisans
+
+AGPL-3.0 — ayrıntılar için `LICENSE`.
