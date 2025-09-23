@@ -27,6 +27,3 @@ python manage.py runserver
 
 Prod ve ileri seviye kurulumlar için dokümantasyonu ziyaret edin.
 
-## Lisans
-
-MIT — ayrıntılar için `LICENSE`.
