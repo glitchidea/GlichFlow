@@ -4,21 +4,21 @@
 
 # GlichFlow
 
-Takımınız için basit ve hızlı proje/görev yönetimi.
+Simple and fast project/task management for your team.
 
-- Canlı: [glichflow.glitchidea.com](http://glichflow.glitchidea.com/)
-- Dokümantasyon: [glichflow.glitchidea.com/docs.html](http://glichflow.glitchidea.com/docs.html)
-- Kaynak kodu: [github.com/glitchidea/GlichFlow](https://github.com/glitchidea/GlichFlow)
+- Live: [glichflow.glitchidea.com](http://glichflow.glitchidea.com/)
+- Documentation: [glichflow.glitchidea.com/docs.html](http://glichflow.glitchidea.com/docs.html)
+- Source: [github.com/glitchidea/GlichFlow](https://github.com/glitchidea/GlichFlow)
 
-## Neler Sunar?
+## What’s Included
 
-- Projeler ve Görevler (atama, durum, dosya)
-- Ekipler ve Yetkiler
-- Mesajlaşma ve Bildirimler
-- Takvim görünümü
-- Raporlar, GitHub entegrasyonu, AI asistan
+- Projects and Tasks (assignment, status, files)
+- Teams and Permissions
+- Messaging and Notifications
+- Calendar views
+- Reports, GitHub integration, AI assistant
 
-## Hızlı Başlangıç
+## Quick Start
 
 ```bash
 git clone https://github.com/glitchidea/GlichFlow.git
@@ -30,9 +30,11 @@ python manage.py runserver
 # http://127.0.0.1:8000
 ```
 
-Prod ve ileri seviye kurulumlar için dokümantasyonu ziyaret edin.
+For production and advanced setups, see the documentation.
 
+## Roadmap
+- English UI support via i18n (Django internationalization) — coming soon.
 
-## Lisans
+## License
 
-AGPL-3.0 — ayrıntılar için `LICENSE`.
+AGPL-3.0 — see `LICENSE` for details.
